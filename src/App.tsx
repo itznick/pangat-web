@@ -1,10 +1,5 @@
-function App() {
+import { LandingPage } from "@/features/landing"
 
-  return (
-    <h1 className="text-3xl font-bold underline">
-      Namaste Pangat!
-    </h1>
-  )
+export default function App() {
+  return <LandingPage />
 }
-
-export default App

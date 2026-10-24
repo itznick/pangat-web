@@ -1,0 +1,31 @@
+<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pangatBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#059669" />
+      <stop offset="50%" stopColor="#047857" />
+      <stop offset="100%" stopColor="#064e3b" />
+    </linearGradient>
+    <linearGradient id="thaliGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#fbbf24" />
+      <stop offset="100%" stopColor="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="52" height="52" rx="14" fill="url(#pangatBg)" />
+  <path d="M 6 42.5 L 50 42.5" stroke="#a7f3d0" stroke-width="1.75" stroke-linecap="round" stroke-opacity="0.45" />
+
+  <ellipse cx="15" cy="38.5" rx="4.2" ry="1.8" fill="url(#thaliGold)" />
+  <ellipse cx="28" cy="38" rx="5" ry="2" fill="url(#thaliGold)" />
+  <ellipse cx="41" cy="38.5" rx="4.2" ry="1.8" fill="url(#thaliGold)" />
+
+  <circle cx="15" cy="18.5" r="3.5" fill="#ffffff" fill-opacity="0.92" />
+  <path d="M 8.5 33.5 C 8.5 26.5 11.2 24.5 15 24.5 C 18.8 24.5 21.5 26.5 21.5 33.5 C 21.5 34.5 20.5 35 15 35 C 9.5 35 8.5 34.5 8.5 33.5 Z" fill="#ffffff" fill-opacity="0.92" />
+
+  <circle cx="28" cy="15.5" r="4" fill="#ffffff" />
+  <path d="M 20.5 32 C 20.5 24.5 23.5 22 28 22 C 32.5 22 35.5 24.5 35.5 32 C 35.5 33.5 34 34.5 28 34.5 C 22 34.5 20.5 33.5 20.5 32 Z" fill="#ffffff" />
+
+  <circle cx="41" cy="18.5" r="3.5" fill="#ffffff" fill-opacity="0.92" />
+  <path d="M 34.5 33.5 C 34.5 26.5 37.2 24.5 41 24.5 C 44.8 24.5 47.5 26.5 47.5 33.5 C 47.5 34.5 46.5 35 41 35 C 35.5 35 34.5 34.5 34.5 33.5 Z" fill="#ffffff" fill-opacity="0.92" />
+
+  <path d="M 26 10 C 27 8.5 29 8.5 30 10" stroke="#fde68a" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.85" />
+</svg>
