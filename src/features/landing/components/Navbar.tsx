@@ -1,8 +1,7 @@
 import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { ShimmerButton } from "@/components/magicui/shimmer-button"
 import { PangatLogo } from "@/components/ui/PangatLogo"
-import { Menu, X, ArrowRight, Sparkles, MapPin } from "lucide-react"
+import { Menu, X, ArrowRight } from "lucide-react"
 
 interface NavbarProps {
   onOpenPilot: () => void
@@ -21,9 +20,9 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
   }, [])
 
   const navLinks = [
-    { name: "Features", href: "#features" },
     { name: "How It Works", href: "#how-it-works" },
-    { name: "Savings Calculator", href: "#calculator" },
+    { name: "Features", href: "#features" },
+    { name: "Turnover Calculator", href: "#calculator" },
     { name: "Pricing", href: "#pricing" },
   ]
 
@@ -32,7 +31,7 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
     setMobileMenuOpen(false)
     const target = document.querySelector(href)
     if (target) {
-      const topOffset = 80
+      const topOffset = 100
       const elementPosition = target.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.pageYOffset - topOffset
       window.scrollTo({
@@ -43,101 +42,85 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
   }
 
   return (
-    <>
-      {/* Top Pune Pilot Banner */}
-      <div className="bg-emerald-950 text-emerald-100 text-xs py-1.5 px-4 text-center font-medium border-b border-emerald-900/60 hidden sm:block">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
-          <span className="flex items-center gap-1 text-emerald-300">
-            <MapPin className="w-3 h-3 text-emerald-400" />
-            Pune On-Site Pilot:
-          </span>
-          <span>We set up your acrylic table standees in person across FC Road, Koregaon Park & Baner.</span>
-          <button
-            onClick={onOpenPilot}
-            className="underline underline-offset-2 hover:text-white font-semibold ml-1 cursor-pointer"
-          >
-            Claim Free Trial →
-          </button>
-        </div>
-      </div>
-
-      {/* Main Sticky Navigation */}
+    <div className="sticky top-3 sm:top-5 z-50 w-full px-4 sm:px-6 pointer-events-none transition-all duration-300">
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-200 ${
+        className={`max-w-5xl mx-auto rounded-full pointer-events-auto transition-all duration-300 ${
           scrolled
-            ? "bg-white/90 backdrop-blur-md shadow-xs border-b border-zinc-200/80 dark:bg-zinc-950/90 dark:border-zinc-800"
-            : "bg-white/80 backdrop-blur-xs border-b border-zinc-100 dark:bg-zinc-950/80 dark:border-zinc-900"
+            ? "glass-panel bg-zinc-950/90 border-white/15 shadow-2xl shadow-black/80 py-2 sm:py-2.5 px-4 sm:px-6"
+            : "glass-panel bg-zinc-950/75 border-white/10 shadow-xl shadow-black/40 py-2.5 sm:py-3 px-4 sm:px-6"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
-          {/* Logo with Seated Pangat Icon & Beta badge */}
+        <div className="flex items-center justify-between">
+          {/* Brand Logo with Seated Pangat Icon */}
           <a
             href="#"
-            className="flex items-center gap-2.5 group focus:outline-none"
+            className="flex items-center gap-2 sm:gap-3 group focus:outline-none"
             aria-label="Pangat Home"
           >
-            <PangatLogo size="sm" />
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white font-heading">
+            <div className="relative shrink-0">
+              <div className="absolute -inset-1 rounded-full bg-emerald-500/30 blur-xs opacity-75 group-hover:opacity-100 transition-opacity" />
+              <PangatLogo size="sm" className="relative" />
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2.5">
+              <span className="text-lg sm:text-xl font-bold tracking-tight text-white font-heading">
                 Pangat
               </span>
-              <span className="text-xs font-serif text-emerald-700/80 dark:text-emerald-400/80 font-medium">
-                (पंगत)
-              </span>
+              <div className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-md bg-gradient-to-r from-emerald-950/80 via-zinc-900 to-amber-950/40 border border-emerald-500/30 shadow-xs">
+                <span className="text-[11px] sm:text-xs font-serif font-bold text-amber-200 tracking-wide select-none">
+                  पंगत
+                </span>
+              </div>
             </div>
-            <Badge
-              variant="emerald"
-              className="ml-1 text-[10px] tracking-wide uppercase px-2 py-0 font-semibold"
-            >
+            <span className="hidden sm:inline-block text-[11px] font-medium text-emerald-300/90 bg-emerald-950/70 border border-emerald-800/80 px-2 py-0.5 rounded-full">
               Beta
-            </Badge>
+            </span>
           </a>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-1 bg-zinc-900/60 border border-white/5 rounded-full px-4 py-1.5">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={(e) => scrollToSection(e, link.href)}
-                className="text-sm font-medium text-zinc-600 hover:text-zinc-950 transition-colors dark:text-zinc-300 dark:hover:text-white"
+                className="px-3.5 py-1 rounded-full text-sm font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
               >
                 {link.name}
               </a>
             ))}
           </nav>
 
-          {/* Right Action Button */}
-          <div className="hidden md:flex items-center gap-3">
-            <Button
+          {/* Right Action Button with ShimmerButton */}
+          <div className="hidden sm:flex items-center gap-3">
+            <ShimmerButton
               onClick={onOpenPilot}
-              variant="default"
-              size="default"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-md shadow-emerald-700/20 gap-1.5 cursor-pointer"
+              shimmerColor="#a7f3d0"
+              shimmerDuration="2.5s"
+              background="rgba(5, 150, 105, 1)"
+              borderRadius="100px"
+              className="text-xs sm:text-sm font-semibold h-9 sm:h-10 px-5 shadow-lg shadow-emerald-950/50"
             >
-              <Sparkles className="w-4 h-4 text-emerald-200" />
-              Claim 7-Day Pilot
-              <ArrowRight className="w-3.5 h-3.5 ml-0.5 opacity-80" />
-            </Button>
+              <span>Try Free for 7 Days</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 opacity-80" />
+            </ShimmerButton>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
-            <Button
+          {/* Mobile Actions */}
+          <div className="flex sm:hidden items-center gap-1.5">
+            <button
               onClick={onOpenPilot}
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 h-8 font-medium"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold transition-all cursor-pointer shadow-sm"
             >
-              Pilot
-            </Button>
+              Try Free
+            </button>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+              className="p-1.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? (
-                <X className="w-5 h-5 text-zinc-900 dark:text-white" />
+                <X className="w-5 h-5 text-white" />
               ) : (
                 <Menu className="w-5 h-5" />
               )}
@@ -147,36 +130,32 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-b border-zinc-200 bg-white/98 backdrop-blur-lg px-4 pt-3 pb-6 space-y-3 dark:bg-zinc-950/98 dark:border-zinc-800 animate-in slide-in-from-top duration-200 shadow-xl">
-            <div className="flex flex-col space-y-2">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={(e) => scrollToSection(e, link.href)}
-                  className="px-3 py-2 rounded-lg text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  {link.name}
-                </a>
-              ))}
-            </div>
-            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
-              <Button
+          <div className="md:hidden mt-3 pt-3 border-t border-white/10 flex flex-col space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                onClick={(e) => scrollToSection(e, link.href)}
+                className="px-3 py-2 rounded-xl text-base font-medium text-zinc-200 hover:bg-white/5 hover:text-white transition-colors flex items-center justify-between"
+              >
+                <span>{link.name}</span>
+                <ArrowRight className="w-4 h-4 opacity-40" />
+              </a>
+            ))}
+            <div className="pt-2">
+              <button
                 onClick={() => {
                   setMobileMenuOpen(false)
                   onOpenPilot()
                 }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white justify-center shadow-md py-5"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-semibold text-sm justify-center shadow-lg shadow-emerald-950/50 cursor-pointer"
               >
-                Claim 7-Day Free Pilot
-              </Button>
-              <p className="text-center text-xs text-zinc-500 mt-2 font-mono">
-                Zero hardware required · Instant UPI dining
-              </p>
+                Try Free for 7 Days (No Card Needed)
+              </button>
             </div>
           </div>
         )}
       </header>
-    </>
+    </div>
   )
 }

@@ -1,175 +1,218 @@
 import { Badge } from "@/components/ui/badge"
+import { MagicCard } from "@/components/magicui/magic-card"
+import { useScrollReveal } from "@/hooks/useScrollReveal"
 import {
-  Hand,
   QrCode,
-  Printer,
   Smartphone,
-  CreditCard,
   Zap,
-  ArrowRight,
-  XCircle,
+  Printer,
+  MessageSquare,
   CheckCircle2,
-  AlertTriangle
 } from "lucide-react"
 
 export function ProblemSolution() {
-  const comparisons = [
-    {
-      id: "waiter-wave",
-      problem: {
-        title: "The Waiter Wave",
-        badge: "Friction Point 1",
-        description:
-          "Diners sit waving their hands for 8-12 minutes during peak rush just to catch a server's eye for menus. Staff get overwhelmed running between tables.",
-        metric: "8 to 12 min wasted per table",
-        icon: Hand,
-      },
-      solution: {
-        title: "Direct Table Ordering",
-        subtext: "Under 30 Seconds",
-        badge: "Pangat Advantage",
-        description:
-          "Guests point their camera at the acrylic standee. A lightning-fast visual menu loads with zero app downloads. Diners order and customize right away.",
-        metric: "Instant & effortless",
-        icon: QrCode,
-      },
-    },
-    {
-      id: "hardware-costs",
-      problem: {
-        title: "Hardware Breakdowns & Paper Costs",
-        badge: "Friction Point 2",
-        description:
-          "Clunky POS terminals that freeze on Friday nights, thermal printers that jam constantly, and ₹3,500/month spent buying thermal paper rolls that fade into dust.",
-        metric: "₹3,500/mo wasted on paper rolls",
-        icon: Printer,
-      },
-      solution: {
-        title: "100% Browser-Based",
-        subtext: "On Your Existing Devices",
-        badge: "Zero Hardware",
-        description:
-          "Pangat runs natively in Chrome or Safari on any smartphone, iPad, or Android tablet your team already owns. Set up in 5 minutes with zero cables.",
-        metric: "₹0 new hardware required",
-        icon: Smartphone,
-      },
-    },
-    {
-      id: "checkout-bottlenecks",
-      problem: {
-        title: "Checkout Bottlenecks",
-        badge: "Friction Point 3",
-        description:
-          "Table turnover grinds to a halt while servers juggle handheld EDC card machines, print draft slips, and handle bill-splitting chaos. Tables sit idle for 15+ mins.",
-        metric: "Tables held up 15+ mins after dining",
-        icon: CreditCard,
-      },
-      solution: {
-        title: "Instant Upfront UPI Settlement",
-        subtext: "Zero Billing Queue",
-        badge: "Direct To Bank",
-        description:
-          "Diners pay securely via Google Pay, PhonePe, or Paytm at order placement. Zero unpaid walkouts, zero bill queues, and tables turn over immediately.",
-        metric: "100% upfront settlement",
-        icon: Zap,
-      },
-    },
-  ]
+  const { ref, isVisible } = useScrollReveal()
 
   return (
-    <section id="features" className="py-16 lg:py-24 bg-white dark:bg-zinc-950">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="features" className="py-16 sm:py-24 bg-transparent text-white relative">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto">
-          <Badge variant="subtle" className="mb-3 text-xs uppercase tracking-wider font-semibold">
-            The High-Turnover Friction
+        <div
+          ref={ref}
+          className={`text-center max-w-2xl mx-auto mb-14 sm:mb-20 transition-all duration-700 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+        >
+          <Badge
+            variant="outline"
+            className="mb-4 text-xs font-sans font-semibold tracking-wider uppercase border-emerald-500/30 bg-emerald-950/60 text-emerald-300 px-3.5 py-1"
+          >
+            Friction vs Flow
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-white">
-            Say goodbye to cafe bottlenecks.{" "}
-            <span className="text-emerald-600 dark:text-emerald-400">
-              Welcome to pure dining flow.
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white font-heading leading-tight">
+            Built to eliminate{" "}
+            <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+              cafe friction.
             </span>
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-zinc-600 dark:text-zinc-400">
-            Independent cafes lose 20-30% of their peak-hour capacity to manual ordering delays and checkout lines. Pangat eliminates every single friction point.
+          <p className="mt-4 text-base sm:text-lg text-zinc-300 leading-relaxed font-normal">
+            Independent cafes lose 20-30% of their rush hours to awkward waving, broken printers, and card machine handoffs. Pangat fixes all three.
           </p>
         </div>
 
-        {/* 3-Column Problem vs Solution Grid */}
-        <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {comparisons.map((item) => {
-            const ProblemIcon = item.problem.icon
-            const SolutionIcon = item.solution.icon
+        {/* Magic UI MagicCard Bento Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          {/* BENTO 1: Direct Table Ordering (Span 7) */}
+          <MagicCard
+            gradientColor="rgba(16, 185, 129, 0.15)"
+            className="lg:col-span-7 p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
+          >
+            {/* Top Text Content with equalized min-height on desktop for laser alignment */}
+            <div className="flex-1 flex flex-col justify-start lg:min-h-[195px]">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs font-sans font-semibold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-3.5 py-1 rounded-full">
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>The Waiter Wave</span>
+                </span>
+                <span className="text-xs font-sans text-rose-400/90 line-through">
+                  12-min wait for menus
+                </span>
+              </div>
 
-            return (
-              <div
-                key={item.id}
-                className="flex flex-col rounded-2xl border border-zinc-200 bg-zinc-50/50 p-1.5 shadow-sm hover:shadow-md transition-shadow dark:border-zinc-800 dark:bg-zinc-900/60"
-              >
-                {/* Upper Half: Problem */}
-                <div className="rounded-xl bg-white p-5 border border-zinc-200/70 dark:bg-zinc-950 dark:border-zinc-800/80">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900">
-                      <XCircle className="w-3 h-3" />
-                      {item.problem.badge}
-                    </span>
-                    <div className="p-2 rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400">
-                      <ProblemIcon className="w-4 h-4" />
-                    </div>
-                  </div>
+              <h3 className="mt-5 text-2xl sm:text-3xl font-bold text-white tracking-tight font-heading">
+                Direct Table Ordering in Under 30 Seconds
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-zinc-300 leading-relaxed max-w-xl">
+                No more frantic hand-waving across a crowded room. Diners point their phone camera at the acrylic table standee, browse visual modifiers, and order instantly.
+              </p>
+            </div>
 
-                  <h3 className="mt-3 text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    {item.problem.title}
-                  </h3>
-                  <p className="mt-2 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    {item.problem.description}
-                  </p>
-
-                  <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-900 flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-medium">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>{item.problem.metric}</span>
-                  </div>
+            {/* Visual Micro-Card with uniform height */}
+            <div className="mt-6 sm:mt-8 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 sm:p-6 space-y-3.5 lg:min-h-[115px] flex flex-col justify-center">
+              <div className="flex items-center justify-between text-xs font-sans text-zinc-400">
+                <span>Diner Scan Session</span>
+                <span className="text-emerald-400 font-bold">Speed: &lt;0.8s</span>
+              </div>
+              <div className="space-y-2.5 text-xs sm:text-sm">
+                <div className="flex justify-between text-xs text-zinc-400">
+                  <span className="line-through text-rose-400">Manual Waiter: 8-12 mins</span>
+                  <span className="text-emerald-400 font-bold">Pangat: 28 seconds</span>
                 </div>
-
-                {/* Transition Arrow / Divider */}
-                <div className="py-2 flex items-center justify-center">
-                  <div className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-300 dark:border-emerald-800">
-                    <span>Solved by Pangat</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </div>
-                </div>
-
-                {/* Lower Half: Solution */}
-                <div className="rounded-xl bg-gradient-to-b from-emerald-50/60 to-white p-5 border border-emerald-200/80 grow flex flex-col justify-between dark:from-emerald-950/30 dark:to-zinc-950 dark:border-emerald-800/60">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="emerald" className="text-[11px] font-semibold py-0.5">
-                        {item.solution.badge}
-                      </Badge>
-                      <div className="p-2 rounded-lg bg-emerald-600 text-white shadow-xs">
-                        <SolutionIcon className="w-4 h-4" />
-                      </div>
-                    </div>
-
-                    <h4 className="mt-3 text-base font-bold text-zinc-950 dark:text-white">
-                      {item.solution.title}
-                    </h4>
-                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block mb-2">
-                      {item.solution.subtext}
-                    </span>
-                    <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                      {item.solution.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-emerald-200/50 dark:border-emerald-900/50 flex items-center gap-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>{item.solution.metric}</span>
-                  </div>
+                <div className="h-2.5 w-full bg-zinc-800 rounded-full overflow-hidden flex">
+                  <div className="h-full bg-emerald-500 w-[25%] rounded-full shadow-lg shadow-emerald-500/50" />
+                  <div className="h-full bg-rose-500/30 w-[75%]" />
                 </div>
               </div>
-            )
-          })}
+            </div>
+          </MagicCard>
+
+          {/* BENTO 2: 100% Browser-Based / Zero Hardware (Span 5) */}
+          <MagicCard
+            gradientColor="rgba(245, 158, 11, 0.12)"
+            className="lg:col-span-5 p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
+          >
+            {/* Top Text Content with matching min-height on desktop */}
+            <div className="flex-1 flex flex-col justify-start lg:min-h-[195px]">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs font-sans font-semibold text-amber-400 bg-amber-950/80 border border-amber-800/80 px-3.5 py-1 rounded-full">
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Hardware Freedom</span>
+                </span>
+                <span className="text-xs font-sans text-zinc-400">
+                  ₹0 New Equipment
+                </span>
+              </div>
+
+              <h3 className="mt-5 text-2xl sm:text-3xl font-bold text-white tracking-tight font-heading">
+                Zero Proprietary Hardware
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-zinc-300 leading-relaxed">
+                No thermal printers that jam on Friday night rush. Pangat runs natively in Safari & Chrome on any smartphone, iPad, or Android tablet your team already owns.
+              </p>
+            </div>
+
+            {/* Visual Proof Tag with matching min-height on desktop */}
+            <div className="mt-6 sm:mt-8 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 sm:p-6 flex items-center justify-between text-xs sm:text-sm lg:min-h-[115px]">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-rose-400 shrink-0">
+                  <Printer className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="font-semibold text-white text-sm block">Zero Thermal Paper</span>
+                  <p className="text-xs text-zinc-400 mt-0.5">Save ₹3,500/month on rolls & ink</p>
+                </div>
+              </div>
+              <span className="px-3.5 py-1.5 rounded-md bg-emerald-950 text-emerald-300 text-xs font-bold font-sans">
+                100% Web
+              </span>
+            </div>
+          </MagicCard>
+
+          {/* BENTO 3: Instant Upfront UPI Settlement (Span 5) */}
+          <MagicCard
+            gradientColor="rgba(16, 185, 129, 0.15)"
+            className="lg:col-span-5 p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
+          >
+            {/* Top Text Content with matching min-height on desktop */}
+            <div className="flex-1 flex flex-col justify-start lg:min-h-[195px]">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs font-sans font-semibold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-3.5 py-1 rounded-full">
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Instant Settlement</span>
+                </span>
+                <span className="text-xs font-sans text-emerald-400 font-bold">
+                  0% Commission
+                </span>
+              </div>
+
+              <h3 className="mt-5 text-2xl sm:text-3xl font-bold text-white tracking-tight font-heading">
+                Instant Upfront UPI Settlement
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-zinc-300 leading-relaxed">
+                Diners pay upfront via Google Pay, PhonePe, or Paytm right at the table. Zero unpaid walkouts, zero EDC card machine handoffs, and tables free up immediately.
+              </p>
+            </div>
+
+            {/* UPI Brand Strip with matching min-height to WhatsApp card on desktop */}
+            <div className="mt-6 sm:mt-8 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 sm:p-6 space-y-3.5 shadow-lg lg:min-h-[145px] flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="font-semibold text-zinc-200">Direct Bank Settlement</span>
+                <span className="text-emerald-400 font-bold font-sans">100% Yours · 0% Cut</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 text-xs">
+                <span className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-800/80 text-zinc-200 font-medium">Google Pay</span>
+                <span className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-800/80 text-zinc-200 font-medium">PhonePe</span>
+                <span className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-800/80 text-zinc-200 font-medium">Paytm</span>
+                <span className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-800/80 text-zinc-200 font-medium">Cred UPI</span>
+              </div>
+              <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-400">
+                <span>Instant sound confirmation</span>
+                <span className="text-emerald-400 font-medium">Direct to merchant account</span>
+              </div>
+            </div>
+          </MagicCard>
+
+          {/* BENTO 4: Daily WhatsApp Closing Intelligence (Span 7) */}
+          <MagicCard
+            gradientColor="rgba(16, 185, 129, 0.12)"
+            className="lg:col-span-7 p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
+          >
+            {/* Top Text Content with matching min-height on desktop */}
+            <div className="flex-1 flex flex-col justify-start lg:min-h-[195px]">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs font-sans font-semibold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-3.5 py-1 rounded-full">
+                  <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Cafe Owner Digest</span>
+                </span>
+                <span className="text-xs font-sans text-zinc-400">
+                  Every Night at 11:30 PM
+                </span>
+              </div>
+
+              <h3 className="mt-5 text-2xl sm:text-3xl font-bold text-white tracking-tight font-heading">
+                Daily WhatsApp Sales & Speed Summary
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-zinc-300 leading-relaxed max-w-xl">
+                No complex dashboards to log into after a long shift. Pangat automatically pings your WhatsApp with total revenue, peak-hour table turn times, and top-selling items.
+              </p>
+            </div>
+
+            {/* Authentic WhatsApp Message Bubble with matching min-height on desktop */}
+            <div className="mt-6 sm:mt-8 rounded-2xl border border-emerald-500/25 bg-[#0b1c14] p-4 sm:p-6 space-y-3 shadow-lg lg:min-h-[145px] flex flex-col justify-between">
+              <div className="flex items-center justify-between text-emerald-300 font-sans font-semibold text-xs sm:text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <span>Pangat Business Digest · Roast & Toast</span>
+                </div>
+                <span className="text-xs text-emerald-400/70 font-sans">11:30 PM</span>
+              </div>
+              <p className="text-zinc-100 text-xs sm:text-sm md:text-base leading-relaxed font-sans pl-1">
+                &ldquo;📊 <strong className="text-white">Today&apos;s Summary:</strong> 118 tables served, <strong className="text-emerald-300">₹44,820</strong> revenue collected directly via UPI. Average table turn: 22 mins. Commission cut: ₹0. Have a great night!&rdquo;
+              </p>
+            </div>
+          </MagicCard>
         </div>
       </div>
     </section>
