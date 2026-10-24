@@ -1,7 +1,16 @@
 import * as React from "react"
 import { ShimmerButton } from "@/components/magicui/shimmer-button"
 import { PangatLogo } from "@/components/ui/PangatLogo"
-import { Menu, X, ArrowRight } from "lucide-react"
+import {
+  Menu,
+  X,
+  ArrowRight,
+  ChevronDown,
+  LayoutDashboard,
+  MonitorSpeaker,
+  Smartphone,
+  Sparkles,
+} from "lucide-react"
 
 interface NavbarProps {
   onOpenPilot: () => void
@@ -9,6 +18,7 @@ interface NavbarProps {
 
 export function Navbar({ onOpenPilot }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [appsDropdownOpen, setAppsDropdownOpen] = React.useState(false)
   const [scrolled, setScrolled] = React.useState(false)
 
   React.useEffect(() => {
@@ -42,9 +52,9 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
   }
 
   return (
-    <div className="sticky top-3 sm:top-5 z-50 w-full px-4 sm:px-6 pointer-events-none transition-all duration-300">
+    <div className="sticky top-3 sm:top-5 z-50 w-full px-4 sm:px-6 pointer-events-none">
       <header
-        className={`max-w-5xl mx-auto rounded-full pointer-events-auto transition-all duration-300 ${
+        className={`max-w-5xl mx-auto rounded-full pointer-events-auto transition-[background-color,border-color,box-shadow,padding] duration-300 ${
           scrolled
             ? "glass-panel bg-zinc-950/90 border-white/15 shadow-2xl shadow-black/80 py-2 sm:py-2.5 px-4 sm:px-6"
             : "glass-panel bg-zinc-950/75 border-white/10 shadow-xl shadow-black/40 py-2.5 sm:py-3 px-4 sm:px-6"
@@ -71,9 +81,6 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
                 </span>
               </div>
             </div>
-            <span className="hidden sm:inline-block text-[11px] font-medium text-emerald-300/90 bg-emerald-950/70 border border-emerald-800/80 px-2 py-0.5 rounded-full">
-              Beta
-            </span>
           </a>
 
           {/* Desktop Navigation Links */}
@@ -83,11 +90,83 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
                 key={link.name}
                 href={link.href}
                 onClick={(e) => scrollToSection(e, link.href)}
-                className="px-3.5 py-1 rounded-full text-sm font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                className="px-3.5 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
               >
                 {link.name}
               </a>
             ))}
+
+            <span className="w-px h-3.5 bg-white/10 mx-1" />
+
+            {/* Try Live Apps Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setAppsDropdownOpen(true)}
+              onMouseLeave={() => setAppsDropdownOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setAppsDropdownOpen(!appsDropdownOpen)}
+                className="px-3 py-1 rounded-full text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3 text-emerald-400" />
+                <span>Try App</span>
+                <ChevronDown
+                  className={`w-3 h-3 transition-transform duration-200 ${
+                    appsDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {appsDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-zinc-950/95 border border-white/15 rounded-2xl p-2 shadow-2xl backdrop-blur-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <a
+                    href="/admin/dashboard"
+                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 transition-colors group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                      <LayoutDashboard className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                        Admin Portal
+                      </p>
+                      <p className="text-[10px] text-zinc-400">Live revenue & table heatmap</p>
+                    </div>
+                  </a>
+
+                  <a
+                    href="/kds/pangat"
+                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 transition-colors group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                      <MonitorSpeaker className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                        Kitchen Display (KDS)
+                      </p>
+                      <p className="text-[10px] text-zinc-400">Tablet ticket prep station</p>
+                    </div>
+                  </a>
+
+                  <a
+                    href="/r/pangat/t/04"
+                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 transition-colors group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                      <Smartphone className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+                        Table 04 Diner View
+                      </p>
+                      <p className="text-[10px] text-zinc-400">Mobile menu & 1-tap UPI pay</p>
+                    </div>
+                  </a>
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Right Action Button with ShimmerButton */}
@@ -127,10 +206,12 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
             </button>
           </div>
         </div>
+      </header>
 
-        {/* Mobile Dropdown Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-3 pt-3 border-t border-white/10 flex flex-col space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+      {/* Mobile Dropdown Menu: clean floating card separate from pill */}
+      {mobileMenuOpen && (
+        <div className="md:hidden max-w-5xl mx-auto mt-2 rounded-2xl glass-panel bg-zinc-950/95 border border-white/15 p-4 shadow-2xl shadow-black/90 pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="flex flex-col space-y-2">
             {navLinks.map((link) => (
               <a
                 key={link.name}
@@ -142,6 +223,26 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
                 <ArrowRight className="w-4 h-4 opacity-40" />
               </a>
             ))}
+            <div className="pt-2 border-t border-white/10 grid grid-cols-3 gap-2">
+              <a
+                href="/admin/dashboard"
+                className="px-2 py-2 rounded-lg bg-zinc-800 text-center text-xs font-semibold text-emerald-400 border border-emerald-500/20 hover:bg-zinc-700"
+              >
+                📊 Admin
+              </a>
+              <a
+                href="/kds/pangat"
+                className="px-2 py-2 rounded-lg bg-zinc-800 text-center text-xs font-semibold text-amber-400 border border-amber-500/20 hover:bg-zinc-700"
+              >
+                👨‍🍳 KDS
+              </a>
+              <a
+                href="/r/pangat/t/04"
+                className="px-2 py-2 rounded-lg bg-zinc-800 text-center text-xs font-semibold text-blue-400 border border-blue-500/20 hover:bg-zinc-700"
+              >
+                📱 Diner
+              </a>
+            </div>
             <div className="pt-2">
               <button
                 onClick={() => {
@@ -154,8 +255,8 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
               </button>
             </div>
           </div>
-        )}
-      </header>
+        </div>
+      )}
     </div>
   )
 }

@@ -238,6 +238,33 @@ export function Footer({ onOpenPilot }: FooterProps) {
             <ul className="space-y-2.5 text-sm text-zinc-300 font-sans">
               <li>
                 <a
+                  href="/admin/dashboard"
+                  className="hover:text-emerald-300 transition-colors font-semibold text-emerald-400 flex items-center gap-1"
+                >
+                  <span>Admin Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/kds/pangat"
+                  className="hover:text-amber-300 transition-colors font-semibold text-amber-400 flex items-center gap-1"
+                >
+                  <span>Kitchen Display (KDS)</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/r/pangat/t/04"
+                  className="hover:text-blue-300 transition-colors font-semibold text-blue-400 flex items-center gap-1"
+                >
+                  <span>Table 04 Diner View</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </li>
+              <li>
+                <a
                   href="#how-it-works"
                   className="hover:text-emerald-400 transition-colors"
                 >

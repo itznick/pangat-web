@@ -299,9 +299,26 @@ export function LiveDemoModal({ isOpen, onClose, onClaimPilot }: LiveDemoModalPr
 
         {/* Modal Bottom CTA */}
         <div className="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-xs text-zinc-400 text-center sm:text-left font-sans">
-            <span>Runs in browser on any staff phone or tablet · </span>
-            <strong className="text-emerald-400 font-semibold">Flat ₹699/month</strong>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-zinc-500 font-medium">Open Fullscreen:</span>
+            <a
+              href="/admin/dashboard"
+              className="px-2.5 py-1 rounded-md bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50 font-semibold transition-colors"
+            >
+              📊 Admin Portal ↗
+            </a>
+            <a
+              href="/kds/pangat"
+              className="px-2.5 py-1 rounded-md bg-amber-950/60 border border-amber-500/30 text-amber-400 hover:bg-amber-900/50 font-semibold transition-colors"
+            >
+              👨‍🍳 Kitchen KDS ↗
+            </a>
+            <a
+              href="/r/pangat/t/04"
+              className="px-2.5 py-1 rounded-md bg-blue-950/60 border border-blue-500/30 text-blue-400 hover:bg-blue-900/50 font-semibold transition-colors"
+            >
+              📱 Diner Menu ↗
+            </a>
           </div>
           <Button
             onClick={() => {
