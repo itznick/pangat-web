@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { Building2, FileText, Volume2, Link, Save, QrCode } from "lucide-react"
+import { Building2, FileText, Volume2, Link, Save } from "lucide-react"
 
 export function AdminSettingsPage() {
   const restaurant = useAdminStore((s) => s.restaurant)

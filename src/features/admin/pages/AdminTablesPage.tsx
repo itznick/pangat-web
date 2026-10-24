@@ -8,7 +8,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { Users, QrCode } from "lucide-react"
+import { QrCode } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { TableStatus } from "@/types/domain"
 
