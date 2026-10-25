@@ -10,8 +10,8 @@ import type {
   PaymentMethod,
 } from '@/types/domain'
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1'
+const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+export const API_BASE_URL = rawApiUrl.replace(/\/+$/, '');
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

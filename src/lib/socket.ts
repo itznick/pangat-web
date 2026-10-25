@@ -1,38 +1,34 @@
 import { io, Socket } from 'socket.io-client'
 
-export const WS_URL =
-  import.meta.env.VITE_WS_URL || 'http://localhost:4000'
+const rawWsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:4000'
+export const WS_BASE_URL = rawWsUrl.replace(/\/+$/, '')
+export const WS_URL = WS_BASE_URL
 
-let socketInstance: Socket | null = null
+export const socket: Socket = io(WS_BASE_URL, {
+  transports: ['websocket', 'polling'], // Allow fallback if WebSockets encounter proxy lag
+  autoConnect: true,
+  withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 10,
+  reconnectionDelay: 2000,
+})
+
+socket.on('connect', () => {
+  console.log('⚡ Connected to Pangat WebSocket gateway:', socket.id)
+})
+
+socket.on('disconnect', (reason) => {
+  console.log('🔌 Disconnected from Pangat WebSocket gateway:', reason)
+})
 
 export function getSocket(): Socket {
-  if (!socketInstance) {
-    socketInstance = io(WS_URL, {
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-    })
-
-    socketInstance.on('connect', () => {
-      console.log('⚡ Connected to Pangat WebSocket gateway:', socketInstance?.id)
-    })
-
-    socketInstance.on('disconnect', (reason) => {
-      console.log('🔌 Disconnected from Pangat WebSocket gateway:', reason)
-    })
-  }
-
-  return socketInstance
+  return socket
 }
 
 export function joinKdsRoom(restaurantSlug: string = 'pangat') {
-  const socket = getSocket()
   socket.emit('join:kds', { restaurantSlug })
 }
 
 export function joinOrderRoom(orderId: string) {
-  const socket = getSocket()
   socket.emit('join:order', { orderId })
 }
