@@ -1,10 +1,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// useCartStore – Diner cart state
-// Manages the in-session cart for a single diner browsing a restaurant menu.
+// useCartStore & useOrderTrackingStore – Diner state with Session Persistence
+// Restores active cart and table session across accidental browser refresh.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { create } from 'zustand'
-import type { OrderItem, SelectedModifier } from '@/types/domain'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import type { Order, OrderItem, SelectedModifier, OrderStatus, OrderFeedback } from '@/types/domain'
 
 // ── Local cart entry (extends OrderItem with a client-side key) ───────────────
 
@@ -50,89 +51,103 @@ function uid(): string {
   return Math.random().toString(36).slice(2, 10)
 }
 
-export const useCartStore = create<CartStore>((set, get) => ({
-  entries: [],
-  dietaryFilter: 'ALL',
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      entries: [],
+      dietaryFilter: 'ALL',
 
-  // ── Mutations ────────────────────────────────────────────────────────────
+      // ── Mutations ────────────────────────────────────────────────────────────
 
-  addItem: (item) =>
-    set((s) => ({
-      entries: [...s.entries, { ...item, _localId: uid() }],
-    })),
+      addItem: (item) =>
+        set((s) => ({
+          entries: [...s.entries, { ...item, _localId: uid() }],
+        })),
 
-  removeItem: (localId) =>
-    set((s) => ({
-      entries: s.entries.filter((e) => e._localId !== localId),
-    })),
+      removeItem: (localId) =>
+        set((s) => ({
+          entries: s.entries.filter((e) => e._localId !== localId),
+        })),
 
-  incrementItem: (localId) =>
-    set((s) => ({
-      entries: s.entries.map((e) =>
-        e._localId === localId ? { ...e, quantity: e.quantity + 1 } : e
-      ),
-    })),
+      incrementItem: (localId) =>
+        set((s) => ({
+          entries: s.entries.map((e) =>
+            e._localId === localId ? { ...e, quantity: e.quantity + 1 } : e
+          ),
+        })),
 
-  decrementItem: (localId) =>
-    set((s) => ({
-      entries: s.entries
-        .map((e) =>
-          e._localId === localId ? { ...e, quantity: e.quantity - 1 } : e
-        )
-        .filter((e) => e.quantity > 0),
-    })),
+      decrementItem: (localId) =>
+        set((s) => ({
+          entries: s.entries
+            .map((e) =>
+              e._localId === localId ? { ...e, quantity: e.quantity - 1 } : e
+            )
+            .filter((e) => e.quantity > 0),
+        })),
 
-  updateModifiers: (localId, mods) =>
-    set((s) => ({
-      entries: s.entries.map((e) =>
-        e._localId === localId ? { ...e, selectedModifiers: mods } : e
-      ),
-    })),
+      updateModifiers: (localId, mods) =>
+        set((s) => ({
+          entries: s.entries.map((e) =>
+            e._localId === localId ? { ...e, selectedModifiers: mods } : e
+          ),
+        })),
 
-  clearCart: () => set({ entries: [] }),
+      clearCart: () => set({ entries: [] }),
 
-  setDietaryFilter: (filter) => set({ dietaryFilter: filter }),
+      setDietaryFilter: (filter) => set({ dietaryFilter: filter }),
 
-  // ── Computed selectors ─────────────────────────────────────────────────────
+      // ── Computed selectors ─────────────────────────────────────────────────────
 
-  itemCount: () =>
-    get().entries.reduce((sum, e) => sum + e.quantity, 0),
+      itemCount: () =>
+        get().entries.reduce((sum, e) => sum + e.quantity, 0),
 
-  subtotal: () =>
-    get().entries.reduce((sum, e) => {
-      const modSum = e.selectedModifiers.reduce((s, m) => s + m.price, 0)
-      return sum + (e.price + modSum) * e.quantity
-    }, 0),
+      subtotal: () =>
+        get().entries.reduce((sum, e) => {
+          const modSum = e.selectedModifiers.reduce((s, m) => s + m.price, 0)
+          return sum + (e.price + modSum) * e.quantity
+        }, 0),
 
-  gstAmount: (gstPct) => {
-    const sub = get().subtotal()
-    return Math.round(sub * (gstPct / 100) * 100) / 100
-  },
+      gstAmount: (gstPct) => {
+        const sub = get().subtotal()
+        return Math.round(sub * (gstPct / 100) * 100) / 100
+      },
 
-  total: (gstPct) => {
-    const sub = get().subtotal()
-    const gst = get().gstAmount(gstPct)
-    return Math.round((sub + gst) * 100) / 100
-  },
+      total: (gstPct) => {
+        const sub = get().subtotal()
+        const gst = get().gstAmount(gstPct)
+        return Math.round((sub + gst) * 100) / 100
+      },
 
-  // ── Serialise for order placement ─────────────────────────────────────────
+      // ── Serialise for order placement ─────────────────────────────────────────
 
-  toOrderItems: (): OrderItem[] =>
-    get().entries.map(({ _localId, isVeg, ...rest }) => rest),
-}))
+      toOrderItems: (): OrderItem[] =>
+        get().entries.map(({ _localId, isVeg, ...rest }) => rest),
+    }),
+    {
+      name: 'pangat_diner_cart',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        entries: state.entries,
+        dietaryFilter: state.dietaryFilter,
+      }),
+    }
+  )
+)
 
 // ─────────────────────────────────────────────────────────────────────────────
-// useOrderTrackingStore – tracks a single placed order from the diner's view
+// useOrderTrackingStore – tracks a placed order with persistence
 // ─────────────────────────────────────────────────────────────────────────────
-
-import type { Order, OrderStatus } from '@/types/domain'
 
 interface OrderTrackingStore {
   order: Order | null
   /** Set immediately after successful order placement */
   placeOrder: (order: Order) => void
-  /** Simulate backend status push — used by mock/dev until WebSocket is live */
+  /** Simulate backend status push (RECEIVED -> PREPARING -> READY -> COMPLETED) */
   advanceStatus: () => void
+  /** Pay counter bill online via UPI */
+  payOnlineUpi: () => void
+  /** Submit 5-star customer experience feedback */
+  submitFeedback: (feedback: Omit<OrderFeedback, 'submittedAt'>) => void
   clear: () => void
 }
 
@@ -143,21 +158,56 @@ const STATUS_PROGRESSION: OrderStatus[] = [
   'COMPLETED',
 ]
 
-export const useOrderTrackingStore = create<OrderTrackingStore>((set, get) => ({
-  order: null,
+export const useOrderTrackingStore = create<OrderTrackingStore>()(
+  persist(
+    (set, get) => ({
+      order: null,
 
-  placeOrder: (order) => set({ order }),
+      placeOrder: (order) => set({ order }),
 
-  advanceStatus: () => {
-    const { order } = get()
-    if (!order) return
-    const idx = STATUS_PROGRESSION.indexOf(order.orderStatus)
-    if (idx < STATUS_PROGRESSION.length - 1) {
-      set({
-        order: { ...order, orderStatus: STATUS_PROGRESSION[idx + 1] },
-      })
+      advanceStatus: () => {
+        const { order } = get()
+        if (!order) return
+        const idx = STATUS_PROGRESSION.indexOf(order.orderStatus)
+        if (idx < STATUS_PROGRESSION.length - 1) {
+          const nextStatus = STATUS_PROGRESSION[idx + 1]
+          set({
+            order: { ...order, orderStatus: nextStatus },
+          })
+        }
+      },
+
+      payOnlineUpi: () => {
+        const { order } = get()
+        if (!order) return
+        set({
+          order: {
+            ...order,
+            paymentStatus: 'PAID',
+            paymentMethod: 'UPI_INSTANT',
+          },
+        })
+      },
+
+      submitFeedback: (feedback) => {
+        const { order } = get()
+        if (!order) return
+        set({
+          order: {
+            ...order,
+            feedback: {
+              ...feedback,
+              submittedAt: new Date(),
+            },
+          },
+        })
+      },
+
+      clear: () => set({ order: null }),
+    }),
+    {
+      name: 'pangat_diner_order_session',
+      storage: createJSONStorage(() => localStorage),
     }
-  },
-
-  clear: () => set({ order: null }),
-}))
+  )
+)

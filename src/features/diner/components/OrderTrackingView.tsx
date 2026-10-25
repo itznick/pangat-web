@@ -1,132 +1,382 @@
-import { CheckCircle2, Clock, ChefHat, Plus, Hash, PlayCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import { useNavigate } from "react-router"
+import {
+  CheckCircle2,
+  ChefHat,
+  Plus,
+  Hash,
+  PlayCircle,
+  Zap,
+  Store,
+  Star,
+  Sparkles,
+  Heart,
+  Check,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useOrderTrackingStore } from "@/stores/useCartStore"
 import type { OrderStatus } from "@/types/domain"
-import { useNavigate } from "react-router"
 
 interface OrderTrackingViewProps {
   restaurantSlug: string
   tableId: string
 }
 
-const TRACKING_STEPS: { key: OrderStatus; label: string; icon: typeof Clock; description: string }[] = [
-  { key: "RECEIVED", label: "Received", icon: CheckCircle2, description: "Your order has been received by the kitchen" },
-  { key: "PREPARING", label: "In Kitchen", icon: ChefHat, description: "Chef is actively preparing your dishes" },
-  { key: "READY", label: "Ready!", icon: CheckCircle2, description: "Your order is plated and ready to serve" },
+const TRACKING_STEPS = [
+  {
+    key: "RECEIVED" as OrderStatus,
+    label: "Received",
+    icon: CheckCircle2,
+    description: "Your order has been received by the kitchen",
+  },
+  {
+    key: "PREPARING" as OrderStatus,
+    label: "In Kitchen",
+    icon: ChefHat,
+    description: "Chef is actively preparing your dishes",
+  },
+  {
+    key: "READY" as OrderStatus,
+    label: "Ready!",
+    icon: CheckCircle2,
+    description: "Your order is plated and ready to serve",
+  },
+]
+
+const FEEDBACK_TAGS = [
+  "Fast Service",
+  "Piping Hot",
+  "Great Ambience",
+  "Authentic Taste",
+  "Polite Staff",
 ]
 
 export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingViewProps) {
   const order = useOrderTrackingStore((s) => s.order)
   const advanceStatus = useOrderTrackingStore((s) => s.advanceStatus)
+  const payOnlineUpi = useOrderTrackingStore((s) => s.payOnlineUpi)
+  const submitFeedback = useOrderTrackingStore((s) => s.submitFeedback)
   const navigate = useNavigate()
 
-  const currentStatus = order?.orderStatus ?? "RECEIVED"
-  const currentStep = TRACKING_STEPS.findIndex((s) => s.key === currentStatus)
-  const effectiveIndex = currentStep === -1 && currentStatus === "COMPLETED" ? 2 : Math.max(0, currentStep)
+  // Local state for 1-tap feedback
+  const [selectedRating, setSelectedRating] = useState<number>(5)
+  const [selectedTags, setSelectedTags] = useState<string[]>(["Fast Service", "Piping Hot"])
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(Boolean(order?.feedback))
+
+  const currentStatus: OrderStatus = order?.orderStatus ?? "RECEIVED"
+
+  // Status mapping:
+  // RECEIVED  -> step 0 reached
+  // PREPARING -> step 0, 1 reached
+  // READY     -> step 0, 1, 2 reached (all 3 green!)
+  // COMPLETED -> all 3 reached + Served celebration mode
+  const getStepState = (idx: number) => {
+    if (currentStatus === "COMPLETED" || currentStatus === "READY") {
+      return { isCompleted: true, isActive: false }
+    }
+    if (currentStatus === "PREPARING") {
+      if (idx === 0) return { isCompleted: true, isActive: false }
+      if (idx === 1) return { isCompleted: false, isActive: true }
+      return { isCompleted: false, isActive: false }
+    }
+    // RECEIVED
+    if (idx === 0) return { isCompleted: false, isActive: true }
+    return { isCompleted: false, isActive: false }
+  }
+
   const tokenId = order ? order.id.slice(-3).toUpperCase() : "04"
+  const isPayAtCounterPending =
+    order?.paymentMethod === "PAY_AT_COUNTER" && order?.paymentStatus === "PENDING"
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    )
+  }
+
+  const handleFeedbackSubmit = () => {
+    submitFeedback({
+      rating: selectedRating,
+      tags: selectedTags,
+    })
+    setFeedbackSubmitted(true)
+  }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col">
+    <div className="min-h-screen bg-zinc-950 flex flex-col pb-12">
       {/* Top bar */}
       <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3">
         <h1 className="text-base font-bold text-zinc-100">Live Order Tracker</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Table {tableId}</p>
+        <p className="text-xs text-zinc-400 mt-0.5">Table {tableId}</p>
       </div>
 
-      <div className="flex-1 px-4 py-6 space-y-6">
-        {/* Token */}
-        <div className="text-center py-6 bg-zinc-900 rounded-2xl border border-zinc-800">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600/20 border border-emerald-600/30 mb-3">
-            <Hash className="h-4 w-4 text-emerald-400" />
-            <span className="text-emerald-400 font-bold text-sm">Order Token</span>
+      <div className="flex-1 px-4 py-5 space-y-5 max-w-md mx-auto w-full">
+        {/* Token Card */}
+        <div className="text-center py-5 bg-zinc-900 rounded-2xl border border-zinc-800 shadow-lg">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600/20 border border-emerald-600/30 mb-2">
+            <Hash className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="text-emerald-400 font-bold text-xs uppercase tracking-wide">
+              Table Order Token
+            </span>
           </div>
           <div className="text-5xl font-black text-zinc-100 tracking-tight">#{tokenId}</div>
-          <p className="text-xs text-zinc-500 mt-2">Show this to your server</p>
+          <p className="text-xs text-zinc-400 mt-1.5">Show this to your server</p>
         </div>
 
-        {/* Step Tracker */}
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
+        {/* Step Progress Tracker */}
+        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 shadow-lg">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-sm font-semibold text-zinc-300">Live Order Progress</h3>
-            <button
-              onClick={advanceStatus}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-xs font-semibold text-zinc-300 hover:text-emerald-400 hover:border-emerald-500/50 transition-colors"
-              title="Simulate status advance (Received -> Preparing -> Ready)"
-            >
-              <PlayCircle className="h-3.5 w-3.5 text-emerald-400" />
-              Simulate Progress
-            </button>
+            <div>
+              <h3 className="text-sm font-bold text-zinc-200">Live Order Progress</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">Real-time kitchen status</p>
+            </div>
+            {currentStatus !== "COMPLETED" && (
+              <button
+                onClick={advanceStatus}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs font-semibold text-zinc-300 hover:text-emerald-400 hover:border-emerald-500/50 transition-colors"
+                title="Simulate status progression"
+              >
+                <PlayCircle className="h-3.5 w-3.5 text-emerald-400" />
+                Simulate Next
+              </button>
+            )}
           </div>
 
-          <div className="relative">
-            {/* Connector line */}
-            <div className="absolute left-5 top-8 bottom-8 w-0.5 bg-zinc-800" />
-            <div
-              className="absolute left-5 top-8 w-0.5 bg-emerald-600 transition-all duration-700"
-              style={{ height: `${(effectiveIndex / (TRACKING_STEPS.length - 1)) * 100}%` }}
-            />
+          {/* Stepper with explicit segment connectors - zero overflow */}
+          <div className="space-y-0">
+            {TRACKING_STEPS.map((step, idx) => {
+              const { isCompleted, isActive } = getStepState(idx)
+              const StepIcon = step.icon
+              const isLast = idx === TRACKING_STEPS.length - 1
 
-            <div className="space-y-6">
-              {TRACKING_STEPS.map((step, idx) => {
-                const StepIcon = step.icon
-                const isCompleted = idx < effectiveIndex || currentStatus === "COMPLETED"
-                const isActive = idx === effectiveIndex && currentStatus !== "COMPLETED"
-                const isPending = idx > effectiveIndex
+              // Connector segment state
+              const nextStepState = !isLast ? getStepState(idx + 1) : null
+              const isConnectorActive =
+                isCompleted ||
+                (isActive && idx === 0 && currentStatus !== "RECEIVED") ||
+                Boolean(nextStepState?.isCompleted || nextStepState?.isActive)
 
-                return (
-                  <div key={step.key} className="flex items-start gap-4 relative">
+              return (
+                <div key={step.key} className="relative">
+                  <div className="flex items-start gap-3.5">
+                    {/* Circle Node */}
                     <div
                       className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all duration-500 z-10",
-                        isCompleted && "border-emerald-600 bg-emerald-600",
-                        isActive && "border-emerald-500 bg-emerald-500/20 shadow-lg shadow-emerald-500/30 animate-pulse",
-                        isPending && "border-zinc-700 bg-zinc-900"
+                        "w-10 h-10 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all duration-300 z-10",
+                        isCompleted
+                          ? "border-emerald-500 bg-emerald-600 text-white shadow-md shadow-emerald-950"
+                          : isActive
+                          ? "border-emerald-400 bg-emerald-500/20 text-emerald-400 animate-pulse shadow-lg shadow-emerald-500/30"
+                          : "border-zinc-700 bg-zinc-800/80 text-zinc-600"
                       )}
                     >
-                      <StepIcon
-                        className={cn(
-                          "h-4 w-4 transition-colors",
-                          isCompleted && "text-white",
-                          isActive && "text-emerald-400",
-                          isPending && "text-zinc-600"
-                        )}
-                      />
+                      <StepIcon className="h-4 w-4" />
                     </div>
-                    <div className="pt-1.5">
-                      <p
-                        className={cn(
-                          "text-sm font-bold transition-colors",
-                          (isCompleted || isActive) ? "text-zinc-100" : "text-zinc-600"
+
+                    {/* Step details */}
+                    <div className="pt-1.5 flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p
+                          className={cn(
+                            "text-sm font-bold transition-colors",
+                            isCompleted || isActive ? "text-zinc-100" : "text-zinc-600"
+                          )}
+                        >
+                          {step.label}
+                        </p>
+                        {isCompleted && (
+                          <span className="text-[11px] font-semibold text-emerald-400">
+                            Completed ✓
+                          </span>
                         )}
-                      >
-                        {step.label}
-                      </p>
+                        {isActive && (
+                          <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            In Progress
+                          </span>
+                        )}
+                      </div>
                       <p
                         className={cn(
                           "text-xs mt-0.5 transition-colors",
-                          isActive ? "text-emerald-400" : "text-zinc-600"
+                          isActive ? "text-emerald-400/90 font-medium" : "text-zinc-400"
                         )}
                       >
                         {step.description}
                       </p>
                     </div>
                   </div>
-                )
-              })}
-            </div>
+
+                  {/* Discrete vertical connector line strictly between this node and next */}
+                  {!isLast && (
+                    <div className="ml-5 my-1.5 pl-[1px]">
+                      <div
+                        className={cn(
+                          "w-0.5 h-7 rounded-full transition-colors duration-500",
+                          isConnectorActive ? "bg-emerald-500" : "bg-zinc-800"
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
+
+          {/* Served Celebration Banner */}
+          {currentStatus === "COMPLETED" && (
+            <div className="mt-5 p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center gap-2.5">
+              <Sparkles className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-emerald-300">Order Placed & Served!</p>
+                <p className="text-[11px] text-zinc-300">
+                  All items have been served to Table {tableId}. Enjoy your meal!
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Order summary */}
+        {/* 1-Tap Experience Feedback Component (Triggered when order is Served / COMPLETED) */}
+        {currentStatus === "COMPLETED" && (
+          <div className="bg-gradient-to-b from-zinc-900 to-zinc-900/90 rounded-2xl border border-amber-500/30 p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                <h3 className="text-sm font-bold text-zinc-100">Rate Your Experience</h3>
+              </div>
+              <span className="text-[11px] font-medium text-amber-400/90 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                1-Tap Feedback
+              </span>
+            </div>
+
+            {!feedbackSubmitted ? (
+              <>
+                {/* 5-star rating selector */}
+                <div className="flex items-center justify-center gap-2 py-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setSelectedRating(star)}
+                      className="p-1.5 rounded-lg transition-transform active:scale-90 hover:scale-110"
+                    >
+                      <Star
+                        className={cn(
+                          "h-7 w-7 transition-colors",
+                          star <= selectedRating
+                            ? "text-amber-400 fill-amber-400"
+                            : "text-zinc-700"
+                        )}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick tag pills */}
+                <div>
+                  <p className="text-xs text-zinc-400 mb-2 font-medium">What stood out?</p>
+                  <div className="flex flex-wrap gap-2">
+                    {FEEDBACK_TAGS.map((tag) => {
+                      const isSelected = selectedTags.includes(tag)
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200",
+                            isSelected
+                              ? "bg-amber-400/20 border-amber-400 text-amber-300"
+                              : "bg-zinc-800/80 border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                          )}
+                        >
+                          {isSelected ? "✓ " : "+ "}
+                          {tag}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Submit Feedback */}
+                <button
+                  onClick={handleFeedbackSubmit}
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98]"
+                >
+                  <Heart className="h-3.5 w-3.5 fill-current" />
+                  Submit Feedback
+                </button>
+              </>
+            ) : (
+              <div className="text-center py-3 bg-zinc-950/60 rounded-xl border border-zinc-800 space-y-1.5">
+                <div className="flex items-center justify-center gap-1 text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  <span className="text-xs font-bold">Feedback Recorded</span>
+                </div>
+                <p className="text-xs text-zinc-300 font-medium">
+                  Thank you for dining with us! ❤️
+                </p>
+                <div className="flex items-center justify-center gap-1 text-amber-400 text-xs">
+                  {Array.from({ length: selectedRating }).map((_, i) => (
+                    <Star key={i} className="h-3 w-3 fill-current" />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pay at Counter Action Card (Requirement 10) */}
+        {isPayAtCounterPending && (
+          <div className="bg-amber-950/20 border border-amber-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <Store className="h-4 w-4 text-amber-400" />
+                <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                  Payment Outstanding at Counter
+                </span>
+              </div>
+              <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                ₹{order.totalAmount.toFixed(2)}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Your order is being prepared. You can pay via Cash, Card, or Counter QR before leaving, or clear it instantly from your seat:
+            </p>
+            <button
+              onClick={() => payOnlineUpi()}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Pay Online Now via UPI (₹{order.totalAmount.toFixed(2)})
+            </button>
+          </div>
+        )}
+
+        {/* Order Summary & Items List */}
         {order && (
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4">
-            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Order Items</h3>
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 shadow-lg space-y-3">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                Order Summary
+              </h3>
+              <div className="flex items-center gap-1.5">
+                {order.paymentStatus === "PAID" ? (
+                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Paid via {order.paymentMethod === "PAY_AT_COUNTER" ? "Counter" : "UPI"}
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Pay at Counter Pending
+                  </span>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-2">
               {order.items.map((item, idx) => (
                 <div key={idx} className="flex justify-between text-sm">
                   <div>
-                    <span className="text-zinc-300">
+                    <span className="text-zinc-200 font-medium">
                       {item.quantity}× {item.name}
                     </span>
                     {item.selectedModifiers.length > 0 && (
@@ -135,28 +385,30 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
                       </p>
                     )}
                   </div>
-                  <span className="text-zinc-300 font-medium">
+                  <span className="text-zinc-300 font-semibold">
                     ₹{((item.price + item.selectedModifiers.reduce((s, m) => s + m.price, 0)) * item.quantity).toFixed(0)}
                   </span>
                 </div>
               ))}
             </div>
-            <div className="border-t border-zinc-800 mt-3 pt-3 flex justify-between">
-              <span className="text-sm font-bold text-zinc-200">Total Paid</span>
-              <span className="text-sm font-bold text-emerald-400">₹{order.totalAmount.toFixed(2)}</span>
+
+            <div className="border-t border-zinc-800 pt-2.5 flex justify-between items-center">
+              <span className="text-xs text-zinc-400">Total Amount</span>
+              <span className="text-base font-bold text-emerald-400">
+                ₹{order.totalAmount.toFixed(2)}
+              </span>
             </div>
           </div>
         )}
 
-        {/* Add more items CTA */}
-        <Button
+        {/* Add More Items CTA (Requirement 3: High-contrast Dark Styled Button) */}
+        <button
           onClick={() => navigate(`/r/${restaurantSlug}/t/${tableId}`)}
-          variant="outline"
-          className="w-full h-12 rounded-xl border-zinc-700 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 gap-2"
+          className="w-full h-12 rounded-xl bg-zinc-900 hover:bg-zinc-850 active:scale-[0.99] border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-100 font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all duration-200"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 text-emerald-400" />
           Add More Items to Table {tableId}
-        </Button>
+        </button>
       </div>
     </div>
   )

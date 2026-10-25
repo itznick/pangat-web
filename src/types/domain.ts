@@ -80,7 +80,16 @@ export interface OrderItem {
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED'
 
+export type PaymentMethod = 'UPI_INSTANT' | 'PAY_AT_COUNTER'
+
 export type OrderStatus = 'RECEIVED' | 'PREPARING' | 'READY' | 'COMPLETED'
+
+export interface OrderFeedback {
+  rating: number
+  tags: string[]
+  comment?: string
+  submittedAt: Date
+}
 
 export interface Order {
   id: string
@@ -90,7 +99,10 @@ export interface Order {
   totalAmount: number
   gstAmount: number
   paymentStatus: PaymentStatus
+  paymentMethod?: PaymentMethod
+  customerPhone?: string
   orderStatus: OrderStatus
+  feedback?: OrderFeedback
   createdAt: Date
 }
 
