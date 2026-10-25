@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   AlertCircle,
   CheckCircle2,
+  Wallet,
+  Sparkles,
 } from "lucide-react"
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
@@ -69,196 +71,239 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
   }
 
   return (
-    <Drawer open={open} onClose={onClose} className="max-h-[92vh]">
-      <DrawerHeader>
+    <Drawer open={open} onClose={onClose} className="max-h-[94vh]">
+      <DrawerHeader className="border-b border-zinc-800/80 pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-emerald-400" />
-            <DrawerTitle>Your Order Summary</DrawerTitle>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <Receipt className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div>
+              <DrawerTitle className="text-base font-bold text-zinc-100">Checkout & Order</DrawerTitle>
+              <p className="text-[11px] text-zinc-500 font-medium">Review items & payment option</p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="p-2 rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       </DrawerHeader>
 
-      <DrawerContent className="overflow-y-auto max-h-[58vh] px-4 space-y-4">
-        {/* Cart Items */}
+      <DrawerContent className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-6">
+        {/* Cart Items List */}
         <div className="space-y-3">
-          {entries.map((entry) => {
-            const modTotal = entry.selectedModifiers.reduce((sum, m) => sum + m.price, 0)
-            const itemPrice = entry.price + modTotal
-            return (
-              <div key={entry._localId} className="flex items-start gap-3 py-2 border-b border-zinc-800/60">
-                {/* Dietary indicator */}
-                <div className="mt-0.5">
-                  {entry.isVeg ? (
-                    <Leaf className="h-3.5 w-3.5 text-emerald-500" />
-                  ) : (
-                    <Drumstick className="h-3.5 w-3.5 text-rose-500" />
-                  )}
-                </div>
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-400 px-0.5">
+            <span>Items Ordered</span>
+            <span className="text-zinc-500 font-medium">{entries.length} {entries.length === 1 ? 'item' : 'items'}</span>
+          </div>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-zinc-100">{entry.name}</p>
-                  {entry.selectedModifiers.length > 0 && (
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      {entry.selectedModifiers.map((m) => m.name).join(", ")}
-                    </p>
-                  )}
-                  {entry.notes && (
-                    <p className="text-xs text-amber-400/80 mt-0.5 italic">"{entry.notes}"</p>
-                  )}
-                </div>
+          <div className="space-y-2.5">
+            {entries.map((entry) => {
+              const modTotal = entry.selectedModifiers.reduce((sum, m) => sum + m.price, 0)
+              const itemPrice = entry.price + modTotal
+              return (
+                <div
+                  key={entry._localId}
+                  className="flex items-start gap-3 p-2.5 rounded-xl bg-zinc-900/40 border border-zinc-800/60"
+                >
+                  {/* Dietary indicator */}
+                  <div className="mt-0.5 flex-shrink-0">
+                    {entry.isVeg ? (
+                      <span className="inline-flex p-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                        <Leaf className="h-3.5 w-3.5 text-emerald-500" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex p-1 rounded-md bg-rose-500/10 border border-rose-500/20">
+                        <Drumstick className="h-3.5 w-3.5 text-rose-500" />
+                      </span>
+                    )}
+                  </div>
 
-                {/* Quantity controls */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => decrementItem(entry._localId)}
-                    className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors"
-                  >
-                    <Minus className="h-3 w-3 text-zinc-300" />
-                  </button>
-                  <span className="text-sm font-bold text-zinc-100 w-4 text-center">{entry.quantity}</span>
-                  <button
-                    onClick={() => incrementItem(entry._localId)}
-                    className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors"
-                  >
-                    <Plus className="h-3 w-3 text-zinc-300" />
-                  </button>
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-zinc-100 leading-snug">{entry.name}</p>
+                    {entry.selectedModifiers.length > 0 && (
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {entry.selectedModifiers.map((m) => m.name).join(", ")}
+                      </p>
+                    )}
+                    {entry.notes && (
+                      <p className="text-xs text-amber-400/90 mt-0.5 italic">"{entry.notes}"</p>
+                    )}
+                  </div>
 
-                <span className="text-sm font-bold text-zinc-100 ml-1 min-w-[52px] text-right">
-                  ₹{(itemPrice * entry.quantity).toFixed(0)}
-                </span>
-              </div>
-            )
-          })}
+                  {/* Quantity controls */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => decrementItem(entry._localId)}
+                      className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors"
+                    >
+                      <Minus className="h-3 w-3 text-zinc-300" />
+                    </button>
+                    <span className="text-sm font-bold text-zinc-100 w-4 text-center">{entry.quantity}</span>
+                    <button
+                      onClick={() => incrementItem(entry._localId)}
+                      className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors"
+                    >
+                      <Plus className="h-3 w-3 text-zinc-300" />
+                    </button>
+                  </div>
+
+                  <span className="text-sm font-bold text-zinc-100 ml-1 min-w-[54px] text-right">
+                    ₹{(itemPrice * entry.quantity).toFixed(0)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        {/* Bill breakdown */}
-        <div className="bg-zinc-900/70 rounded-xl p-3.5 border border-zinc-800 space-y-2">
+        {/* Bill Breakdown Card */}
+        <div className="bg-zinc-900/80 rounded-2xl p-4 border border-zinc-800 space-y-2.5 shadow-sm">
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400">Subtotal</span>
             <span className="text-zinc-200 font-medium">₹{subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400 flex items-center gap-1">
-              <IndianRupee className="h-3 w-3" />
-              GST (5%)
+              <IndianRupee className="h-3 w-3 text-zinc-500" />
+              Taxes & GST (5%)
             </span>
             <span className="text-zinc-200 font-medium">₹{gst.toFixed(2)}</span>
           </div>
-          <Separator className="bg-zinc-800" />
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-bold text-zinc-100">Grand Total</span>
-            <span className="text-base font-bold text-emerald-400">₹{total.toFixed(2)}</span>
+          <Separator className="bg-zinc-800/90 my-1" />
+          <div className="flex justify-between items-center pt-0.5">
+            <div>
+              <span className="text-sm font-bold text-zinc-100">Total Payable</span>
+              <p className="text-[11px] text-zinc-500">Includes all applicable taxes</p>
+            </div>
+            <span className="text-lg font-black text-emerald-400">₹{total.toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Payment Selector Radio Tiles */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-zinc-400 block">
-            Select Payment Method
-          </label>
-          <div className="grid grid-cols-1 gap-2.5">
-            {/* Tile 1: UPI Instant Pay */}
+        {/* Spacious & Elevated Payment Selector (Enhanced layout) */}
+        <div className="space-y-3 pt-1">
+          <div className="flex items-center justify-between px-0.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+              <Wallet className="h-3.5 w-3.5 text-emerald-400" />
+              Select Payment Method
+            </span>
+            <span className="text-[11px] text-zinc-500 font-medium">Choose preferred mode</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5">
+            {/* Option 1: UPI Instant Pay */}
             <div
               onClick={() => setPaymentMethod("UPI_INSTANT")}
               className={cn(
-                "p-3 rounded-xl border transition-all cursor-pointer relative",
+                "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
                 paymentMethod === "UPI_INSTANT"
-                  ? "bg-emerald-950/30 border-emerald-500/80 shadow-md shadow-emerald-950/50"
-                  : "bg-zinc-900/60 border-zinc-800 hover:border-zinc-700"
+                  ? "bg-gradient-to-r from-emerald-950/40 to-zinc-900 border-emerald-500 ring-1 ring-emerald-500/50 shadow-lg shadow-emerald-950/50"
+                  : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
               )}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={cn(
-                      "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
-                      paymentMethod === "UPI_INSTANT"
-                        ? "border-emerald-500 bg-emerald-500"
-                        : "border-zinc-600 bg-transparent"
-                    )}
-                  >
-                    {paymentMethod === "UPI_INSTANT" && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
-                        <Zap className="h-3.5 w-3.5 text-emerald-400" />
-                        UPI Instant Pay
-                      </p>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        Recommended
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      Auto-opens Google Pay, PhonePe, Paytm or BHIM
+              <div className="flex items-start gap-3.5">
+                {/* Radio Circle */}
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 flex-shrink-0",
+                    paymentMethod === "UPI_INSTANT"
+                      ? "border-emerald-400 bg-emerald-500"
+                      : "border-zinc-600 bg-transparent"
+                  )}
+                >
+                  {paymentMethod === "UPI_INSTANT" && (
+                    <div className="w-2 h-2 rounded-full bg-black" />
+                  )}
+                </div>
+
+                {/* Icon Box */}
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <Zap className="h-5 w-5 text-emerald-400" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
+                      UPI Instant Pay
                     </p>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex-shrink-0">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      Recommended
+                    </span>
                   </div>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    Auto-opens Google Pay, PhonePe, Paytm, CRED or BHIM with seamless 1-tap confirmation.
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Tile 2: Pay at Counter */}
+            {/* Option 2: Pay at Counter */}
             <div
               onClick={() => setPaymentMethod("PAY_AT_COUNTER")}
               className={cn(
-                "p-3 rounded-xl border transition-all cursor-pointer relative",
+                "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
                 paymentMethod === "PAY_AT_COUNTER"
-                  ? "bg-amber-950/20 border-amber-500/80 shadow-md shadow-amber-950/40"
-                  : "bg-zinc-900/60 border-zinc-800 hover:border-zinc-700"
+                  ? "bg-gradient-to-r from-amber-950/30 to-zinc-900 border-amber-500 ring-1 ring-amber-500/50 shadow-lg shadow-amber-950/40"
+                  : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
               )}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={cn(
-                      "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
-                      paymentMethod === "PAY_AT_COUNTER"
-                        ? "border-amber-500 bg-amber-500"
-                        : "border-zinc-600 bg-transparent"
-                    )}
-                  >
-                    {paymentMethod === "PAY_AT_COUNTER" && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
-                    )}
-                  </div>
-                  <div>
+              <div className="flex items-start gap-3.5">
+                {/* Radio Circle */}
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 flex-shrink-0",
+                    paymentMethod === "PAY_AT_COUNTER"
+                      ? "border-amber-400 bg-amber-500"
+                      : "border-zinc-600 bg-transparent"
+                  )}
+                >
+                  {paymentMethod === "PAY_AT_COUNTER" && (
+                    <div className="w-2 h-2 rounded-full bg-black" />
+                  )}
+                </div>
+
+                {/* Icon Box */}
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <Store className="h-5 w-5 text-amber-400" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
-                      <Store className="h-3.5 w-3.5 text-amber-400" />
                       Pay at Counter
                     </p>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      Order goes to kitchen now; pay via Cash, Card, or Counter QR before leaving.
-                    </p>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0">
+                      Cash / Card
+                    </span>
                   </div>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    Order fires to kitchen immediately; settle bill at counter via Cash, Card, or QR before leaving.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile Number Input with strict validation */}
-        <div>
-          <label className="flex items-center justify-between text-xs font-semibold text-zinc-300 mb-1.5">
+        {/* Mobile Number Input Section */}
+        <div className="space-y-2 pt-1">
+          <label className="flex items-center justify-between text-xs font-semibold text-zinc-300">
             <span className="flex items-center gap-1.5">
               <Smartphone className="h-3.5 w-3.5 text-emerald-400" />
               Mobile Number <span className="text-rose-400">*</span>
             </span>
             <span className="text-[11px] text-zinc-500 font-normal">
-              {paymentMethod === "PAY_AT_COUNTER" ? "Required for OTP & order confirmation" : "For digital WhatsApp invoice"}
+              {paymentMethod === "PAY_AT_COUNTER" ? "Required for anti-prank OTP" : "For digital WhatsApp receipt"}
             </span>
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">
               +91
             </span>
             <input
@@ -269,17 +314,17 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
               value={mobile}
               onChange={handleMobileChange}
               className={cn(
-                "w-full h-11 pl-12 pr-4 rounded-xl bg-zinc-900 border text-sm text-zinc-100 placeholder:text-zinc-600 font-medium tracking-wide focus:outline-none transition-all",
+                "w-full h-12 pl-13 pr-4 rounded-xl bg-zinc-900 border text-sm text-zinc-100 placeholder:text-zinc-600 font-medium tracking-wide focus:outline-none transition-all",
                 hasAttemptedSubmit && !isMobileValid
-                  ? "border-rose-500/80 focus:ring-1 focus:ring-rose-500/40"
-                  : "border-zinc-700/80 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/40"
+                  ? "border-rose-500/80 focus:ring-1 focus:ring-rose-500/40 bg-rose-950/10"
+                  : "border-zinc-750 focus:border-emerald-500/70 focus:ring-1 focus:ring-emerald-500/40"
               )}
             />
           </div>
 
           {hasAttemptedSubmit && !isMobileValid && (
-            <p className="flex items-center gap-1 text-xs text-rose-400 mt-1.5">
-              <AlertCircle className="h-3.5 w-3.5" />
+            <p className="flex items-center gap-1.5 text-xs text-rose-400 mt-1 px-1">
+              <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
               Please enter a valid 10-digit Indian mobile number (e.g. 9820012345).
             </p>
           )}
@@ -287,24 +332,26 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
 
         {/* Pay at Counter 4-digit OTP Security Step */}
         {paymentMethod === "PAY_AT_COUNTER" && (
-          <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-amber-500/30 space-y-2.5">
-            <div className="flex items-start gap-2">
-              <ShieldCheck className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+          <div className="p-4 rounded-2xl bg-zinc-900/90 border border-amber-500/40 space-y-3 shadow-lg">
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <ShieldCheck className="h-4 w-4 text-amber-400 flex-shrink-0" />
+              </div>
               <div>
-                <p className="text-xs font-bold text-zinc-200">Anti-Prank Order Verification</p>
-                <p className="text-[11px] text-zinc-400">
-                  To protect kitchen prep from false orders, enter the 4-digit code.
+                <p className="text-xs font-bold text-zinc-100">Anti-Prank Order Verification</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  To protect our kitchen from fake QR fires, please enter the demo code below.
                 </p>
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-zinc-400">
-                  Verification Code:
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-400 font-medium">
+                  Enter 4-Digit Code:
                 </span>
-                <span className="text-[11px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                  Demo Code: 1234
+                <span className="text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30">
+                  Demo OTP: 1234
                 </span>
               </div>
               <div className="relative">
@@ -312,16 +359,16 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
                   type="tel"
                   inputMode="numeric"
                   maxLength={4}
-                  placeholder="Enter 1234"
+                  placeholder="1234"
                   value={otp}
                   onChange={handleOtpChange}
                   className={cn(
-                    "w-full h-11 px-4 rounded-xl bg-zinc-950 border text-center text-lg font-bold tracking-widest text-zinc-100 placeholder:text-zinc-700 placeholder:text-sm focus:outline-none transition-all",
+                    "w-full h-12 px-4 rounded-xl bg-zinc-950 border text-center text-lg font-bold tracking-[0.4em] text-zinc-100 placeholder:text-zinc-700 placeholder:tracking-normal focus:outline-none transition-all",
                     isOtpValid
-                      ? "border-emerald-500/80 text-emerald-400 bg-emerald-950/20"
+                      ? "border-emerald-500 text-emerald-400 bg-emerald-950/20 ring-1 ring-emerald-500/40"
                       : hasAttemptedSubmit && !isOtpValid
-                      ? "border-rose-500/80"
-                      : "border-zinc-700 focus:border-amber-500/60"
+                      ? "border-rose-500/80 bg-rose-950/10"
+                      : "border-zinc-700 focus:border-amber-500/70"
                   )}
                 />
                 {isOtpValid && (
@@ -330,8 +377,8 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
               </div>
 
               {hasAttemptedSubmit && !isOtpValid && (
-                <p className="flex items-center gap-1 text-xs text-rose-400 mt-1">
-                  <AlertCircle className="h-3 w-3" />
+                <p className="flex items-center gap-1 text-xs text-rose-400 mt-1 px-1">
+                  <AlertCircle className="h-3 w-3 flex-shrink-0" />
                   Incorrect code. Please enter demo OTP "1234".
                 </p>
               )}
@@ -340,7 +387,7 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
         )}
       </DrawerContent>
 
-      <DrawerFooter>
+      <DrawerFooter className="border-t border-zinc-800/80 pt-3">
         <Button
           className={cn(
             "w-full h-13 text-sm font-bold rounded-xl",
