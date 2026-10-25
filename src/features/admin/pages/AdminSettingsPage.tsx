@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,10 +12,70 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { Building2, FileText, Volume2, Link, Save } from "lucide-react"
+import { Building2, FileText, Volume2, Link as LinkIcon, Save, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 
 export function AdminSettingsPage() {
   const restaurant = useAdminStore((s) => s.restaurant)
+  const updateSettings = useAdminStore((s) => s.updateSettings)
+
+  const [form, setForm] = useState({
+    name: restaurant.name || "",
+    upiVpa: restaurant.upiVpa || "",
+    phone: restaurant.phone || "+91 98200 12345",
+    email: restaurant.email || "bandra@pangat.in",
+    gstin: restaurant.gstin || "27AADCB2230M1ZT",
+    gstPercentage: restaurant.gstPercentage ?? 5,
+    hsnSac: restaurant.hsnSac || "9963",
+    kdsNewOrderAlert: restaurant.kdsNewOrderAlert ?? true,
+    orderReadyChime: restaurant.orderReadyChime ?? true,
+    outOfStockNotification: restaurant.outOfStockNotification ?? true,
+  })
+
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle")
+
+  useEffect(() => {
+    if (restaurant.name) {
+      setForm({
+        name: restaurant.name || "",
+        upiVpa: restaurant.upiVpa || "",
+        phone: restaurant.phone || "+91 98200 12345",
+        email: restaurant.email || "bandra@pangat.in",
+        gstin: restaurant.gstin || "27AADCB2230M1ZT",
+        gstPercentage: restaurant.gstPercentage ?? 5,
+        hsnSac: restaurant.hsnSac || "9963",
+        kdsNewOrderAlert: restaurant.kdsNewOrderAlert ?? true,
+        orderReadyChime: restaurant.orderReadyChime ?? true,
+        outOfStockNotification: restaurant.outOfStockNotification ?? true,
+      })
+    }
+  }, [restaurant])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    setSaveStatus("idle")
+    try {
+      await updateSettings({
+        name: form.name,
+        upiVpa: form.upiVpa,
+        gstin: form.gstin,
+        hsnSac: form.hsnSac,
+        gstPercentage: Number(form.gstPercentage) || 0,
+        phone: form.phone,
+        email: form.email,
+        kdsNewOrderAlert: form.kdsNewOrderAlert,
+        orderReadyChime: form.orderReadyChime,
+        outOfStockNotification: form.outOfStockNotification,
+      })
+      setSaveStatus("success")
+      setTimeout(() => setSaveStatus("idle"), 4000)
+    } catch (err) {
+      console.error("Failed to save settings:", err)
+      setSaveStatus("error")
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="flex flex-col h-full overflow-auto bg-zinc-950">
@@ -28,12 +89,30 @@ export function AdminSettingsPage() {
               <BreadcrumbItem><BreadcrumbPage>Settings</BreadcrumbPage></BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-100 mt-1">Settings</h1>
+          <h1 className="text-xl font-bold text-zinc-100 mt-1">Outlet Settings</h1>
         </div>
-        <Button className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white">
-          <Save className="h-4 w-4" />
-          Save Changes
-        </Button>
+        <div className="flex items-center gap-3">
+          {saveStatus === "success" && (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
+              <CheckCircle2 className="h-4 w-4" />
+              Settings saved!
+            </span>
+          )}
+          {saveStatus === "error" && (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg">
+              <AlertCircle className="h-4 w-4" />
+              Failed to save
+            </span>
+          )}
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30"
+          >
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 p-6 max-w-2xl space-y-6">
@@ -45,17 +124,32 @@ export function AdminSettingsPage() {
         >
           <div className="space-y-3">
             <SettingsField label="Outlet Name">
-              <Input defaultValue={restaurant.name} />
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
             </SettingsField>
             <SettingsField label="UPI VPA (QR Payment)">
-              <Input defaultValue={restaurant.upiVpa} className="font-mono" />
+              <Input
+                value={form.upiVpa}
+                onChange={(e) => setForm({ ...form, upiVpa: e.target.value })}
+                className="font-mono"
+              />
             </SettingsField>
             <div className="grid grid-cols-2 gap-3">
               <SettingsField label="Phone">
-                <Input type="tel" defaultValue="+91 98200 12345" />
+                <Input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
               </SettingsField>
               <SettingsField label="Email">
-                <Input type="email" defaultValue="bandra@pangat.in" />
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
               </SettingsField>
             </div>
           </div>
@@ -72,14 +166,28 @@ export function AdminSettingsPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <SettingsField label="GSTIN">
-                <Input defaultValue="27AADCB2230M1ZT" className="font-mono" />
+                <Input
+                  value={form.gstin}
+                  onChange={(e) => setForm({ ...form, gstin: e.target.value })}
+                  className="font-mono"
+                />
               </SettingsField>
               <SettingsField label="GST Rate (%)">
-                <Input type="number" defaultValue={String(restaurant.gstPercentage)} min={0} max={28} />
+                <Input
+                  type="number"
+                  value={String(form.gstPercentage)}
+                  onChange={(e) => setForm({ ...form, gstPercentage: parseFloat(e.target.value) || 0 })}
+                  min={0}
+                  max={28}
+                />
               </SettingsField>
             </div>
             <SettingsField label="HSN / SAC Code">
-              <Input defaultValue="9963" className="font-mono" />
+              <Input
+                value={form.hsnSac}
+                onChange={(e) => setForm({ ...form, hsnSac: e.target.value })}
+                className="font-mono"
+              />
             </SettingsField>
           </div>
         </SettingsSection>
@@ -96,17 +204,20 @@ export function AdminSettingsPage() {
             <SettingsToggle
               label="KDS New Order Alert"
               description="Play sound chime when a new order arrives on KDS board"
-              defaultChecked={true}
+              checked={form.kdsNewOrderAlert}
+              onChange={(v) => setForm({ ...form, kdsNewOrderAlert: v })}
             />
             <SettingsToggle
               label="Order Ready Chime"
               description="Audio chime when ticket is marked ready for pickup"
-              defaultChecked={true}
+              checked={form.orderReadyChime}
+              onChange={(v) => setForm({ ...form, orderReadyChime: v })}
             />
             <SettingsToggle
               label="Out-of-Stock Notification"
               description="Notify floor staff when kitchen 86's an item"
-              defaultChecked={false}
+              checked={form.outOfStockNotification}
+              onChange={(v) => setForm({ ...form, outOfStockNotification: v })}
             />
           </div>
         </SettingsSection>
@@ -115,7 +226,7 @@ export function AdminSettingsPage() {
 
         {/* Staff Links */}
         <SettingsSection
-          icon={<Link className="h-4 w-4 text-violet-400" />}
+          icon={<LinkIcon className="h-4 w-4 text-violet-400" />}
           title="Live Screen URLs"
           description="Direct access URLs for tablets, kitchen screens, and table QR codes"
         >
@@ -190,17 +301,18 @@ function SettingsField({ label, children }: SettingsFieldProps) {
 interface SettingsToggleProps {
   label: string
   description: string
-  defaultChecked?: boolean
+  checked: boolean
+  onChange: (v: boolean) => void
 }
 
-function SettingsToggle({ label, description, defaultChecked = false }: SettingsToggleProps) {
+function SettingsToggle({ label, description, checked, onChange }: SettingsToggleProps) {
   return (
     <div className="flex items-center justify-between py-2">
       <div>
         <p className="text-sm font-medium text-zinc-200">{label}</p>
         <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
       </div>
-      <Switch checked={defaultChecked} onCheckedChange={() => {}} />
+      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   )
 }

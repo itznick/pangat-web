@@ -28,9 +28,9 @@ export function PaymentBreakdownWidget() {
   const pendingOrders = orders.filter((o) => o.paymentStatus === "PENDING")
   const failedOrders = orders.filter((o) => o.paymentStatus === "FAILED")
 
-  const upiTotal = upiOrders.reduce((s, o) => s + o.totalAmount, 0)
-  const counterTotal = counterOrders.reduce((s, o) => s + o.totalAmount, 0)
-  const pendingTotal = pendingOrders.reduce((s, o) => s + o.totalAmount, 0)
+  const upiTotal = upiOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0)
+  const counterTotal = counterOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0)
+  const pendingTotal = pendingOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0)
   const grandTotal = upiTotal + counterTotal + pendingTotal
 
   const segments: PaymentSegment[] = [

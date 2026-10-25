@@ -144,6 +144,10 @@ function AdminSidebarContent() {
           )}
           {!collapsed && (
             <button
+              onClick={() => {
+                localStorage.removeItem("pangat_access_token")
+                navigate("/")
+              }}
               className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-rose-400 transition-colors"
               title="Logout"
             >

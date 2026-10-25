@@ -206,6 +206,31 @@ export function AdminOrdersPage() {
                   </TableRow>
                 )
               })}
+
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center text-zinc-500">
+                      <Clock className="h-8 w-8 mb-2 text-zinc-600" />
+                      <p className="text-sm font-semibold text-zinc-300">No orders found</p>
+                      <p className="text-xs text-zinc-500 mt-1 max-w-sm">
+                        No orders match the current search or payment status filter.
+                      </p>
+                      {(search || statusFilter !== "all") && (
+                        <button
+                          onClick={() => {
+                            setSearch("")
+                            setStatusFilter("all")
+                          }}
+                          className="mt-3 text-xs font-semibold text-emerald-400 hover:text-emerald-300"
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

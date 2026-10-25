@@ -3,14 +3,24 @@
 // for cook acknowledgment. Uses live useKdsStore data.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useEffect } from "react"
 import { AlertTriangle, Clock, ChefHat, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useKdsStore } from "@/stores/useKdsStore"
+import { useAdminStore } from "@/stores/useAdminStore"
 
 const SLA_THRESHOLD_MS = 15 * 60 * 1000 // 15 minutes
 
 export function KitchenSlaWidget() {
-  const tickets = useKdsStore((s) => s.tickets)
+  const kdsTickets = useKdsStore((s) => s.tickets)
+  const activeOrders = useAdminStore((s) => s.activeOrders)
+
+  useEffect(() => {
+    useKdsStore.getState().fetchTickets()
+  }, [])
+
+  // Use kdsTickets or fallback to non-completed activeOrders from admin store
+  const tickets = kdsTickets.length > 0 ? kdsTickets : activeOrders.filter((o) => o.orderStatus !== "COMPLETED")
 
   const now = Date.now()
 

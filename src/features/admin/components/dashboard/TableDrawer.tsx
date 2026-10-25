@@ -28,7 +28,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
 
   const totalUnbilled = tableOrders
     .filter((o) => o.paymentStatus === "PENDING")
-    .reduce((sum, o) => sum + o.totalAmount, 0)
+    .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0)
 
   const handleSettle = (orderId: string) => {
     settleOrder(orderId, "PAID")
@@ -178,8 +178,8 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                         <span className="text-sm font-semibold text-zinc-300 flex-shrink-0">
                           ₹
                           {(
-                            (item.price +
-                              item.selectedModifiers.reduce((s, m) => s + m.price, 0)) *
+                            (Number(item.price || 0) +
+                              item.selectedModifiers.reduce((s, m) => s + Number(m.price || 0), 0)) *
                             item.quantity
                           ).toFixed(0)}
                         </span>
@@ -192,7 +192,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                     <div>
                       <p className="text-xs text-zinc-500">Total</p>
                       <p className="text-base font-black text-zinc-100">
-                        ₹{order.totalAmount.toFixed(2)}
+                        ₹{Number(order.totalAmount || 0).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                   Unbilled Balance
                 </span>
                 <span className="text-base font-black text-amber-400">
-                  ₹{totalUnbilled.toFixed(2)}
+                  ₹{Number(totalUnbilled || 0).toFixed(2)}
                 </span>
               </div>
             )}

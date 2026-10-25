@@ -152,7 +152,7 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
                   </div>
 
                   <span className="text-sm font-bold text-zinc-100 ml-1 min-w-[54px] text-right">
-                    ₹{(itemPrice * entry.quantity).toFixed(0)}
+                    ₹{((Number(itemPrice) || 0) * entry.quantity).toFixed(0)}
                   </span>
                 </div>
               )
@@ -164,14 +164,14 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
         <div className="bg-zinc-900/80 rounded-2xl p-4 border border-zinc-800 space-y-2.5 shadow-sm">
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400">Subtotal</span>
-            <span className="text-zinc-200 font-medium">₹{subtotal.toFixed(2)}</span>
+            <span className="text-zinc-200 font-medium">₹{Number(subtotal || 0).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400 flex items-center gap-1">
               <IndianRupee className="h-3 w-3 text-zinc-500" />
               Taxes & GST (5%)
             </span>
-            <span className="text-zinc-200 font-medium">₹{gst.toFixed(2)}</span>
+            <span className="text-zinc-200 font-medium">₹{Number(gst || 0).toFixed(2)}</span>
           </div>
           <Separator className="bg-zinc-800/90 my-1" />
           <div className="flex justify-between items-center pt-0.5">
@@ -179,7 +179,7 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
               <span className="text-sm font-bold text-zinc-100">Total Payable</span>
               <p className="text-[11px] text-zinc-500">Includes all applicable taxes</p>
             </div>
-            <span className="text-lg font-black text-emerald-400">₹{total.toFixed(2)}</span>
+            <span className="text-lg font-black text-emerald-400">₹{Number(total || 0).toFixed(2)}</span>
           </div>
         </div>
 
@@ -402,12 +402,12 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
           {paymentMethod === "UPI_INSTANT" ? (
             <>
               <Zap className="h-4 w-4 mr-1.5" />
-              Proceed to UPI Pay • ₹{total.toFixed(2)}
+              Proceed to UPI Pay • ₹{Number(total || 0).toFixed(2)}
             </>
           ) : (
             <>
               <Store className="h-4 w-4 mr-1.5" />
-              Confirm & Fire to Kitchen • ₹{total.toFixed(2)}
+              Confirm & Fire to Kitchen • ₹{Number(total || 0).toFixed(2)}
             </>
           )}
         </Button>

@@ -403,7 +403,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
                 </span>
               </div>
               <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                ₹{order.totalAmount.toFixed(2)}
+                ₹{Number(order.totalAmount || 0).toFixed(2)}
               </span>
             </div>
             <p className="text-xs text-zinc-400">
@@ -414,7 +414,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
             >
               <Zap className="h-3.5 w-3.5" />
-              Pay Online Now via UPI (₹{order.totalAmount.toFixed(2)})
+              Pay Online Now via UPI (₹{Number(order.totalAmount || 0).toFixed(2)})
             </button>
           </div>
         )}
@@ -453,7 +453,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
                     )}
                   </div>
                   <span className="text-zinc-300 font-semibold">
-                    ₹{((item.price + item.selectedModifiers.reduce((s, m) => s + m.price, 0)) * item.quantity).toFixed(0)}
+                    ₹{(((Number(item.price || 0) + item.selectedModifiers.reduce((s, m) => s + Number(m.price || 0), 0)) * item.quantity)).toFixed(0)}
                   </span>
                 </div>
               ))}
@@ -462,7 +462,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
             <div className="border-t border-zinc-800 pt-2.5 flex justify-between items-center">
               <span className="text-xs text-zinc-400">Total Amount</span>
               <span className="text-base font-bold text-emerald-400">
-                ₹{order.totalAmount.toFixed(2)}
+                ₹{Number(order.totalAmount || 0).toFixed(2)}
               </span>
             </div>
           </div>

@@ -104,6 +104,10 @@ export const api = {
       apiClient.patch(`/menu/items/${id}/availability`, { isAvailable }),
     updatePrice: (id: string, price: number): Promise<MenuItem> =>
       apiClient.patch(`/menu/items/${id}/price`, { price }),
+    createItem: (data: Partial<MenuItem> & { categoryId: string; restaurantSlug?: string }): Promise<MenuItem> =>
+      apiClient.post('/menu/items', data),
+    updateItem: (id: string, data: Partial<MenuItem>): Promise<MenuItem> =>
+      apiClient.patch(`/menu/items/${id}`, data),
   },
 
   // Orders

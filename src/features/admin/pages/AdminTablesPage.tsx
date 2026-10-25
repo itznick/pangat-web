@@ -8,35 +8,36 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { QrCode } from "lucide-react"
+import { QrCode, RefreshCw, LayoutGrid, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { TableStatus } from "@/types/domain"
+import { Button } from "@/components/ui/button"
 
 const STATUS_CONFIG: Record<TableStatus, { label: string; bg: string; border: string; text: string; badge: string }> = {
   VACANT: {
     label: "Vacant",
-    bg: "bg-zinc-900 hover:bg-zinc-800",
-    border: "border-zinc-700",
+    bg: "bg-zinc-900 hover:bg-zinc-850",
+    border: "border-zinc-800",
     text: "text-zinc-400",
     badge: "bg-zinc-800 text-zinc-400 border-zinc-700",
   },
   OCCUPIED: {
     label: "Occupied / Unpaid",
-    bg: "bg-rose-950/30 hover:bg-rose-950/40",
+    bg: "bg-rose-950/20 hover:bg-rose-950/30",
     border: "border-rose-500/40",
     text: "text-rose-300",
     badge: "bg-rose-500/20 text-rose-300 border-rose-500/40",
   },
   PREPPING: {
     label: "Prepping",
-    bg: "bg-amber-950/30 hover:bg-amber-950/40",
+    bg: "bg-amber-950/20 hover:bg-amber-950/30",
     border: "border-amber-500/40",
     text: "text-amber-300",
     badge: "bg-amber-500/20 text-amber-300 border-amber-500/40",
   },
   SERVED: {
     label: "Served / Paid",
-    bg: "bg-emerald-950/30 hover:bg-emerald-950/40",
+    bg: "bg-emerald-950/20 hover:bg-emerald-950/30",
     border: "border-emerald-500/40",
     text: "text-emerald-300",
     badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
@@ -46,7 +47,10 @@ const STATUS_CONFIG: Record<TableStatus, { label: string; bg: string; border: st
 export function AdminTablesPage() {
   const tables = useAdminStore((s) => s.tables)
   const updateTableStatus = useAdminStore((s) => s.updateTableStatus)
+  const fetchDashboardData = useAdminStore((s) => s.fetchDashboardData)
   const [filterStatus, setFilterStatus] = useState<TableStatus | "all">("all")
+  const [lastUpdatedTable, setLastUpdatedTable] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const filtered = filterStatus === "all" ? tables : tables.filter((t) => t.status === filterStatus)
 
@@ -56,6 +60,18 @@ export function AdminTablesPage() {
     OCCUPIED: tables.filter((t) => t.status === "OCCUPIED").length,
     PREPPING: tables.filter((t) => t.status === "PREPPING").length,
     SERVED: tables.filter((t) => t.status === "SERVED").length,
+  }
+
+  const handleStatusChange = async (tableId: string, tableNumber: string, status: TableStatus) => {
+    await updateTableStatus(tableId, status)
+    setLastUpdatedTable(`Table T${tableNumber} is now ${status}`)
+    setTimeout(() => setLastUpdatedTable(null), 3000)
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await fetchDashboardData()
+    setIsRefreshing(false)
   }
 
   return (
@@ -70,7 +86,26 @@ export function AdminTablesPage() {
               <BreadcrumbItem><BreadcrumbPage>Floor & Tables</BreadcrumbPage></BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-100 mt-1">Floor & Table View</h1>
+          <h1 className="text-xl font-bold text-zinc-100 mt-1">Floor & Table Management</h1>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {lastUpdatedTable && (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {lastUpdatedTable}
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="gap-2 border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            Refresh Floor
+          </Button>
         </div>
       </div>
 
@@ -105,7 +140,7 @@ export function AdminTablesPage() {
               <div
                 key={table.id}
                 className={cn(
-                  "rounded-2xl border p-4 flex flex-col gap-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]",
+                  "rounded-2xl border p-4 flex flex-col gap-3 transition-all duration-200 hover:scale-[1.02]",
                   config.bg,
                   config.border
                 )}
@@ -128,22 +163,39 @@ export function AdminTablesPage() {
                   {config.label}
                 </span>
 
-                {/* Quick status change */}
+                {/* Quick status change selector */}
                 <select
-                  className="text-[10px] bg-zinc-800/80 border border-zinc-700 rounded-lg px-2 py-1 text-zinc-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+                  className="text-xs bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-zinc-300 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full"
                   value={table.status}
-                  onChange={(e) => updateTableStatus(table.id, e.target.value as TableStatus)}
-                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => handleStatusChange(table.id, table.tableNumber, e.target.value as TableStatus)}
                 >
-                  <option value="VACANT">Vacant</option>
-                  <option value="OCCUPIED">Occupied</option>
-                  <option value="PREPPING">Prepping</option>
-                  <option value="SERVED">Served</option>
+                  <option value="VACANT">Vacant (Gray)</option>
+                  <option value="OCCUPIED">Occupied (Rose)</option>
+                  <option value="PREPPING">Prepping (Amber)</option>
+                  <option value="SERVED">Served (Green)</option>
                 </select>
               </div>
             )
           })}
         </div>
+
+        {filtered.length === 0 && (
+          <div className="py-20 flex flex-col items-center justify-center text-center bg-zinc-900/50 rounded-2xl border border-zinc-800 p-8">
+            <LayoutGrid className="h-10 w-10 text-zinc-600 mb-3" />
+            <h3 className="text-sm font-bold text-zinc-300">No tables matching this status</h3>
+            <p className="text-xs text-zinc-500 mt-1 max-w-sm">
+              Currently no tables are marked with this filter. Select "All Tables" to view the complete floor plan.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilterStatus("all")}
+              className="mt-4 text-xs border-zinc-700 text-zinc-300"
+            >
+              Show All Tables
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

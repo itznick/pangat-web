@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select } from "@/components/ui/select"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { Search, Plus, Pencil, Leaf, Drumstick, Star, Filter } from "lucide-react"
+import { Search, Plus, Pencil, Leaf, Drumstick, Star, Filter, UtensilsCrossed } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { MenuItem } from "@/types/domain"
 
@@ -32,6 +32,7 @@ export function AdminMenuPage() {
   const toggleMenuAvailability = useAdminStore((s) => s.toggleMenuAvailability)
   const updateMenuPrice = useAdminStore((s) => s.updateMenuPrice)
   const addMenuItem = useAdminStore((s) => s.addMenuItem)
+  const updateMenuItem = useAdminStore((s) => s.updateMenuItem)
 
   const categoryOpts = useMemo(
     () => categories.map((c) => ({ value: c.id, label: c.name })),
@@ -41,6 +42,7 @@ export function AdminMenuPage() {
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [editingDish, setEditingDish] = useState<MenuItem | null>(null)
   const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null)
 
   const [newDish, setNewDish] = useState({
@@ -53,7 +55,8 @@ export function AdminMenuPage() {
   })
 
   const filtered = menuItems.filter((item) => {
-    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch =
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.description.toLowerCase().includes(search.toLowerCase())
     const matchCategory = categoryFilter === "all" || item.categoryId === categoryFilter
     return matchSearch && matchCategory
@@ -72,7 +75,7 @@ export function AdminMenuPage() {
     if (!newDish.name.trim() || !newDish.price) return
     const createdItem: MenuItem = {
       id: `item-${Date.now()}`,
-      categoryId: newDish.categoryId,
+      categoryId: newDish.categoryId || (categories[0]?.id ?? "cat-01"),
       name: newDish.name,
       description: newDish.description,
       price: parseFloat(newDish.price) || 0,
@@ -87,10 +90,16 @@ export function AdminMenuPage() {
       name: "",
       description: "",
       price: "",
-      categoryId: "cat-breakfast",
+      categoryId: categories[0]?.id ?? "cat-01",
       isVeg: true,
       imageUrl: "🍽️",
     })
+  }
+
+  const handleSaveEditedDish = () => {
+    if (!editingDish || !editingDish.name.trim()) return
+    updateMenuItem(editingDish)
+    setEditingDish(null)
   }
 
   return (
@@ -139,7 +148,7 @@ export function AdminMenuPage() {
             />
           </div>
 
-          <p className="text-xs text-zinc-500 ml-auto">
+          <p className="text-xs text-zinc-500 ml-auto font-medium">
             {filtered.length} item{filtered.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -245,13 +254,42 @@ export function AdminMenuPage() {
 
                     {/* Actions */}
                     <TableCell className="text-right">
-                      <button className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 transition-colors">
+                      <button
+                        onClick={() => setEditingDish(item)}
+                        title="Edit dish details"
+                        className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-emerald-400 transition-colors"
+                      >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     </TableCell>
                   </TableRow>
                 )
               })}
+
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center text-zinc-500">
+                      <UtensilsCrossed className="h-8 w-8 mb-2 text-zinc-600" />
+                      <p className="text-sm font-semibold text-zinc-300">No dishes found</p>
+                      <p className="text-xs text-zinc-500 mt-1 max-w-sm">
+                        No dishes match your active filter. Try resetting your search or add a new dish to your menu.
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSearch("")
+                          setCategoryFilter("all")
+                        }}
+                        variant="outline"
+                        className="mt-3 text-xs border-zinc-700 text-zinc-300"
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
@@ -360,6 +398,108 @@ export function AdminMenuPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dish Dialog */}
+      {editingDish && (
+        <Dialog open={Boolean(editingDish)} onOpenChange={(open) => !open && setEditingDish(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Dish Details</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Dish Name *</label>
+                  <Input
+                    value={editingDish.name}
+                    onChange={(e) => setEditingDish({ ...editingDish, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Emoji Icon</label>
+                  <Input
+                    value={editingDish.imageUrl}
+                    onChange={(e) => setEditingDish({ ...editingDish, imageUrl: e.target.value })}
+                    className="text-center text-xl"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Description</label>
+                <Input
+                  value={editingDish.description}
+                  onChange={(e) => setEditingDish({ ...editingDish, description: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Base Price (₹) *</label>
+                  <Input
+                    type="number"
+                    value={String(editingDish.price)}
+                    onChange={(e) => setEditingDish({ ...editingDish, price: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Category *</label>
+                  <Select
+                    value={editingDish.categoryId}
+                    onValueChange={(v) => setEditingDish({ ...editingDish, categoryId: v })}
+                    options={categoryOpts}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Dietary Type</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingDish({ ...editingDish, isVeg: true })}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
+                      editingDish.isVeg
+                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                        : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                    )}
+                  >
+                    <Leaf className="h-3.5 w-3.5" />
+                    Vegetarian
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingDish({ ...editingDish, isVeg: false })}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
+                      !editingDish.isVeg
+                        ? "border-rose-500 bg-rose-500/15 text-rose-400"
+                        : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                    )}
+                  >
+                    <Drumstick className="h-3.5 w-3.5" />
+                    Non-Veg
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setEditingDish(null)} className="text-zinc-400">
+                Cancel
+              </Button>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                onClick={handleSaveEditedDish}
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

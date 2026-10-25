@@ -15,6 +15,13 @@ export interface Restaurant {
   /** GST percentage applied at checkout, e.g. 5 */
   gstPercentage: number
   isVegOnly: boolean
+  gstin?: string | null
+  hsnSac?: string
+  phone?: string
+  email?: string
+  kdsNewOrderAlert?: boolean
+  orderReadyChime?: boolean
+  outOfStockNotification?: boolean
 }
 
 // ── Table ─────────────────────────────────────────────────────────────────────

@@ -103,8 +103,8 @@ export const useCartStore = create<CartStore>()(
 
       subtotal: () =>
         get().entries.reduce((sum, e) => {
-          const modSum = e.selectedModifiers.reduce((s, m) => s + m.price, 0)
-          return sum + (e.price + modSum) * e.quantity
+          const modSum = e.selectedModifiers.reduce((s, m) => s + Number(m.price || 0), 0)
+          return sum + (Number(e.price || 0) + modSum) * Number(e.quantity || 1)
         }, 0),
 
       gstAmount: (gstPct) => {

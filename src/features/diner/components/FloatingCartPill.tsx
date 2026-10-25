@@ -38,7 +38,7 @@ export function FloatingCartPill({ onViewOrder }: FloatingCartPillProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-white font-bold text-base">₹{total.toFixed(2)}</span>
+          <span className="text-white font-bold text-base">₹{Number(total || 0).toFixed(2)}</span>
           <ChevronRight className="h-4 w-4 text-emerald-200" />
         </div>
       </button>

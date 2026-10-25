@@ -41,14 +41,24 @@ const DEFAULT_SALES: SalesSummary = {
 
 function computeSalesSummary(orders: Order[]): SalesSummary {
   const paidOrders = orders.filter((o) => o.paymentStatus === 'PAID')
-  const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.totalAmount), 0)
+  const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0)
   const totalCovers = orders.length
-  const activeKotCount = orders.filter((o) => o.orderStatus !== 'COMPLETED').length
+  const activeOrders = orders.filter((o) => o.orderStatus !== 'COMPLETED')
+  const activeKotCount = activeOrders.length
+
+  let avgPrepTimeMinutes = 0
+  if (orders.length > 0) {
+    const totalElapsedMins = orders.reduce((sum, o) => {
+      const ms = Date.now() - new Date(o.createdAt).getTime()
+      return sum + Math.max(1, Math.round(ms / 60_000))
+    }, 0)
+    avgPrepTimeMinutes = Math.min(60, Math.round(totalElapsedMins / orders.length))
+  }
 
   return {
     totalRevenue,
     totalCovers,
-    avgPrepTimeMinutes: 11,
+    avgPrepTimeMinutes: avgPrepTimeMinutes || 12,
     activeKotCount,
   }
 }
@@ -73,7 +83,11 @@ interface AdminStore {
   // ── Menu management ────────────────────────────────────────────────────────
   toggleMenuAvailability: (menuItemId: string) => Promise<void>
   updateMenuPrice: (menuItemId: string, price: number) => Promise<void>
-  addMenuItem: (item: MenuItem) => void
+  addMenuItem: (item: MenuItem) => Promise<void>
+  updateMenuItem: (item: MenuItem) => Promise<void>
+
+  // ── Settings management ────────────────────────────────────────────────────
+  updateSettings: (settings: Partial<Restaurant>, slug?: string) => Promise<void>
 
   // ── Order / settlement actions ─────────────────────────────────────────────
   addOrder: (order: Order) => void
@@ -224,10 +238,69 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
-  addMenuItem: (item) =>
+  addMenuItem: async (item) => {
+    // Optimistic UI update
     set((s) => ({
       menuItems: [item, ...s.menuItems],
-    })),
+    }))
+
+    try {
+      const created = await api.menu.createItem({
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        categoryId: item.categoryId,
+        isVeg: item.isVeg,
+        imageUrl: item.imageUrl,
+        restaurantSlug: get().restaurant.slug || 'pangat',
+      })
+      if (created?.id) {
+        set((s) => ({
+          menuItems: s.menuItems.map((m) => (m.id === item.id ? { ...m, id: created.id } : m)),
+        }))
+      }
+    } catch (err) {
+      console.error('Failed to create dish via API:', err)
+    }
+  },
+
+  updateMenuItem: async (item) => {
+    // Optimistic UI update
+    set((s) => ({
+      menuItems: s.menuItems.map((m) => (m.id === item.id ? item : m)),
+    }))
+
+    try {
+      await api.menu.updateItem(item.id, {
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        categoryId: item.categoryId,
+        isVeg: item.isVeg,
+        imageUrl: item.imageUrl,
+      })
+    } catch (err) {
+      console.error('Failed to update dish via API:', err)
+    }
+  },
+
+  updateSettings: async (settings, slug = 'pangat') => {
+    set((s) => ({
+      restaurant: { ...s.restaurant, ...settings },
+    }))
+
+    try {
+      const updated = await api.restaurants.updateSettings(slug, settings)
+      if (updated) {
+        set((s) => ({
+          restaurant: { ...s.restaurant, ...updated },
+        }))
+      }
+    } catch (err) {
+      console.error('Failed to update settings via API:', err)
+      throw err
+    }
+  },
 
   addOrder: (order) =>
     set((s) => {

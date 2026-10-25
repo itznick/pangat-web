@@ -666,7 +666,7 @@ export function AdminDashboardPage() {
                     {/* Amount + time */}
                     <div className="flex-shrink-0 text-right">
                       <p className="text-sm font-bold text-zinc-100">
-                        ₹{order.totalAmount.toFixed(0)}
+                        ₹{Number(order.totalAmount || 0).toFixed(0)}
                       </p>
                       <p className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-0.5 justify-end">
                         <Clock className="h-2.5 w-2.5" />
