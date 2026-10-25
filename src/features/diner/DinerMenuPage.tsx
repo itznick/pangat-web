@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useParams, useNavigate } from "react-router"
 import { Search, X, ChefHat, ArrowRight } from "lucide-react"
 import { DinerTopBar } from "./components/DinerTopBar"
@@ -8,10 +8,25 @@ import { CustomizationDrawer } from "./components/CustomizationDrawer"
 import { FloatingCartPill } from "./components/FloatingCartPill"
 import { CheckoutDrawer } from "./components/CheckoutDrawer"
 import { useCartStore, useOrderTrackingStore } from "@/stores/useCartStore"
-import { useAdminStore } from "@/stores/useAdminStore"
 import { useKdsStore } from "@/stores/useKdsStore"
-import { MOCK_CATEGORIES, CATEGORY_NAME_MAP } from "@/data/mockData"
-import type { MenuItem, SelectedModifier, Order, PaymentMethod } from "@/types/domain"
+import { api } from "@/lib/api"
+import type {
+  MenuItem,
+  MenuCategory,
+  Restaurant,
+  SelectedModifier,
+  Order,
+  PaymentMethod,
+} from "@/types/domain"
+
+const DEFAULT_RESTAURANT: Restaurant = {
+  id: "rest-001",
+  name: "The Pangat",
+  slug: "pangat",
+  upiVpa: "pangat.bandra@icici",
+  gstPercentage: 5,
+  isVegOnly: false,
+}
 
 export function DinerMenuPage() {
   const { restaurantSlug = "pangat", tableId = "04" } = useParams<{
@@ -26,12 +41,35 @@ export function DinerMenuPage() {
   const [showCustomization, setShowCustomization] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
 
-  // Global stores
-  const restaurant = useAdminStore((s) => s.restaurant)
-  const menuItems = useAdminStore((s) => s.menuItems)
+  // Dynamic API state
+  const [restaurant, setRestaurant] = useState<Restaurant>(DEFAULT_RESTAURANT)
+  const [categories, setCategories] = useState<MenuCategory[]>([])
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
   const outOfStockIds = useKdsStore((s) => s.outOfStockIds)
   const { dietaryFilter, addItem, total, gstAmount, toOrderItems, clearCart } = useCartStore()
   const { order: activeOrder, placeOrder } = useOrderTrackingStore()
+
+  // Load public menu from NestJS backend API
+  useEffect(() => {
+    setIsLoading(true)
+    api.menu.getPublic(restaurantSlug)
+      .then((data) => {
+        if (data.restaurant) setRestaurant(data.restaurant)
+        if (data.categories) setCategories(data.categories)
+        if (data.items) setMenuItems(data.items)
+        setIsLoading(false)
+      })
+      .catch((err) => {
+        console.warn("API menu fetch failed; using fallback state:", err)
+        setIsLoading(false)
+      })
+  }, [restaurantSlug])
+
+  const categoryNameMap = useMemo(() => {
+    return Object.fromEntries(categories.map((c) => [c.id, c.name]))
+  }, [categories])
 
   // Filter items based on Category, Search Query & Dietary selection
   const filteredItems = useMemo(() => {
@@ -53,7 +91,7 @@ export function DinerMenuPage() {
       // Search matching (fuzzy/includes check across title, desc, category, modifiers)
       let searchMatch = true
       if (q.length > 0) {
-        const catName = (CATEGORY_NAME_MAP[item.categoryId] || "").toLowerCase()
+        const catName = (categoryNameMap[item.categoryId] || "").toLowerCase()
         const modText = item.modifiers
           .map((m) => `${m.name} ${m.options.map((o) => o.name).join(" ")}`)
           .join(" ")
@@ -68,23 +106,22 @@ export function DinerMenuPage() {
 
       return categoryMatch && dietaryMatch && searchMatch
     })
-  }, [menuItems, activeCategoryId, dietaryFilter, searchQuery])
+  }, [menuItems, activeCategoryId, dietaryFilter, searchQuery, categoryNameMap])
 
   // Group by category when "all" is active and not searching
   const groupedItems = useMemo(() => {
     if (activeCategoryId !== "all" || searchQuery.trim().length > 0) return null
     const groups: Record<string, MenuItem[]> = {}
     filteredItems.forEach((item) => {
-      const catName = CATEGORY_NAME_MAP[item.categoryId] || item.categoryId
+      const catName = categoryNameMap[item.categoryId] || item.categoryId
       if (!groups[catName]) groups[catName] = []
       groups[catName].push(item)
     })
     return groups
-  }, [filteredItems, activeCategoryId, searchQuery])
+  }, [filteredItems, activeCategoryId, searchQuery, categoryNameMap])
 
   const handleAddItem = (item: MenuItem) => {
     if (item.modifiers.length === 0) {
-      // Direct add
       addItem({
         menuItemId: item.id,
         name: item.name,
@@ -119,50 +156,62 @@ export function DinerMenuPage() {
     setSelectedItem(null)
   }
 
-  const handleProceedToPay = ({
+  const handleProceedToPay = async ({
     mobile,
     paymentMethod,
   }: {
     mobile: string
     paymentMethod: PaymentMethod
   }) => {
-    const orderId = `ORD-${Math.floor(Math.random() * 9000 + 1000)}`
     const orderItems = toOrderItems()
-    const gstPct = restaurant.gstPercentage || 5
-    const totalVal = total(gstPct)
-    const gstVal = gstAmount(gstPct)
+    const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
-    const newOrder: Order = {
-      id: orderId,
-      restaurantId: restaurant.id,
-      tableNumber: tableId,
-      items: orderItems,
-      totalAmount: totalVal,
-      gstAmount: gstVal,
-      paymentStatus: paymentMethod === "UPI_INSTANT" ? "PAID" : "PENDING",
-      paymentMethod,
-      customerPhone: mobile,
-      orderStatus: "RECEIVED",
-      createdAt: new Date(),
+    try {
+      // 1. Submit order to NestJS backend API
+      const placedOrder = await api.orders.create(
+        {
+          restaurantSlug,
+          tableNumber: tableId,
+          paymentMethod,
+          customerPhone: mobile,
+          items: orderItems,
+        },
+        idempotencyKey,
+      )
+
+      // 2. Set in diner tracking store (persisted to localStorage)
+      placeOrder(placedOrder)
+
+      // 3. Reset cart & navigate to live order tracking
+      clearCart()
+      setShowCheckout(false)
+      navigate(`/r/${restaurantSlug}/order/${placedOrder.id}`)
+    } catch (err: any) {
+      console.warn("Backend API order placement failed; using local fallback:", err)
+      const orderId = `ORD-${Math.floor(Math.random() * 9000 + 1000)}`
+      const gstPct = restaurant.gstPercentage || 5
+      const totalVal = total(gstPct)
+      const gstVal = gstAmount(gstPct)
+
+      const fallbackOrder: Order = {
+        id: orderId,
+        restaurantId: restaurant.id,
+        tableNumber: tableId,
+        items: orderItems,
+        totalAmount: totalVal,
+        gstAmount: gstVal,
+        paymentStatus: paymentMethod === "UPI_INSTANT" ? "PAID" : "PENDING",
+        paymentMethod,
+        customerPhone: mobile,
+        orderStatus: "RECEIVED",
+        createdAt: new Date(),
+      }
+
+      placeOrder(fallbackOrder)
+      clearCart()
+      setShowCheckout(false)
+      navigate(`/r/${restaurantSlug}/order/${orderId}`)
     }
-
-    // 1. Set in diner tracking store (persisted to localStorage)
-    placeOrder(newOrder)
-
-    // 2. Dispatch live to KDS queue
-    useKdsStore.getState().addTicket(newOrder)
-
-    // 3. Update Admin live orders & table state
-    useAdminStore.getState().addOrder(newOrder)
-    const matchedTable = useAdminStore.getState().tableByNumber(tableId)
-    if (matchedTable) {
-      useAdminStore.getState().updateTableStatus(matchedTable.id, "PREPPING")
-    }
-
-    // 4. Reset cart & navigate
-    clearCart()
-    setShowCheckout(false)
-    navigate(`/r/${restaurantSlug}/order/${orderId}`)
   }
 
   // Active in-flight order tracker banner
@@ -202,14 +251,16 @@ export function DinerMenuPage() {
           </div>
         )}
 
-        <CategoryNav
-          categories={MOCK_CATEGORIES}
-          activeId={activeCategoryId}
-          onChange={(id) => {
-            setActiveCategoryId(id)
-            if (searchQuery) setSearchQuery("")
-          }}
-        />
+        {categories.length > 0 && (
+          <CategoryNav
+            categories={categories}
+            activeId={activeCategoryId}
+            onChange={(id) => {
+              setActiveCategoryId(id)
+              if (searchQuery) setSearchQuery("")
+            }}
+          />
+        )}
 
         {/* Instant In-Menu Search Bar */}
         <div className="px-4 pt-3 pb-1">
@@ -246,7 +297,12 @@ export function DinerMenuPage() {
 
         {/* Menu list */}
         <div className="px-4 py-3 pb-32 space-y-4">
-          {activeCategoryId === "all" && !searchQuery && groupedItems ? (
+          {isLoading && menuItems.length === 0 ? (
+            <div className="py-20 text-center space-y-2">
+              <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mx-auto" />
+              <p className="text-xs text-zinc-500">Loading fresh menu from kitchen...</p>
+            </div>
+          ) : activeCategoryId === "all" && !searchQuery && groupedItems ? (
             Object.entries(groupedItems).map(([category, items]) => (
               <section key={category}>
                 <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 px-0.5">
@@ -277,7 +333,7 @@ export function DinerMenuPage() {
             </div>
           )}
 
-          {filteredItems.length === 0 && (
+          {!isLoading && filteredItems.length === 0 && (
             <div className="text-center py-16">
               <p className="text-4xl mb-3">🍽️</p>
               <p className="text-zinc-300 font-semibold">No dishes found</p>

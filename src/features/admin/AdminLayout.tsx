@@ -26,7 +26,7 @@ import {
   User,
 } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
@@ -157,6 +157,10 @@ function AdminSidebarContent() {
 }
 
 export function AdminLayout() {
+  useEffect(() => {
+    useAdminStore.getState().fetchDashboardData()
+  }, [])
+
   return (
     <SidebarProvider>
       <Sidebar>

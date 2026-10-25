@@ -14,7 +14,10 @@ function useLiveClock() {
 }
 
 export function KDSTopBar() {
-  const { soundEnabled, setSoundEnabled, wakeLockActive, setWakeLockActive } = useKdsStore()
+  const soundEnabled = useKdsStore((s) => s.soundEnabled)
+  const setSoundEnabled = useKdsStore((s) => s.setSoundEnabled)
+  const wakeLockActive = useKdsStore((s) => s.wakeLockActive)
+  const setWakeLockActive = useKdsStore((s) => s.setWakeLockActive)
   const time = useLiveClock()
 
   const timeStr = time.toLocaleTimeString("en-IN", {

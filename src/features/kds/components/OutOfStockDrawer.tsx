@@ -3,7 +3,6 @@ import { Drawer, DrawerHeader, DrawerTitle, DrawerContent } from "@/components/u
 import { Switch } from "@/components/ui/switch"
 import { useKdsStore } from "@/stores/useKdsStore"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { CATEGORY_NAME_MAP } from "@/data/mockData"
 import { cn } from "@/lib/utils"
 
 interface OutOfStockDrawerProps {
@@ -12,8 +11,10 @@ interface OutOfStockDrawerProps {
 }
 
 export function OutOfStockDrawer({ open, onClose }: OutOfStockDrawerProps) {
-  const { outOfStockIds, toggleOutOfStock } = useKdsStore()
+  const outOfStockIds = useKdsStore((s) => s.outOfStockIds)
+  const toggleOutOfStock = useKdsStore((s) => s.toggleOutOfStock)
   const menuItems = useAdminStore((s) => s.menuItems)
+  const categoryNameMap = useAdminStore((s) => s.categoryNameMap)
 
   return (
     <Drawer open={open} onClose={onClose} className="max-h-[80vh]">
@@ -39,7 +40,7 @@ export function OutOfStockDrawer({ open, onClose }: OutOfStockDrawerProps) {
         <div className="space-y-1">
           {menuItems.map((item) => {
             const is86d = outOfStockIds.has(item.id)
-            const catName = CATEGORY_NAME_MAP[item.categoryId] || item.categoryId
+            const catName = categoryNameMap[item.categoryId] || item.categoryId
 
             return (
               <div
@@ -58,14 +59,14 @@ export function OutOfStockDrawer({ open, onClose }: OutOfStockDrawerProps) {
                     <p className="text-xs text-zinc-500">{catName}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-2">
-                  {is86d && (
-                    <span className="text-xs font-bold text-rose-400 uppercase tracking-wide">86'd</span>
-                  )}
+                  <span className={cn("text-xs font-semibold", is86d ? "text-rose-400" : "text-zinc-500")}>
+                    {is86d ? "86'd" : "In Stock"}
+                  </span>
                   <Switch
-                    checked={is86d}
+                    checked={!is86d}
                     onCheckedChange={() => toggleOutOfStock(item.id)}
-                    className={is86d ? "data-[state=checked]:bg-rose-600" : ""}
                   />
                 </div>
               </div>

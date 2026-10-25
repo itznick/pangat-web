@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router"
 import {
   CheckCircle2,
@@ -15,6 +15,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useOrderTrackingStore } from "@/stores/useCartStore"
+import { api } from "@/lib/api"
+import { getSocket, joinOrderRoom } from "@/lib/socket"
 import type { OrderStatus } from "@/types/domain"
 
 interface OrderTrackingViewProps {
@@ -57,6 +59,71 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
   const payOnlineUpi = useOrderTrackingStore((s) => s.payOnlineUpi)
   const submitFeedback = useOrderTrackingStore((s) => s.submitFeedback)
   const navigate = useNavigate()
+
+  // Real-time socket updates for customer tracking
+  useEffect(() => {
+    if (!order?.id) return
+    joinOrderRoom(order.id)
+    const socket = getSocket()
+
+    const onStatus = ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
+      if (orderId === order.id) {
+        useOrderTrackingStore.setState((s) =>
+          s.order ? { order: { ...s.order, orderStatus: status } } : s
+        )
+      }
+    }
+
+    const onPaid = ({ orderId }: { orderId: string }) => {
+      if (orderId === order.id) {
+        useOrderTrackingStore.setState((s) =>
+          s.order
+            ? {
+                order: {
+                  ...s.order,
+                  paymentStatus: "PAID",
+                  paymentMethod: "UPI_INSTANT",
+                },
+              }
+            : s
+        )
+      }
+    }
+
+    socket.on("order:status", onStatus)
+    socket.on("order:paid", onPaid)
+
+    return () => {
+      socket.off("order:status", onStatus)
+      socket.off("order:paid", onPaid)
+    }
+  }, [order?.id])
+
+  const handleAdvanceStatus = async () => {
+    advanceStatus()
+    if (!order?.id) return
+    const progression: OrderStatus[] = ["RECEIVED", "PREPARING", "READY", "COMPLETED"]
+    const idx = progression.indexOf(order.orderStatus)
+    if (idx < progression.length - 1) {
+      const nextStatus = progression[idx + 1]
+      try {
+        await api.orders.updateStatus(order.id, nextStatus)
+      } catch (err) {
+        console.error("Failed to advance order status via API:", err)
+      }
+    }
+  }
+
+  const handlePayOnlineUpi = async () => {
+    payOnlineUpi()
+    if (order?.id) {
+      try {
+        await api.orders.markPaid(order.id)
+      } catch (err) {
+        console.error("Failed to mark paid via API:", err)
+      }
+    }
+  }
 
   // Local state for 1-tap feedback
   const [selectedRating, setSelectedRating] = useState<number>(5)
@@ -132,7 +199,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
             </div>
             {currentStatus !== "COMPLETED" && (
               <button
-                onClick={advanceStatus}
+                onClick={handleAdvanceStatus}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs font-semibold text-zinc-300 hover:text-emerald-400 hover:border-emerald-500/50 transition-colors"
                 title="Simulate status progression"
               >
@@ -343,7 +410,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
               Your order is being prepared. You can pay via Cash, Card, or Counter QR before leaving, or clear it instantly from your seat:
             </p>
             <button
-              onClick={() => payOnlineUpi()}
+              onClick={handlePayOnlineUpi}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
             >
               <Zap className="h-3.5 w-3.5" />

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { useParams } from "react-router"
 import { AlertTriangle, LayoutGrid, BellRing } from "lucide-react"
 import { KDSTopBar } from "./components/KDSTopBar"
 import { KDSTicketCard } from "./components/KDSTicketCard"
@@ -7,6 +8,7 @@ import { useKdsStore } from "@/stores/useKdsStore"
 import { Button } from "@/components/ui/button"
 
 export function KDSPage() {
+  const { restaurantSlug = "pangat" } = useParams<{ restaurantSlug: string }>()
   const [showOutOfStock, setShowOutOfStock] = useState(false)
   const [showChimeToast, setShowChimeToast] = useState(false)
 
@@ -15,6 +17,11 @@ export function KDSPage() {
   const archiveTicket = useKdsStore((s) => s.archiveTicket)
   const chimeCount = useKdsStore((s) => s.chimeCount)
   const soundEnabled = useKdsStore((s) => s.soundEnabled)
+
+  // Fetch initial live tickets from API & connect socket
+  useEffect(() => {
+    useKdsStore.getState().fetchTickets(restaurantSlug)
+  }, [restaurantSlug])
 
   // Listen for chime triggers
   useEffect(() => {
@@ -25,15 +32,15 @@ export function KDSPage() {
     }
   }, [chimeCount, soundEnabled])
 
-  const newTickets = tickets.filter((t) => t.orderStatus === "RECEIVED")
-  const inPrepTickets = tickets.filter((t) => t.orderStatus === "PREPARING")
-  const readyTickets = tickets.filter((t) => t.orderStatus === "READY")
+  const newTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "RECEIVED"), [tickets])
+  const inPrepTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "PREPARING"), [tickets])
+  const readyTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "READY"), [tickets])
 
-  const columns = [
+  const columns = useMemo(() => [
     { label: "New Orders", count: newTickets.length, tickets: newTickets, color: "text-blue-400", dotColor: "bg-blue-500" },
     { label: "In Prep", count: inPrepTickets.length, tickets: inPrepTickets, color: "text-amber-400", dotColor: "bg-amber-500" },
     { label: "Ready for Pickup", count: readyTickets.length, tickets: readyTickets, color: "text-emerald-400", dotColor: "bg-emerald-500" },
-  ]
+  ], [newTickets, inPrepTickets, readyTickets])
 
   return (
     <div className="h-screen flex flex-col bg-zinc-950 overflow-hidden relative">

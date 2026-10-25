@@ -1,3 +1,4 @@
+import { useState, useCallback, useMemo } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,7 +7,17 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { useAdminStore } from "@/stores/useAdminStore"
+import { useKdsStore } from "@/stores/useKdsStore"
+import { api } from "@/lib/api"
 import {
   TrendingUp,
   Users,
@@ -14,8 +25,24 @@ import {
   FileStack,
   ArrowUpRight,
   IndianRupee,
+  Plus,
+  Package,
+  CheckCircle2,
+  XCircle,
+  X,
+  Hash,
+  Clock,
+  Zap,
+  Layers,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { TableDrawer } from "../components/dashboard/TableDrawer"
+import { KitchenSlaWidget } from "../components/dashboard/KitchenSlaWidget"
+import { PaymentBreakdownWidget } from "../components/dashboard/PaymentBreakdownWidget"
+import { ServiceRequestsWidget } from "../components/dashboard/ServiceRequestsWidget"
+import type { Table, Order } from "@/types/domain"
+
+// ── Metric Card ────────────────────────────────────────────────────────────────
 
 interface MetricCardProps {
   title: string
@@ -45,12 +72,14 @@ function MetricCard({
           <Icon className={cn("h-5 w-5", accentClass)} />
         </div>
         {trend !== undefined && (
-          <div className={cn(
-            "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
-            trend >= 0
-              ? "bg-emerald-500/10 text-emerald-400"
-              : "bg-rose-500/10 text-rose-400"
-          )}>
+          <div
+            className={cn(
+              "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
+              trend >= 0
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "bg-rose-500/10 text-rose-400"
+            )}
+          >
             <ArrowUpRight className={cn("h-3 w-3", trend < 0 && "rotate-90")} />
             {Math.abs(trend)}%
           </div>
@@ -65,17 +94,350 @@ function MetricCard({
   )
 }
 
+// ── Quick Walk-in Dialog ───────────────────────────────────────────────────────
+
+interface WalkInDialogProps {
+  open: boolean
+  onClose: () => void
+}
+
+function WalkInDialog({ open, onClose }: WalkInDialogProps) {
+  const tables = useAdminStore((s) => s.tables)
+  const menuItems = useAdminStore((s) => s.menuItems)
+  const [selectedTable, setSelectedTable] = useState<string>("")
+  const [cart, setCart] = useState<Record<string, number>>({})
+
+  const vacantTables = tables.filter((t) => t.status === "VACANT")
+
+  const cartTotal = useMemo(() => {
+    return Object.entries(cart).reduce((sum, [id, qty]) => {
+      const item = menuItems.find((m) => m.id === id)
+      return sum + (item ? item.price * qty : 0)
+    }, 0)
+  }, [cart, menuItems])
+
+  const itemCount = Object.values(cart).reduce((s, q) => s + q, 0)
+
+  const adjustCart = (id: string, delta: number) => {
+    setCart((prev) => {
+      const next = { ...prev, [id]: Math.max(0, (prev[id] ?? 0) + delta) }
+      if (next[id] === 0) delete next[id]
+      return next
+    })
+  }
+
+  const handleConfirm = async () => {
+    const targetTable = tables.find((t) => t.id === selectedTable)
+    if (!targetTable) return
+
+    const orderItems = Object.entries(cart).map(([id, qty]) => {
+      const item = menuItems.find((m) => m.id === id)!
+      return {
+        menuItemId: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: qty,
+      }
+    })
+
+    try {
+      const created = await api.orders.create(
+        {
+          restaurantSlug: 'pangat',
+          tableNumber: targetTable.tableNumber,
+          paymentMethod: 'PAY_AT_COUNTER' as any,
+          items: orderItems,
+        },
+        `idemp-walkin-${Date.now()}`
+      )
+      useAdminStore.getState().addOrder(created)
+      useAdminStore.getState().updateTableStatus(targetTable.id, 'PREPPING')
+    } catch (err) {
+      console.error('Failed to place walk-in order:', err)
+    }
+
+    onClose()
+    setSelectedTable("")
+    setCart({})
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg bg-zinc-900 border border-zinc-800">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+              <Plus className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold text-zinc-100">
+                Quick Walk-in Order
+              </DialogTitle>
+              <DialogDescription className="text-xs text-zinc-400">
+                Select a vacant table, add items, and fire to kitchen.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-2">
+          {/* Table selector */}
+          <div>
+            <label className="text-xs font-semibold text-zinc-400 mb-2 block">
+              Select Table
+            </label>
+            <div className="grid grid-cols-6 gap-2">
+              {vacantTables.length === 0 ? (
+                <p className="col-span-6 text-xs text-zinc-500 text-center py-4">
+                  No vacant tables available.
+                </p>
+              ) : (
+                vacantTables.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedTable(t.id)}
+                    className={cn(
+                      "h-10 rounded-xl border text-sm font-bold transition-all",
+                      selectedTable === t.id
+                        ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-900/40"
+                        : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-600"
+                    )}
+                  >
+                    {t.tableNumber}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Menu quick-add */}
+          <div>
+            <label className="text-xs font-semibold text-zinc-400 mb-2 block">
+              Add Items
+            </label>
+            <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
+              {menuItems
+                .filter((m) => m.isAvailable)
+                .slice(0, 12)
+                .map((item) => {
+                  const qty = cart[item.id] ?? 0
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between py-2 border-b border-zinc-800/60"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-zinc-200 leading-snug">{item.name}</p>
+                        <p className="text-[11px] text-zinc-500">₹{item.price}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {qty > 0 && (
+                          <>
+                            <button
+                              onClick={() => adjustCart(item.id, -1)}
+                              className="w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300 hover:bg-zinc-700 transition-colors text-sm font-bold"
+                            >
+                              −
+                            </button>
+                            <span className="text-sm font-bold text-zinc-100 w-4 text-center">{qty}</span>
+                          </>
+                        )}
+                        <button
+                          onClick={() => adjustCart(item.id, 1)}
+                          className={cn(
+                            "w-6 h-6 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors",
+                            qty > 0
+                              ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30"
+                              : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700"
+                          )}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+
+          {/* Cart summary */}
+          {itemCount > 0 && (
+            <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+              <span className="text-xs font-semibold text-emerald-300">
+                {itemCount} item{itemCount !== 1 ? "s" : ""} in order
+              </span>
+              <span className="text-sm font-black text-emerald-400">₹{cartTotal}</span>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={!selectedTable || itemCount === 0}
+            className="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white border border-emerald-500/50 transition-colors shadow-lg shadow-emerald-900/30 flex items-center gap-2"
+          >
+            <Zap className="h-3.5 w-3.5" />
+            Fire to Kitchen
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── 86 Quick Toggle Popover ────────────────────────────────────────────────────
+
+interface StockTogglePanelProps {
+  open: boolean
+  onClose: () => void
+}
+
+function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
+  const menuItems = useAdminStore((s) => s.menuItems)
+  const outOfStockIds = useKdsStore((s) => s.outOfStockIds)
+  const toggleOutOfStock = useKdsStore((s) => s.toggleOutOfStock)
+  const toggleMenuAvailability = useAdminStore((s) => s.toggleMenuAvailability)
+
+  const handleToggle = (id: string) => {
+    toggleOutOfStock(id)
+    toggleMenuAvailability(id)
+  }
+
+  return (
+    <>
+      <div
+        className={cn(
+          "fixed inset-0 z-40 transition-opacity duration-200",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+      />
+      <div
+        className={cn(
+          "absolute top-full right-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-200",
+          open
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 -translate-y-2 pointer-events-none"
+        )}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+          <div>
+            <p className="text-xs font-bold text-zinc-100">86 Quick Toggle</p>
+            <p className="text-[11px] text-zinc-500">Mark items in/out of stock instantly</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <div className="max-h-72 overflow-y-auto p-2 space-y-1">
+          {menuItems.map((item) => {
+            const is86 = outOfStockIds.has(item.id)
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleToggle(item.id)}
+                className={cn(
+                  "w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-left transition-all",
+                  is86
+                    ? "bg-rose-950/30 border-rose-500/40 hover:border-rose-500/60"
+                    : "bg-zinc-800/40 border-zinc-700/60 hover:border-zinc-600"
+                )}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-zinc-200 truncate">{item.name}</p>
+                  <p className="text-[10px] text-zinc-500">₹{item.price}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded border",
+                      is86
+                        ? "text-rose-300 bg-rose-500/20 border-rose-500/30"
+                        : "text-emerald-300 bg-emerald-500/20 border-emerald-500/30"
+                    )}
+                  >
+                    {is86 ? "86'd" : "In Stock"}
+                  </span>
+                  {is86 ? (
+                    <XCircle className="h-4 w-4 text-rose-400" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Main Dashboard Page ────────────────────────────────────────────────────────
+
 export function AdminDashboardPage() {
   const todaySales = useAdminStore((s) => s.todaySales)
   const tables = useAdminStore((s) => s.tables)
+  const activeOrders = useAdminStore((s) => s.activeOrders)
 
-  const occupiedCount = tables.filter((t) => t.status === "OCCUPIED" || t.status === "PREPPING" || t.status === "SERVED").length
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null)
+  const [showWalkIn, setShowWalkIn] = useState(false)
+  const [showStockToggle, setShowStockToggle] = useState(false)
+
+  const occupiedCount = tables.filter(
+    (t) => t.status === "OCCUPIED" || t.status === "PREPPING" || t.status === "SERVED"
+  ).length
   const vacantCount = tables.filter((t) => t.status === "VACANT").length
+
+  // Helper: get active order for a table (most recent non-completed)
+  const getTableOrder = useCallback(
+    (tableNumber: string): Order | undefined =>
+      activeOrders.find(
+        (o) => o.tableNumber === tableNumber && o.orderStatus !== "COMPLETED"
+      ),
+    [activeOrders]
+  )
+
+  // Elapsed time from order creation
+  const elapsedLabel = (createdAt: Date): string => {
+    const mins = Math.round((Date.now() - new Date(createdAt).getTime()) / 60_000)
+    return mins < 1 ? "<1m" : `${mins}m`
+  }
+
+  // Last 5 orders for the Live Order Stream
+  const recentOrders = useMemo(
+    () => [...activeOrders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
+    [activeOrders]
+  )
+
+  const statusColors = {
+    VACANT:   "bg-zinc-800/80 border-zinc-700 text-zinc-400",
+    OCCUPIED: "bg-rose-500/20 border-rose-500/50 text-rose-300",
+    PREPPING: "bg-amber-500/20 border-amber-500/50 text-amber-300",
+    SERVED:   "bg-emerald-500/20 border-emerald-500/50 text-emerald-300",
+  }
+
+  const orderStatusBadge = {
+    RECEIVED:  "bg-blue-500/20 border-blue-500/30 text-blue-300",
+    PREPARING: "bg-amber-500/20 border-amber-500/30 text-amber-300",
+    READY:     "bg-emerald-500/20 border-emerald-500/30 text-emerald-300",
+    COMPLETED: "bg-zinc-700/60 border-zinc-600 text-zinc-400",
+  }
 
   return (
     <div className="flex flex-col h-full overflow-auto bg-zinc-950">
-      {/* Page header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800">
+      {/* ── Page Header ───────────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 gap-4">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -88,19 +450,53 @@ export function AdminDashboardPage() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-100 mt-1">Live Dashboard</h1>
+          <h1 className="text-xl font-bold text-zinc-100 mt-1">Live Cockpit</h1>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-          </span>
-          <span className="text-xs font-semibold text-emerald-400">Live</span>
+
+        {/* Header Actions */}
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          {/* Live badge */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="text-xs font-semibold text-emerald-400">Live</span>
+          </div>
+
+          {/* 86 Quick Toggle */}
+          <div className="relative">
+            <button
+              onClick={() => setShowStockToggle((p) => !p)}
+              className={cn(
+                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all",
+                showStockToggle
+                  ? "bg-rose-600/20 border-rose-500/60 text-rose-300"
+                  : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:text-zinc-100"
+              )}
+            >
+              <Package className="h-3.5 w-3.5" />
+              86 Toggle
+            </button>
+            <StockTogglePanel
+              open={showStockToggle}
+              onClose={() => setShowStockToggle(false)}
+            />
+          </div>
+
+          {/* Quick Walk-in Order */}
+          <button
+            onClick={() => setShowWalkIn(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white border border-emerald-500/50 shadow-lg shadow-emerald-900/30 transition-all"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Quick Walk-in Order
+          </button>
         </div>
       </div>
 
       <div className="flex-1 p-6 space-y-6">
-        {/* Metric cards */}
+        {/* ── Metric Cards ──────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Today's Gross Revenue"
@@ -143,47 +539,168 @@ export function AdminDashboardPage() {
           />
         </div>
 
-        {/* Table Heatmap */}
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-zinc-100">Table Heatmap</h2>
-            <div className="flex items-center gap-4 text-xs text-zinc-500">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-zinc-700" />
-                Vacant ({vacantCount})
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-rose-500/70" />
-                Occupied / Active ({occupiedCount})
-              </span>
+        {/* ── Split Layout ──────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-5">
+          {/* ── Left Column (60%) ─────────────────────────────────────────────── */}
+          <div className="space-y-5 min-w-0">
+            {/* Interactive Table Heatmap */}
+            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-sm font-bold text-zinc-100">Floor Table Heatmap</h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">Tap any table to view active order & actions</p>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-zinc-500">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded bg-zinc-700" />
+                    Vacant ({vacantCount})
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded bg-rose-500/70" />
+                    Active ({occupiedCount})
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-6 gap-2.5">
+                {tables.map((table) => {
+                  const order = getTableOrder(table.tableNumber)
+                  const elapsed = order ? elapsedLabel(order.createdAt) : null
+                  const unbilled =
+                    order && order.paymentStatus === "PENDING"
+                      ? order.totalAmount
+                      : null
+                  const isActive = table.status !== "VACANT"
+
+                  return (
+                    <button
+                      key={table.id}
+                      onClick={() => isActive && setSelectedTable(table)}
+                      className={cn(
+                        "rounded-xl border p-2.5 flex flex-col items-center gap-1 transition-all duration-200",
+                        statusColors[table.status],
+                        isActive
+                          ? "hover:scale-105 hover:shadow-lg cursor-pointer ring-0 hover:ring-1 hover:ring-white/10"
+                          : "cursor-default opacity-60"
+                      )}
+                      title={isActive ? `Table ${table.tableNumber} — click to view order` : undefined}
+                    >
+                      <span className="text-sm font-black leading-none">
+                        {table.tableNumber}
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide opacity-80">
+                        {table.status}
+                      </span>
+                      {elapsed && (
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                          <Clock className="h-2.5 w-2.5 opacity-70" />
+                          <span className="text-[9px] font-semibold">{elapsed}</span>
+                        </div>
+                      )}
+                      {unbilled != null && (
+                        <span className="text-[9px] font-bold opacity-90 mt-0.5">
+                          ₹{Math.round(unbilled)}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Live Order Stream */}
+            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+                  <Layers className="h-3.5 w-3.5 text-violet-400" />
+                </div>
+                <div>
+                  <h2 className="text-xs font-bold text-zinc-100">Live Order Stream</h2>
+                  <p className="text-[11px] text-zinc-500">Most recent 5 transactions</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {recentOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/50 border border-zinc-700/60 hover:border-zinc-700 transition-colors"
+                  >
+                    {/* Table badge */}
+                    <div className="w-9 h-9 rounded-xl bg-zinc-800 border border-zinc-700 flex flex-col items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] text-zinc-500 leading-none">T</span>
+                      <span className="text-sm font-black text-zinc-200 leading-tight">
+                        {order.tableNumber}
+                      </span>
+                    </div>
+
+                    {/* Order info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-zinc-200">
+                          #{order.id.slice(-4).toUpperCase()}
+                        </span>
+                        <span
+                          className={cn(
+                            "px-1.5 py-0.5 rounded text-[10px] font-bold border",
+                            orderStatusBadge[order.orderStatus]
+                          )}
+                        >
+                          {order.orderStatus}
+                        </span>
+                        {order.paymentStatus === "PAID" ? (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border bg-emerald-500/15 border-emerald-500/30 text-emerald-300">
+                            Paid
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border bg-amber-500/15 border-amber-500/30 text-amber-300">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
+                        {order.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
+                      </p>
+                    </div>
+
+                    {/* Amount + time */}
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-sm font-bold text-zinc-100">
+                        ₹{order.totalAmount.toFixed(0)}
+                      </p>
+                      <p className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-0.5 justify-end">
+                        <Clock className="h-2.5 w-2.5" />
+                        {elapsedLabel(order.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                {recentOrders.length === 0 && (
+                  <div className="text-center py-8">
+                    <Hash className="h-6 w-6 text-zinc-700 mx-auto mb-2" />
+                    <p className="text-xs text-zinc-500">No orders yet today</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-2.5">
-            {tables.map((table) => {
-              const statusColors = {
-                VACANT: "bg-zinc-800 border-zinc-700 text-zinc-500",
-                OCCUPIED: "bg-rose-500/20 border-rose-500/40 text-rose-300",
-                PREPPING: "bg-amber-500/20 border-amber-500/40 text-amber-300",
-                SERVED: "bg-emerald-500/20 border-emerald-500/40 text-emerald-300",
-              }
-
-              return (
-                <div
-                  key={table.id}
-                  className={cn(
-                    "rounded-xl border p-2.5 flex flex-col items-center gap-1 transition-all hover:scale-105 cursor-pointer",
-                    statusColors[table.status]
-                  )}
-                >
-                  <span className="text-sm font-black">{table.tableNumber}</span>
-                  <span className="text-[10px] font-semibold uppercase">{table.status}</span>
-                </div>
-              )
-            })}
+          {/* ── Right Column (40%) ─────────────────────────────────────────────── */}
+          <div className="space-y-5">
+            <KitchenSlaWidget />
+            <PaymentBreakdownWidget />
+            <ServiceRequestsWidget />
           </div>
         </div>
       </div>
+
+      {/* ── Overlays / Drawers ──────────────────────────────────────────────────── */}
+      <TableDrawer
+        table={selectedTable}
+        onClose={() => setSelectedTable(null)}
+      />
+      <WalkInDialog open={showWalkIn} onClose={() => setShowWalkIn(false)} />
     </div>
   )
 }

@@ -9,12 +9,13 @@ interface KDSTicketCardProps {
   onArchive: (ticketId: string) => void
 }
 
-function useElapsedTime(createdAt: Date): string {
+function useElapsedTime(createdAt: Date | string): string {
   const [elapsed, setElapsed] = useState("")
+  const createdTime = new Date(createdAt).getTime()
 
   useEffect(() => {
     const update = () => {
-      const ms = Date.now() - new Date(createdAt).getTime()
+      const ms = Date.now() - createdTime
       const secs = Math.floor(ms / 1000)
       const mins = Math.floor(secs / 60)
       const s = secs % 60
@@ -23,7 +24,7 @@ function useElapsedTime(createdAt: Date): string {
     update()
     const id = setInterval(update, 1000)
     return () => clearInterval(id)
-  }, [createdAt])
+  }, [createdTime])
 
   return elapsed
 }

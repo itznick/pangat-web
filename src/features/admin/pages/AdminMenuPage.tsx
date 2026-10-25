@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,16 +23,20 @@ import { Select } from "@/components/ui/select"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { Search, Plus, Pencil, Leaf, Drumstick, Star, Filter } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { MOCK_CATEGORIES, CATEGORY_NAME_MAP } from "@/data/mockData"
 import type { MenuItem } from "@/types/domain"
-
-const CATEGORY_OPTS = MOCK_CATEGORIES.map((c) => ({ value: c.id, label: c.name }))
 
 export function AdminMenuPage() {
   const menuItems = useAdminStore((s) => s.menuItems)
+  const categories = useAdminStore((s) => s.categories)
+  const categoryNameMap = useAdminStore((s) => s.categoryNameMap)
   const toggleMenuAvailability = useAdminStore((s) => s.toggleMenuAvailability)
   const updateMenuPrice = useAdminStore((s) => s.updateMenuPrice)
   const addMenuItem = useAdminStore((s) => s.addMenuItem)
+
+  const categoryOpts = useMemo(
+    () => categories.map((c) => ({ value: c.id, label: c.name })),
+    [categories]
+  )
 
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
@@ -130,7 +134,7 @@ export function AdminMenuPage() {
             <Select
               value={categoryFilter}
               onValueChange={(v) => setCategoryFilter(v)}
-              options={[{ value: "all", label: "All Categories" }, ...CATEGORY_OPTS]}
+              options={[{ value: "all", label: "All Categories" }, ...categoryOpts]}
               className="min-w-[180px]"
             />
           </div>
@@ -156,7 +160,7 @@ export function AdminMenuPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((item) => {
-                const catName = CATEGORY_NAME_MAP[item.categoryId] || item.categoryId
+                const catName = categoryNameMap[item.categoryId] || item.categoryId
 
                 return (
                   <TableRow key={item.id}>
@@ -305,7 +309,7 @@ export function AdminMenuPage() {
                 <Select
                   value={newDish.categoryId}
                   onValueChange={(v) => setNewDish({ ...newDish, categoryId: v })}
-                  options={CATEGORY_OPTS}
+                  options={categoryOpts}
                 />
               </div>
             </div>
