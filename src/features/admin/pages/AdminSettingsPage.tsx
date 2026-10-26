@@ -12,20 +12,23 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { Building2, FileText, Volume2, Link as LinkIcon, Save, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
+import { useAuthStore } from "@/stores/useAuthStore"
+import { Building2, FileText, Volume2, Save, CheckCircle2, AlertCircle, Loader2, Lock } from "lucide-react"
 
 export function AdminSettingsPage() {
   const restaurant = useAdminStore((s) => s.restaurant)
   const updateSettings = useAdminStore((s) => s.updateSettings)
+  const user = useAuthStore((s) => s.user)
+  const isSuperOwner = !user?.role || user?.role === "SUPER_OWNER"
 
   const [form, setForm] = useState({
     name: restaurant.name || "",
     upiVpa: restaurant.upiVpa || "",
-    phone: restaurant.phone || "+91 98200 12345",
-    email: restaurant.email || "bandra@pangat.in",
-    gstin: restaurant.gstin || "27AADCB2230M1ZT",
+    phone: restaurant.phone || "",
+    email: restaurant.email || "",
+    gstin: restaurant.gstin || "",
     gstPercentage: restaurant.gstPercentage ?? 5,
-    hsnSac: restaurant.hsnSac || "9963",
+    hsnSac: restaurant.hsnSac || "",
     kdsNewOrderAlert: restaurant.kdsNewOrderAlert ?? true,
     orderReadyChime: restaurant.orderReadyChime ?? true,
     outOfStockNotification: restaurant.outOfStockNotification ?? true,
@@ -39,11 +42,11 @@ export function AdminSettingsPage() {
       setForm({
         name: restaurant.name || "",
         upiVpa: restaurant.upiVpa || "",
-        phone: restaurant.phone || "+91 98200 12345",
-        email: restaurant.email || "bandra@pangat.in",
-        gstin: restaurant.gstin || "27AADCB2230M1ZT",
+        phone: restaurant.phone || "",
+        email: restaurant.email || "",
+        gstin: restaurant.gstin || "",
         gstPercentage: restaurant.gstPercentage ?? 5,
-        hsnSac: restaurant.hsnSac || "9963",
+        hsnSac: restaurant.hsnSac || "",
         kdsNewOrderAlert: restaurant.kdsNewOrderAlert ?? true,
         orderReadyChime: restaurant.orderReadyChime ?? true,
         outOfStockNotification: restaurant.outOfStockNotification ?? true,
@@ -120,7 +123,7 @@ export function AdminSettingsPage() {
         <SettingsSection
           icon={<Building2 className="h-4 w-4 text-emerald-400" />}
           title="Outlet Information"
-          description="Basic details and NestJS entity configuration"
+          description="Outlet identity, direct UPI settlement VPA, and contact details"
         >
           <div className="space-y-3">
             <SettingsField label="Outlet Name">
@@ -130,11 +133,19 @@ export function AdminSettingsPage() {
               />
             </SettingsField>
             <SettingsField label="UPI VPA (QR Payment)">
-              <Input
-                value={form.upiVpa}
-                onChange={(e) => setForm({ ...form, upiVpa: e.target.value })}
-                className="font-mono"
-              />
+              <div className="relative">
+                <Input
+                  value={form.upiVpa}
+                  disabled={!isSuperOwner}
+                  onChange={(e) => setForm({ ...form, upiVpa: e.target.value })}
+                  className={!isSuperOwner ? "font-mono bg-zinc-900/50 text-zinc-400 cursor-not-allowed pr-24" : "font-mono"}
+                />
+                {!isSuperOwner && (
+                  <span className="absolute right-2 top-2 text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" /> Super Owner Only
+                  </span>
+                )}
+              </div>
             </SettingsField>
             <div className="grid grid-cols-2 gap-3">
               <SettingsField label="Phone">
@@ -161,22 +172,29 @@ export function AdminSettingsPage() {
         <SettingsSection
           icon={<FileText className="h-4 w-4 text-blue-400" />}
           title="GST Configuration"
-          description="Tax computation settings applied transparently across orders"
+          description={
+            isSuperOwner
+              ? "Tax computation settings applied transparently across orders"
+              : "Tax computation settings (Restricted: view-only for Store Managers)"
+          }
         >
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <SettingsField label="GSTIN">
                 <Input
                   value={form.gstin}
+                  disabled={!isSuperOwner}
                   onChange={(e) => setForm({ ...form, gstin: e.target.value })}
-                  className="font-mono"
+                  className={!isSuperOwner ? "font-mono bg-zinc-900/50 text-zinc-400 cursor-not-allowed" : "font-mono"}
                 />
               </SettingsField>
               <SettingsField label="GST Rate (%)">
                 <Input
                   type="number"
                   value={String(form.gstPercentage)}
+                  disabled={!isSuperOwner}
                   onChange={(e) => setForm({ ...form, gstPercentage: parseFloat(e.target.value) || 0 })}
+                  className={!isSuperOwner ? "bg-zinc-900/50 text-zinc-400 cursor-not-allowed" : ""}
                   min={0}
                   max={28}
                 />
@@ -185,8 +203,9 @@ export function AdminSettingsPage() {
             <SettingsField label="HSN / SAC Code">
               <Input
                 value={form.hsnSac}
+                disabled={!isSuperOwner}
                 onChange={(e) => setForm({ ...form, hsnSac: e.target.value })}
-                className="font-mono"
+                className={!isSuperOwner ? "font-mono bg-zinc-900/50 text-zinc-400 cursor-not-allowed" : "font-mono"}
               />
             </SettingsField>
           </div>
@@ -215,44 +234,10 @@ export function AdminSettingsPage() {
             />
             <SettingsToggle
               label="Out-of-Stock Notification"
-              description="Notify floor staff when kitchen 86's an item"
+              description="Notify floor staff when kitchen marks an item out of stock"
               checked={form.outOfStockNotification}
               onChange={(v) => setForm({ ...form, outOfStockNotification: v })}
             />
-          </div>
-        </SettingsSection>
-
-        <Separator />
-
-        {/* Staff Links */}
-        <SettingsSection
-          icon={<LinkIcon className="h-4 w-4 text-violet-400" />}
-          title="Live Screen URLs"
-          description="Direct access URLs for tablets, kitchen screens, and table QR codes"
-        >
-          <div className="space-y-2">
-            {[
-              { label: "KDS Screen", url: "/kds/pangat" },
-              { label: "Table 04 Mobile View", url: "/r/pangat/t/04" },
-              { label: "Admin Console", url: "/admin/dashboard" },
-            ].map(({ label, url }) => (
-              <div key={label} className="flex items-center gap-2">
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-zinc-400 mb-1">{label}</p>
-                  <div className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-2 border border-zinc-700">
-                    <span className="text-xs font-mono text-zinc-300 flex-1 truncate">{url}</span>
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold"
-                    >
-                      Open ↗
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </SettingsSection>
       </div>

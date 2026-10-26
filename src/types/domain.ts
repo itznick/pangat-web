@@ -6,15 +6,42 @@
 
 // ── Restaurant ────────────────────────────────────────────────────────────────
 
-export interface Restaurant {
+export type UserRole = 'PLATFORM_SUPER_ADMIN' | 'SUPER_OWNER' | 'STORE_MANAGER' | 'CHEF' | 'STEWARD'
+
+export interface Organization {
   id: string
   name: string
+  ownerId?: string
+  createdAt?: string
+  updatedAt?: string
+  outlets?: Restaurant[]
+}
+
+export interface StaffUser {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  isPlatformAdmin?: boolean
+  organizationId?: string
+  organizationName?: string
+  restaurantId?: string | null
+  restaurantSlug?: string
+  pinCode?: string
+}
+
+export interface Restaurant {
+  id: string
+  organizationId?: string
+  name: string
   slug: string
+  branchArea?: string
   /** UPI Virtual Payment Address, e.g. pangat.bandra@icici */
   upiVpa: string
   /** GST percentage applied at checkout, e.g. 5 */
   gstPercentage: number
   isVegOnly: boolean
+  isActive?: boolean
   gstin?: string | null
   hsnSac?: string
   phone?: string
@@ -119,4 +146,188 @@ export interface MenuCategory {
   id: string
   name: string
   sortOrder: number
+}
+
+// ── Multi-Tenant Onboarding Types ─────────────────────────────────────────────
+
+export interface OnboardPayload {
+  // Step 1: Brand & Super Owner
+  brandName: string
+  ownerFullName: string
+  mobileNumber: string
+  email: string
+  password: string
+
+  // Step 2: Outlet Details
+  outletName: string
+  branchArea?: string
+  slug: string
+  upiVpa: string
+  gstin?: string
+  gstPercentage?: number
+
+  // Step 3: Floor Batch Generator
+  indoorTableCount: number
+  outdoorTableCount: number
+
+  // Step 4: Starter Menu Choice
+  menuPreset: 'pune_cafe' | 'south_indian' | 'empty'
+
+  // Step 5: Team & Roles
+  teamMode: 'solo' | 'with_team'
+  storeManager?: {
+    name: string
+    email: string
+    password: string
+  }
+  kitchenPin?: string
+}
+
+export interface OnboardResponseData {
+  organization: Organization
+  superOwner: StaffUser
+  outlet: Restaurant
+  tables: Table[]
+  menuItemsCount: number
+  accessToken: string
+}
+
+// ── Lead Capture & Platform Admin Types ──────────────────────────────────────
+
+export type LeadStatus = 'NEW' | 'CONTACTED' | 'SCHEDULED' | 'ONBOARDED'
+
+export interface Lead {
+  id: string
+  name: string
+  restaurantName: string
+  phone: string
+  city: string
+  tableCount: string
+  status: LeadStatus
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PlatformMetrics {
+  totalOrganizations: number
+  totalOutlets: number
+  activeOutlets: number
+  totalOrders: number
+  systemGmv: number
+  totalLeads: number
+  newLeads: number
+  systemHealth: {
+    status: string
+    database: string
+    gateway: string
+    uptimeSeconds: number
+    timestamp: string
+  }
+}
+
+export interface ProvisionPayload {
+  brandName: string
+  ownerFullName: string
+  email: string
+  mobileNumber: string
+  password?: string
+  outletName: string
+  slug: string
+  branchArea?: string
+  upiVpa: string
+  gstin?: string
+  gstPercentage?: number
+  indoorTableCount?: number
+  outdoorTableCount?: number
+  menuPreset?: 'pune_cafe' | 'south_indian' | 'blank'
+  leadId?: string
+}
+
+export interface ProvisionResult {
+  success: boolean
+  message: string
+  organization: {
+    id: string
+    name: string
+  }
+  outlet: {
+    id: string
+    name: string
+    slug: string
+    branchArea?: string
+    upiVpa: string
+    phone?: string
+  }
+  ownerCredentials: {
+    name: string
+    email: string
+    temporaryPassword: string
+    loginUrl: string
+  }
+  batchTablesCreated: number
+  menuItemsSeeded: number
+  qrKitLink: string
+}
+
+export interface AdminOrganizationItem {
+  id: string
+  name: string
+  createdAt: string
+  owner: {
+    id: string | null
+    name: string
+    email: string
+    phone: string
+  }
+  outletsCount: number
+  activeOutletsCount: number
+  outlets: {
+    id: string
+    name: string
+    slug: string
+    branchArea?: string
+    isActive: boolean
+    upiVpa: string
+  }[]
+  totalGmv: number
+  totalOrders: number
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
+export interface AdminOutletItem {
+  id: string
+  name: string
+  slug: string
+  branchArea: string
+  phone: string
+  email: string
+  upiVpa: string
+  gstPercentage: number
+  isActive: boolean
+  organizationId: string
+  organizationName: string
+  tablesCount: number
+  activeOrdersCount: number
+  isOnline: boolean
+}
+
+export interface DetailedSystemHealth {
+  status: string
+  database: {
+    status: string
+    latencyMs: number
+    client: string
+  }
+  websocket: {
+    connectedClients: number
+    activeOutletRooms: string[]
+  }
+  server: {
+    uptimeSeconds: number
+    nodeVersion: string
+    memoryRssMb: number
+    memoryHeapUsedMb: number
+    timestamp: string
+  }
 }

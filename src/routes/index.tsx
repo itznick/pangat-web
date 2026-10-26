@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from "react-router"
 import { LandingPage } from "@/features/landing"
+import { LoginPage } from "@/features/auth/LoginPage"
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary"
+import { SuperAdminLayout, SuperAdminDashboardPage } from "@/features/super-admin"
 
 // Diner
 import { DinerMenuPage, DinerOrderTrackingPage } from "@/features/diner"
@@ -24,6 +26,35 @@ export const router = createBrowserRouter([
     path: "/",
     element: <LandingPage />,
     errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/onboarding",
+    element: <Navigate to="/?demo=true" replace />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/signup",
+    element: <Navigate to="/?demo=true" replace />,
+    errorElement: <RouteErrorBoundary />,
+  },
+
+  // ─── Super-Admin / Platform Operations Portal ────────────────────────────
+  {
+    path: "/super-admin",
+    element: <SuperAdminLayout />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <SuperAdminDashboardPage />,
+        errorElement: <RouteErrorBoundary />,
+      },
+    ],
   },
 
   // ─── Diner Flow ──────────────────────────────────────────────────────────

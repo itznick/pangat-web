@@ -10,6 +10,27 @@
     <title>Pangat (पंगत) | Zero-Hardware Table Ordering & Kitchen Orchestration</title>
     <meta name="description" content="Modern dining speed, rooted in timeless hospitality. Instant UPI payments, zero thermal printers, and live kitchen tracking for independent cafes and specialty coffee spots." />
     <meta name="theme-color" content="#059669" />
+    <script>
+      (function() {
+        try {
+          var isLanding = window.location.pathname === '/' || window.location.pathname === '';
+          if (isLanding) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+            return;
+          }
+          var saved = localStorage.getItem('pangat_theme');
+          var isDark = saved ? saved === 'dark' : !window.matchMedia('(prefers-color-scheme: light)').matches;
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

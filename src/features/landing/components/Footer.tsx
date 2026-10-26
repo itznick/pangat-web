@@ -247,21 +247,22 @@ export function Footer({ onOpenPilot }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="/kds/pangat"
+                  href="/login"
                   className="hover:text-amber-300 transition-colors font-semibold text-amber-400 flex items-center gap-1"
                 >
-                  <span>Kitchen Display (KDS)</span>
+                  <span>Owner Login</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </li>
               <li>
-                <a
-                  href="/r/pangat/t/04"
-                  className="hover:text-blue-300 transition-colors font-semibold text-blue-400 flex items-center gap-1"
+                <button
+                  type="button"
+                  onClick={onOpenPilot}
+                  className="hover:text-emerald-300 transition-colors font-semibold text-emerald-400 flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Table 04 Diner View</span>
+                  <span>Book a Free Demo</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+                </button>
               </li>
               <li>
                 <a

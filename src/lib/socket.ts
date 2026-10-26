@@ -1,7 +1,38 @@
 import { io, Socket } from 'socket.io-client'
 
-const rawWsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:4000'
-export const WS_BASE_URL = rawWsUrl.replace(/\/+$/, '')
+export function resolveWsBaseUrl(): string {
+  const envWs = import.meta.env.VITE_WS_URL?.trim();
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+
+    // If accessed via mobile phone or LAN IP (e.g. 192.168.x.x), route to host machine IP
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      if (envWs && (envWs.includes('localhost') || envWs.includes('127.0.0.1'))) {
+        return envWs
+          .replace(/\b(localhost|127\.0\.0\.1)\b/g, hostname)
+          .replace(/\/+$/, '');
+      }
+      if (!envWs) {
+        return `${protocol}//${hostname}:4000`;
+      }
+    }
+  }
+
+  if (envWs) {
+    return envWs.replace(/\/+$/, '');
+  }
+
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    const hostname = window.location.hostname;
+    return `${protocol}//${hostname}:4000`;
+  }
+
+  return 'http://localhost:4000';
+}
+
+export const WS_BASE_URL = resolveWsBaseUrl()
 export const WS_URL = WS_BASE_URL
 
 export const socket: Socket = io(WS_BASE_URL, {
@@ -9,12 +40,25 @@ export const socket: Socket = io(WS_BASE_URL, {
   autoConnect: true,
   withCredentials: true,
   reconnection: true,
-  reconnectionAttempts: 10,
-  reconnectionDelay: 2000,
+  reconnectionAttempts: 20,
+  reconnectionDelay: 1500,
 })
+
+let currentKdsSlug: string | null = null
+let currentAdminSlug: string | null = null
+const activeOrderRooms = new Set<string>()
 
 socket.on('connect', () => {
   console.log('⚡ Connected to Pangat WebSocket gateway:', socket.id)
+  if (currentKdsSlug) {
+    socket.emit('join:kds', { restaurantSlug: currentKdsSlug })
+  }
+  if (currentAdminSlug) {
+    socket.emit('join:admin', { restaurantSlug: currentAdminSlug })
+  }
+  for (const orderId of activeOrderRooms) {
+    socket.emit('join:order', { orderId })
+  }
 })
 
 socket.on('disconnect', (reason) => {
@@ -26,9 +70,19 @@ export function getSocket(): Socket {
 }
 
 export function joinKdsRoom(restaurantSlug: string = 'pangat') {
-  socket.emit('join:kds', { restaurantSlug })
+  const clean = (restaurantSlug || 'pangat').trim().toLowerCase()
+  currentKdsSlug = clean
+  socket.emit('join:kds', { restaurantSlug: clean })
+}
+
+export function joinAdminRoom(restaurantSlug: string = 'pangat') {
+  const clean = (restaurantSlug || 'pangat').trim().toLowerCase()
+  currentAdminSlug = clean
+  socket.emit('join:admin', { restaurantSlug: clean })
 }
 
 export function joinOrderRoom(orderId: string) {
+  if (!orderId) return
+  activeOrderRooms.add(orderId)
   socket.emit('join:order', { orderId })
 }

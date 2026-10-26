@@ -50,7 +50,11 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
   outOfStockIds: new Set<string>(),
   isLoading: false,
 
-  fetchTickets: async (slug = 'pangat') => {
+  fetchTickets: async (slug?: string) => {
+    if (!slug) {
+      set({ tickets: [], isLoading: false })
+      return
+    }
     if (get().isLoading) return
     set({ isLoading: true })
     try {
@@ -77,7 +81,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     }
   },
 
-  initSocketSync: (slug = 'pangat') => {
+  initSocketSync: (slug?: string) => {
+    if (!slug) return
     joinKdsRoom(slug)
     if (kdsSocketListening) return
     kdsSocketListening = true

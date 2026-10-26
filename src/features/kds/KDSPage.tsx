@@ -8,7 +8,7 @@ import { useKdsStore } from "@/stores/useKdsStore"
 import { Button } from "@/components/ui/button"
 
 export function KDSPage() {
-  const { restaurantSlug = "pangat" } = useParams<{ restaurantSlug: string }>()
+  const { restaurantSlug = "" } = useParams<{ restaurantSlug: string }>()
   const [showOutOfStock, setShowOutOfStock] = useState(false)
   const [showChimeToast, setShowChimeToast] = useState(false)
 
@@ -20,7 +20,9 @@ export function KDSPage() {
 
   // Fetch initial live tickets from API & connect socket
   useEffect(() => {
-    useKdsStore.getState().fetchTickets(restaurantSlug)
+    if (restaurantSlug) {
+      useKdsStore.getState().fetchTickets(restaurantSlug)
+    }
   }, [restaurantSlug])
 
   // Listen for chime triggers
@@ -44,7 +46,7 @@ export function KDSPage() {
 
   return (
     <div className="h-screen flex flex-col bg-zinc-950 overflow-hidden relative">
-      <KDSTopBar />
+      <KDSTopBar restaurantSlug={restaurantSlug} />
 
       {/* Audio alert chime visual indicator */}
       {showChimeToast && (
@@ -75,7 +77,7 @@ export function KDSPage() {
           className="gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50 text-xs"
         >
           <AlertTriangle className="h-3.5 w-3.5" />
-          86'd Items
+          Out of Stock Items
         </Button>
       </div>
 

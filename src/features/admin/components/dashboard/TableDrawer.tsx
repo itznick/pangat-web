@@ -4,8 +4,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { X, CheckCircle2, Trash2, IndianRupee, Clock, Hash } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, isSameTableNumber } from "@/lib/utils"
 import { useAdminStore } from "@/stores/useAdminStore"
+import { api } from "@/lib/api"
 import type { Table, Order } from "@/types/domain"
 
 interface TableDrawerProps {
@@ -21,7 +22,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
   const tableOrders: Order[] = table
     ? activeOrders.filter(
         (o) =>
-          o.tableNumber === table.tableNumber &&
+          isSameTableNumber(o.tableNumber, table.tableNumber) &&
           o.orderStatus !== "COMPLETED"
       )
     : []
@@ -30,21 +31,24 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
     .filter((o) => o.paymentStatus === "PENDING")
     .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0)
 
-  const handleSettle = (orderId: string) => {
-    settleOrder(orderId, "PAID")
-    // If no more pending orders, mark table SERVED
-    const remaining = tableOrders.filter(
-      (o) => o.id !== orderId && o.paymentStatus === "PENDING"
-    )
-    if (remaining.length === 0 && table) {
-      updateTableStatus(table.id, "SERVED")
+  const handleSettle = async (orderId: string) => {
+    await settleOrder(orderId, "PAID")
+    if (table) {
+      await updateTableStatus(table.id, "SERVED")
     }
   }
 
-  const handleClearTable = () => {
+  const handleClearTable = async () => {
     if (!table) return
-    tableOrders.forEach((o) => settleOrder(o.id, "PAID"))
-    updateTableStatus(table.id, "VACANT")
+    for (const o of tableOrders) {
+      if (o.paymentStatus !== "PAID") {
+        await settleOrder(o.id, "PAID")
+      }
+      try {
+        await api.orders.updateStatus(o.id, "COMPLETED")
+      } catch (e) {}
+    }
+    await updateTableStatus(table.id, "VACANT")
     onClose()
   }
 
@@ -64,34 +68,34 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
       {/* Right-side panel */}
       <div
         className={cn(
-          "fixed top-0 right-0 bottom-0 z-50 w-[420px] max-w-full flex flex-col bg-zinc-900 border-l border-zinc-800 shadow-2xl transition-transform duration-300 ease-out",
+          "fixed top-0 right-0 bottom-0 z-50 w-[420px] max-w-full flex flex-col bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transition-transform duration-300 ease-out text-zinc-900 dark:text-zinc-100",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div
               className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border",
                 table?.status === "OCCUPIED"
-                  ? "bg-rose-500/20 border-rose-500/50 text-rose-300"
+                  ? "bg-rose-500/20 border-rose-500/50 text-rose-600 dark:text-rose-300"
                   : table?.status === "PREPPING"
-                  ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                  ? "bg-amber-500/20 border-amber-500/50 text-amber-600 dark:text-amber-300"
                   : table?.status === "SERVED"
-                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
-                  : "bg-zinc-800 border-zinc-700 text-zinc-400"
+                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300"
+                  : "bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400"
               )}
             >
               {table?.tableNumber ?? "–"}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-zinc-100">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                 Table {table?.tableNumber} – Live View
               </h3>
-              <p className="text-xs text-zinc-400 capitalize">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
                 Status:{" "}
-                <span className="font-semibold text-zinc-300">
+                <span className="font-semibold text-zinc-800 dark:text-zinc-300">
                   {table?.status?.toLowerCase() ?? "–"}
                 </span>
               </p>
@@ -99,7 +103,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -109,11 +113,11 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {tableOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center mb-3">
-                <Hash className="h-6 w-6 text-zinc-600" />
+              <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center mb-3">
+                <Hash className="h-6 w-6 text-zinc-400 dark:text-zinc-600" />
               </div>
-              <p className="text-sm font-semibold text-zinc-400">No active orders</p>
-              <p className="text-xs text-zinc-600 mt-1">
+              <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">No active orders</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">
                 This table has no open kitchen tickets.
               </p>
             </div>
@@ -123,29 +127,29 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
               return (
                 <div
                   key={order.id}
-                  className="bg-zinc-800/50 rounded-2xl border border-zinc-700/80 overflow-hidden"
+                  className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/80 overflow-hidden"
                 >
                   {/* Order header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/60 bg-zinc-800/40">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700/60 bg-zinc-100/60 dark:bg-zinc-800/40">
                     <div className="flex items-center gap-2">
-                      <Hash className="h-3.5 w-3.5 text-zinc-500" />
-                      <span className="text-xs font-bold text-zinc-200">
+                      <Hash className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+                      <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                         Order #{order.id.slice(-4).toUpperCase()}
                       </span>
                       <span
                         className={cn(
                           "px-2 py-0.5 rounded-full text-[10px] font-bold border",
                           order.orderStatus === "READY"
-                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
                             : order.orderStatus === "PREPARING"
-                            ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                            : "bg-blue-500/20 border-blue-500/40 text-blue-300"
+                            ? "bg-amber-500/20 border-amber-500/40 text-amber-700 dark:text-amber-300"
+                            : "bg-blue-500/20 border-blue-500/40 text-blue-700 dark:text-blue-300"
                         )}
                       >
                         {order.orderStatus}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
                       <Clock className="h-3 w-3" />
                       <span>
                         {Math.round(
@@ -161,11 +165,10 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                       <div key={idx} className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-2 flex-1 min-w-0">
                           <div className="mt-0.5 flex-shrink-0">
-                            {/* We don't have isVeg on OrderItem — use a neutral icon */}
-                            <IndianRupee className="h-3 w-3 text-zinc-600" />
+                            <IndianRupee className="h-3 w-3 text-zinc-400 dark:text-zinc-600" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-zinc-200 leading-snug">
+                            <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 leading-snug">
                               {item.quantity}× {item.name}
                             </p>
                             {item.selectedModifiers.length > 0 && (
@@ -175,7 +178,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                             )}
                           </div>
                         </div>
-                        <span className="text-sm font-semibold text-zinc-300 flex-shrink-0">
+                        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex-shrink-0">
                           ₹
                           {(
                             (Number(item.price || 0) +
@@ -188,10 +191,10 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                   </div>
 
                   {/* Order footer */}
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-700/60 bg-zinc-900/40">
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-200 dark:border-zinc-700/60 bg-zinc-100/40 dark:bg-zinc-900/40">
                     <div>
                       <p className="text-xs text-zinc-500">Total</p>
-                      <p className="text-base font-black text-zinc-100">
+                      <p className="text-base font-black text-zinc-900 dark:text-zinc-100">
                         ₹{Number(order.totalAmount || 0).toFixed(2)}
                       </p>
                     </div>

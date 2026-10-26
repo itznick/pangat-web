@@ -3,7 +3,87 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark, .dark *));
+
+/* ── Light Mode vs Dark Mode Theme Variables ─────────────────────────────── */
+html:not(.dark) {
+  --color-zinc-950: #f8fafc;
+  --color-zinc-900: #ffffff;
+  --color-zinc-850: #f1f5f9;
+  --color-zinc-800: #f1f5f9;
+  --color-zinc-700: #e2e8f0;
+  --color-zinc-600: #94a3b8;
+  --color-zinc-500: #64748b;
+  --color-zinc-400: #475569;
+  --color-zinc-300: #334155;
+  --color-zinc-200: #1e293b;
+  --color-zinc-100: #0f172a;
+  --color-zinc-50: #020617;
+}
+
+html:not(.dark) .bg-zinc-900 {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+}
+
+html.dark {
+  --color-zinc-950: oklch(14.1% .005 285.823);
+  --color-zinc-900: oklch(21% .006 285.885);
+  --color-zinc-850: oklch(24% .006 285.95);
+  --color-zinc-800: oklch(27.4% .006 286.033);
+  --color-zinc-700: oklch(37% .013 285.805);
+  --color-zinc-600: oklch(44.2% .017 285.786);
+  --color-zinc-500: oklch(55.2% .016 285.938);
+  --color-zinc-400: oklch(70.5% .015 286.067);
+  --color-zinc-300: oklch(87.1% .006 286.286);
+  --color-zinc-200: oklch(92% .004 286.32);
+  --color-zinc-100: oklch(96.7% .001 286.375);
+  --color-zinc-50: oklch(98.5% 0 none);
+}
+
+/* ── Modern Thin Aesthetic Scrollbar ────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+html.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(16, 185, 129, 0.75);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(52, 211, 153, 0.75);
+}
 
 @theme inline {
     --font-heading: 'Plus Jakarta Sans', 'Inter Variable', sans-serif;
@@ -122,7 +202,7 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white;
+    @apply bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-150;
     }
   html {
     @apply font-sans scroll-smooth;

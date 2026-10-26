@@ -25,7 +25,7 @@ const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProvider
   const [collapsed, setCollapsed] = React.useState(defaultCollapsed)
   return (
     <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
-      <div className="flex h-screen overflow-hidden bg-zinc-950">
+      <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
         {children}
       </div>
     </SidebarContext.Provider>
@@ -37,7 +37,7 @@ const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDiv
   return (
     <aside
       className={cn(
-        "flex flex-col h-full bg-zinc-900 border-r border-zinc-800 transition-all duration-300 shrink-0",
+        "flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 shrink-0",
         collapsed ? "w-16" : "w-64",
         className
       )}
@@ -49,7 +49,7 @@ const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDiv
 }
 
 const SidebarHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex items-center px-4 py-4 border-b border-zinc-800 shrink-0", className)} {...props} />
+  <div className={cn("flex items-center px-4 py-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0", className)} {...props} />
 )
 
 const SidebarContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -57,7 +57,7 @@ const SidebarContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivEle
 )
 
 const SidebarFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("border-t border-zinc-800 p-4 shrink-0", className)} {...props} />
+  <div className={cn("border-t border-zinc-200 dark:border-zinc-800 p-4 shrink-0", className)} {...props} />
 )
 
 const SidebarGroup = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -99,11 +99,11 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonP
         ref={ref}
         title={collapsed ? tooltip : undefined}
         className={cn(
-          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
-          "hover:bg-zinc-800 hover:text-zinc-100",
+          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer",
+          "hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100",
           isActive
-            ? "bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/25 hover:text-emerald-300"
-            : "text-zinc-400",
+            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-semibold hover:bg-emerald-500/20"
+            : "text-zinc-600 dark:text-zinc-400",
           collapsed ? "justify-center px-2" : "",
           className
         )}

@@ -22,7 +22,7 @@ export function OutOfStockDrawer({ open, onClose }: OutOfStockDrawerProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-400" />
-            <DrawerTitle>86'd / Sold Out Items</DrawerTitle>
+            <DrawerTitle>Out of Stock / Sold Out Items</DrawerTitle>
           </div>
           <button
             onClick={onClose}
@@ -62,7 +62,7 @@ export function OutOfStockDrawer({ open, onClose }: OutOfStockDrawerProps) {
 
                 <div className="flex items-center gap-2">
                   <span className={cn("text-xs font-semibold", is86d ? "text-rose-400" : "text-zinc-500")}>
-                    {is86d ? "86'd" : "In Stock"}
+                    {is86d ? "Out of Stock" : "In Stock"}
                   </span>
                   <Switch
                     checked={!is86d}

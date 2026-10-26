@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type {
+  Organization,
   Restaurant,
   Table,
   MenuItem,
@@ -8,10 +9,52 @@ import type {
   TableStatus,
   OrderStatus,
   PaymentMethod,
+  OnboardPayload,
+  OnboardResponseData,
+  StaffUser,
+  Lead,
+  LeadStatus,
+  PlatformMetrics,
+  ProvisionPayload,
+  ProvisionResult,
+  AdminOrganizationItem,
+  AdminOutletItem,
+  DetailedSystemHealth,
 } from '@/types/domain'
 
-const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
-export const API_BASE_URL = rawApiUrl.replace(/\/+$/, '');
+export function resolveApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL?.trim();
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol || 'http:';
+
+    // If accessed via mobile phone or LAN IP (e.g. 192.168.x.x), route to host machine IP
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      if (envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+        return envUrl
+          .replace(/\b(localhost|127\.0\.0\.1)\b/g, hostname)
+          .replace(/\/+$/, '');
+      }
+      if (!envUrl) {
+        return `${protocol}//${hostname}:4000/api/v1`;
+      }
+    }
+  }
+
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const protocol = window.location.protocol || 'http:';
+    const hostname = window.location.hostname;
+    return `${protocol}//${hostname}:4000/api/v1`;
+  }
+
+  return 'http://localhost:4000/api/v1';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -20,8 +63,9 @@ export const apiClient = axios.create({
   },
 })
 
-// Request interceptor to attach JWT token if available
+// Request interceptor to attach JWT token and ensure dynamic host baseURL
 apiClient.interceptors.request.use((config) => {
+  config.baseURL = resolveApiBaseUrl();
   const token = localStorage.getItem('pangat_access_token')
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`
@@ -72,8 +116,55 @@ export interface CreateOrderPayload {
 export const api = {
   // Auth
   auth: {
-    login: (credentials: { email: string; password: string }): Promise<{ accessToken: string; user: any }> =>
+    login: (credentials: { email?: string; password?: string; pinCode?: string }): Promise<{
+      accessToken: string
+      user: StaffUser
+      organization?: Organization | null
+      outlets?: Restaurant[]
+    }> =>
       apiClient.post('/auth/login', credentials),
+    onboard: (data: OnboardPayload): Promise<OnboardResponseData> =>
+      apiClient.post('/auth/onboard', data),
+    setupSuperAdmin: (data: { name: string; email: string; password: string; phone?: string }): Promise<{
+      id: string
+      name: string
+      email: string
+      role: string
+      isPlatformAdmin: boolean
+      action: string
+    }> =>
+      apiClient.post('/auth/setup-super-admin', data),
+  },
+
+  // Organizations
+  organizations: {
+    listOutlets: (): Promise<Restaurant[]> =>
+      apiClient.get('/organizations/outlets'),
+    createOutlet: (data: {
+      name: string
+      slug: string
+      branchArea?: string
+      upiVpa: string
+      gstPercentage?: number
+      tableCount?: number
+      organizationId?: string
+    }): Promise<Restaurant> =>
+      apiClient.post('/organizations/outlets', data),
+  },
+
+  // Staff Management
+  staff: {
+    create: (
+      restaurantId: string,
+      data: {
+        name: string
+        email: string
+        password?: string
+        pinCode?: string
+        role: 'SUPER_OWNER' | 'STORE_MANAGER' | 'CHEF' | 'STEWARD'
+      }
+    ): Promise<StaffUser> =>
+      apiClient.post(`/restaurants/${restaurantId}/staff`, data),
   },
 
   // Restaurants
@@ -90,6 +181,10 @@ export const api = {
       apiClient.get('/tables', { params: { restaurantId } }),
     get: (id: string): Promise<Table> =>
       apiClient.get(`/tables/${id}`),
+    create: (data: { restaurantId: string; tableNumber: string }): Promise<Table> =>
+      apiClient.post('/tables', data),
+    delete: (id: string): Promise<{ id: string }> =>
+      apiClient.delete(`/tables/${id}`),
     updateStatus: (id: string, status: TableStatus): Promise<Table> =>
       apiClient.patch(`/tables/${id}/status`, { status }),
   },
@@ -104,10 +199,14 @@ export const api = {
       apiClient.patch(`/menu/items/${id}/availability`, { isAvailable }),
     updatePrice: (id: string, price: number): Promise<MenuItem> =>
       apiClient.patch(`/menu/items/${id}/price`, { price }),
-    createItem: (data: Partial<MenuItem> & { categoryId: string; restaurantSlug?: string }): Promise<MenuItem> =>
+    createItem: (data: Partial<MenuItem> & { categoryId: string; restaurantId?: string; restaurantSlug?: string }): Promise<MenuItem> =>
       apiClient.post('/menu/items', data),
     updateItem: (id: string, data: Partial<MenuItem>): Promise<MenuItem> =>
       apiClient.patch(`/menu/items/${id}`, data),
+    createCategory: (data: { name: string; restaurantId?: string; restaurantSlug?: string; sortOrder?: number }): Promise<MenuCategory> =>
+      apiClient.post('/menu/categories', data),
+    deleteCategory: (id: string): Promise<{ id: string }> =>
+      apiClient.delete(`/menu/categories/${id}`),
   },
 
   // Orders
@@ -126,5 +225,45 @@ export const api = {
       apiClient.patch(`/orders/${id}/status`, { status }),
     markPaid: (id: string): Promise<Order> =>
       apiClient.patch(`/orders/${id}/mark-paid`),
+  },
+
+  // Leads (Public demo inquiries)
+  leads: {
+    create: (data: {
+      name: string
+      restaurantName: string
+      phone: string
+      city: string
+      tableCount?: string
+      notes?: string
+    }): Promise<{ message: string; lead: Lead }> =>
+      apiClient.post('/leads', data),
+  },
+
+  // Platform Ops / Super Admin
+  admin: {
+    getMetrics: (): Promise<PlatformMetrics> =>
+      apiClient.get('/admin/metrics'),
+    listLeads: (): Promise<Lead[]> =>
+      apiClient.get('/admin/leads'),
+    updateLead: (id: string, data: { status?: LeadStatus; notes?: string }): Promise<Lead> =>
+      apiClient.patch(`/admin/leads/${id}`, data),
+    provision: (data: ProvisionPayload): Promise<ProvisionResult> =>
+      apiClient.post('/admin/provision', data),
+    listOrganizations: (): Promise<AdminOrganizationItem[]> =>
+      apiClient.get('/admin/organizations'),
+    resetOrganizationPassword: (orgId: string): Promise<{
+      success: boolean
+      message: string
+      ownerName: string
+      ownerEmail: string
+      temporaryPassword: string
+      organizationName: string
+    }> =>
+      apiClient.post(`/admin/organizations/${orgId}/reset-password`),
+    listOutlets: (): Promise<AdminOutletItem[]> =>
+      apiClient.get('/admin/outlets'),
+    getSystemHealth: (): Promise<DetailedSystemHealth> =>
+      apiClient.get('/admin/system-health'),
   },
 }

@@ -5,7 +5,6 @@ import {
   ChefHat,
   Plus,
   Hash,
-  PlayCircle,
   Zap,
   Store,
   Star,
@@ -55,7 +54,6 @@ const FEEDBACK_TAGS = [
 
 export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingViewProps) {
   const order = useOrderTrackingStore((s) => s.order)
-  const advanceStatus = useOrderTrackingStore((s) => s.advanceStatus)
   const payOnlineUpi = useOrderTrackingStore((s) => s.payOnlineUpi)
   const submitFeedback = useOrderTrackingStore((s) => s.submitFeedback)
   const navigate = useNavigate()
@@ -98,21 +96,6 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
       socket.off("order:paid", onPaid)
     }
   }, [order?.id])
-
-  const handleAdvanceStatus = async () => {
-    advanceStatus()
-    if (!order?.id) return
-    const progression: OrderStatus[] = ["RECEIVED", "PREPARING", "READY", "COMPLETED"]
-    const idx = progression.indexOf(order.orderStatus)
-    if (idx < progression.length - 1) {
-      const nextStatus = progression[idx + 1]
-      try {
-        await api.orders.updateStatus(order.id, nextStatus)
-      } catch (err) {
-        console.error("Failed to advance order status via API:", err)
-      }
-    }
-  }
 
   const handlePayOnlineUpi = async () => {
     payOnlineUpi()
@@ -192,21 +175,9 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
 
         {/* Step Progress Tracker */}
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 shadow-lg">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-sm font-bold text-zinc-200">Live Order Progress</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">Real-time kitchen status</p>
-            </div>
-            {currentStatus !== "COMPLETED" && (
-              <button
-                onClick={handleAdvanceStatus}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs font-semibold text-zinc-300 hover:text-emerald-400 hover:border-emerald-500/50 transition-colors"
-                title="Simulate status progression"
-              >
-                <PlayCircle className="h-3.5 w-3.5 text-emerald-400" />
-                Simulate Next
-              </button>
-            )}
+          <div className="mb-5">
+            <h3 className="text-sm font-bold text-zinc-200">Live Order Progress</h3>
+            <p className="text-xs text-zinc-500 mt-0.5">Real-time kitchen status</p>
           </div>
 
           {/* Stepper with explicit segment connectors - zero overflow */}

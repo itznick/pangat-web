@@ -10,13 +10,13 @@ interface KDSTicketCardProps {
 }
 
 function useElapsedTime(createdAt: Date | string): string {
-  const [elapsed, setElapsed] = useState("")
+  const [elapsed, setElapsed] = useState("00m 00s")
   const createdTime = new Date(createdAt).getTime()
 
   useEffect(() => {
     const update = () => {
-      const ms = Date.now() - createdTime
-      const secs = Math.floor(ms / 1000)
+      const diff = isNaN(createdTime) ? 0 : Math.max(0, Date.now() - createdTime)
+      const secs = Math.floor(diff / 1000)
       const mins = Math.floor(secs / 60)
       const s = secs % 60
       setElapsed(`${String(mins).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`)
@@ -137,7 +137,8 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive }: KDSTicketCardPro
         "border-emerald-500/20"
       )}>
         <Clock className={cn("h-3.5 w-3.5", isOverdue ? "text-rose-400" : "text-zinc-500")} />
-        <span className={cn("font-bold tabular-nums", isOverdue ? "text-rose-400" : "text-zinc-400")}>
+        <span className="text-[11px] font-sans text-zinc-500 font-medium">Elapsed:</span>
+        <span className={cn("font-bold tabular-nums", isOverdue ? "text-rose-400" : "text-zinc-300")}>
           {elapsed}
         </span>
         {isOverdue && (

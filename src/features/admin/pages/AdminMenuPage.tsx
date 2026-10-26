@@ -21,9 +21,181 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select } from "@/components/ui/select"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { Search, Plus, Pencil, Leaf, Drumstick, Star, Filter, UtensilsCrossed } from "lucide-react"
+import {
+  Search,
+  Plus,
+  Pencil,
+  Leaf,
+  Drumstick,
+  Star,
+  Filter,
+  UtensilsCrossed,
+  FolderPlus,
+  Trash2,
+  X,
+  Layers,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { MenuItem } from "@/types/domain"
+import type { MenuItem, Modifier, ModifierOption } from "@/types/domain"
+
+interface ModifierBuilderProps {
+  modifiers: Modifier[]
+  onChange: (modifiers: Modifier[]) => void
+}
+
+function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
+  const addGroup = () => {
+    const newGroup: Modifier = {
+      id: `mod-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: "",
+      type: "SINGLE",
+      isRequired: false,
+      options: [
+        { name: "Regular", price: 0 },
+        { name: "Large", price: 30 },
+      ],
+    }
+    onChange([...modifiers, newGroup])
+  }
+
+  const removeGroup = (index: number) => {
+    onChange(modifiers.filter((_, i) => i !== index))
+  }
+
+  const updateGroup = (index: number, updated: Partial<Modifier>) => {
+    onChange(
+      modifiers.map((m, i) => (i === index ? { ...m, ...updated } : m))
+    )
+  }
+
+  const addOption = (groupIndex: number) => {
+    const group = modifiers[groupIndex]
+    const nextOptions: ModifierOption[] = [...group.options, { name: "", price: 0 }]
+    updateGroup(groupIndex, { options: nextOptions })
+  }
+
+  const updateOption = (groupIndex: number, optIndex: number, field: keyof ModifierOption, val: any) => {
+    const group = modifiers[groupIndex]
+    const nextOptions = group.options.map((opt, i) =>
+      i === optIndex ? { ...opt, [field]: val } : opt
+    )
+    updateGroup(groupIndex, { options: nextOptions })
+  }
+
+  const removeOption = (groupIndex: number, optIndex: number) => {
+    const group = modifiers[groupIndex]
+    const nextOptions = group.options.filter((_, i) => i !== optIndex)
+    updateGroup(groupIndex, { options: nextOptions })
+  }
+
+  return (
+    <div className="space-y-3 pt-3 border-t border-zinc-800">
+      <div className="flex items-center justify-between">
+        <div>
+          <label className="text-xs font-semibold text-zinc-200">Customization & Modifiers</label>
+          <p className="text-[11px] text-zinc-500">Configure size variants, add-on toppings, spice levels</p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={addGroup}
+          className="text-xs h-7 border-zinc-700 hover:border-emerald-500 text-zinc-300 hover:text-emerald-400 gap-1"
+        >
+          <Plus className="h-3 w-3" />
+          Add Modifier Group
+        </Button>
+      </div>
+
+      {modifiers.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-zinc-800 p-3 text-center text-xs text-zinc-500">
+          No modifiers added yet. Click above to add portion sizes, add-ons, or custom choices.
+        </div>
+      ) : (
+        <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+          {modifiers.map((group, gIdx) => (
+            <div key={group.id || gIdx} className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Group Name (e.g. Size, Add-on Cheese, Spice)"
+                  value={group.name}
+                  onChange={(e) => updateGroup(gIdx, { name: e.target.value })}
+                  className="text-xs h-8 flex-1"
+                />
+                <select
+                  value={group.type}
+                  onChange={(e) => updateGroup(gIdx, { type: e.target.value as 'SINGLE' | 'MULTIPLE' })}
+                  className="text-xs h-8 bg-zinc-900 border border-zinc-700 rounded-lg px-2 text-zinc-200"
+                >
+                  <option value="SINGLE">Single Choice (Radio)</option>
+                  <option value="MULTIPLE">Multi Choice (Checkbox)</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => updateGroup(gIdx, { isRequired: !group.isRequired })}
+                  className={cn(
+                    "px-2 py-1 rounded text-[11px] font-semibold border transition-colors",
+                    group.isRequired
+                      ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
+                      : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                  )}
+                >
+                  {group.isRequired ? "Required" : "Optional"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeGroup(gIdx)}
+                  className="p-1 rounded text-zinc-500 hover:text-rose-400"
+                  title="Remove group"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* Options list */}
+              <div className="space-y-1.5 pl-2 border-l-2 border-zinc-700/60">
+                {group.options.map((opt, oIdx) => (
+                  <div key={oIdx} className="flex items-center gap-2 text-xs">
+                    <Input
+                      placeholder="Option (e.g., Large, Extra Pav)"
+                      value={opt.name}
+                      onChange={(e) => updateOption(gIdx, oIdx, 'name', e.target.value)}
+                      className="text-xs h-7 flex-1"
+                    />
+                    <div className="flex items-center gap-1 w-24">
+                      <span className="text-zinc-500 text-xs">+₹</span>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={opt.price}
+                        onChange={(e) => updateOption(gIdx, oIdx, 'price', parseFloat(e.target.value) || 0)}
+                        className="text-xs h-7 w-16"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeOption(gIdx, oIdx)}
+                      className="p-1 text-zinc-500 hover:text-rose-400"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => addOption(gIdx)}
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 mt-1"
+                >
+                  <Plus className="h-3 w-3" /> Add Choice
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function AdminMenuPage() {
   const menuItems = useAdminStore((s) => s.menuItems)
@@ -33,6 +205,7 @@ export function AdminMenuPage() {
   const updateMenuPrice = useAdminStore((s) => s.updateMenuPrice)
   const addMenuItem = useAdminStore((s) => s.addMenuItem)
   const updateMenuItem = useAdminStore((s) => s.updateMenuItem)
+  const addCategory = useAdminStore((s) => s.addCategory)
 
   const categoryOpts = useMemo(
     () => categories.map((c) => ({ value: c.id, label: c.name })),
@@ -42,16 +215,29 @@ export function AdminMenuPage() {
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false)
+
   const [editingDish, setEditingDish] = useState<MenuItem | null>(null)
   const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null)
 
-  const [newDish, setNewDish] = useState({
+  const [newDish, setNewDish] = useState<{
+    name: string
+    description: string
+    price: string
+    categoryId: string
+    isVeg: boolean
+    imageUrl: string
+    modifiers: Modifier[]
+  }>({
     name: "",
     description: "",
     price: "",
-    categoryId: "cat-breakfast",
+    categoryId: categories[0]?.id || "",
     isVeg: true,
     imageUrl: "🍽️",
+    modifiers: [],
   })
 
   const filtered = menuItems.filter((item) => {
@@ -71,6 +257,23 @@ export function AdminMenuPage() {
     setEditingPrice(null)
   }
 
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return
+    setIsSubmittingCategory(true)
+    try {
+      const created = await addCategory(newCategoryName.trim())
+      setNewCategoryName("")
+      setShowCategoryDialog(false)
+      if (created?.id && !newDish.categoryId) {
+        setNewDish((d) => ({ ...d, categoryId: created.id }))
+      }
+    } catch (err) {
+      console.error("Failed to add category:", err)
+    } finally {
+      setIsSubmittingCategory(false)
+    }
+  }
+
   const handleCreateDish = () => {
     if (!newDish.name.trim() || !newDish.price) return
     const createdItem: MenuItem = {
@@ -82,7 +285,7 @@ export function AdminMenuPage() {
       isVeg: newDish.isVeg,
       isAvailable: true,
       imageUrl: newDish.imageUrl || "🍽️",
-      modifiers: [],
+      modifiers: newDish.modifiers || [],
     }
     addMenuItem(createdItem)
     setShowAddDialog(false)
@@ -90,9 +293,10 @@ export function AdminMenuPage() {
       name: "",
       description: "",
       price: "",
-      categoryId: categories[0]?.id ?? "cat-01",
+      categoryId: categories[0]?.id ?? "",
       isVeg: true,
       imageUrl: "🍽️",
+      modifiers: [],
     })
   }
 
@@ -116,13 +320,30 @@ export function AdminMenuPage() {
           </Breadcrumb>
           <h1 className="text-xl font-bold text-zinc-100 mt-1">Menu Management</h1>
         </div>
-        <Button
-          onClick={() => setShowAddDialog(true)}
-          className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25"
-        >
-          <Plus className="h-4 w-4" />
-          Add New Dish
-        </Button>
+
+        <div className="flex items-center gap-2.5">
+          <Button
+            onClick={() => setShowCategoryDialog(true)}
+            variant="outline"
+            className="gap-1.5 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-600 bg-zinc-900"
+          >
+            <FolderPlus className="h-4 w-4 text-emerald-400" />
+            Add Category
+          </Button>
+
+          <Button
+            onClick={() => {
+              if (!newDish.categoryId && categories.length > 0) {
+                setNewDish((d) => ({ ...d, categoryId: categories[0].id }))
+              }
+              setShowAddDialog(true)
+            }}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25"
+          >
+            <Plus className="h-4 w-4" />
+            Add New Dish
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 p-6 space-y-4">
@@ -170,6 +391,7 @@ export function AdminMenuPage() {
             <TableBody>
               {filtered.map((item) => {
                 const catName = categoryNameMap[item.categoryId] || item.categoryId
+                const modifierCount = item.modifiers?.length || 0
 
                 return (
                   <TableRow key={item.id}>
@@ -235,13 +457,21 @@ export function AdminMenuPage() {
                       )}
                     </TableCell>
 
-                    {/* Modifier count */}
+                    {/* Modifiers badge */}
                     <TableCell>
-                      <span className="text-xs text-zinc-500">
-                        {item.modifiers.length === 0
-                          ? "—"
-                          : `${item.modifiers.length} group${item.modifiers.length > 1 ? "s" : ""}`}
-                      </span>
+                      {modifierCount === 0 ? (
+                        <span className="text-xs text-zinc-600">—</span>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-1">
+                            <Layers className="h-3 w-3" />
+                            {modifierCount} {modifierCount === 1 ? "group" : "groups"}
+                          </span>
+                          <span className="text-[11px] text-zinc-400 truncate max-w-[140px]">
+                            {item.modifiers.map((m) => m.name).filter(Boolean).join(", ")}
+                          </span>
+                        </div>
+                      )}
                     </TableCell>
 
                     {/* Availability toggle */}
@@ -255,8 +485,8 @@ export function AdminMenuPage() {
                     {/* Actions */}
                     <TableCell className="text-right">
                       <button
-                        onClick={() => setEditingDish(item)}
-                        title="Edit dish details"
+                        onClick={() => setEditingDish({ ...item, modifiers: item.modifiers || [] })}
+                        title="Edit dish details & modifiers"
                         className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-emerald-400 transition-colors"
                       >
                         <Pencil className="h-3.5 w-3.5" />
@@ -295,9 +525,44 @@ export function AdminMenuPage() {
         </div>
       </div>
 
+      {/* Add New Category Dialog */}
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Menu Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Category Name *</label>
+              <Input
+                placeholder="e.g., Cold Beverages, Chai & Snacks, Desserts"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                autoFocus
+              />
+              <p className="text-[11px] text-zinc-500 mt-1">
+                Categories group dishes on both customer digital menus and kitchen tickets.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCategoryDialog(false)} className="text-zinc-400">
+              Cancel
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+              disabled={!newCategoryName.trim() || isSubmittingCategory}
+              onClick={handleCreateCategory}
+            >
+              {isSubmittingCategory ? "Creating..." : "Create Category"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add New Dish Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Dish</DialogTitle>
           </DialogHeader>
@@ -307,7 +572,7 @@ export function AdminMenuPage() {
               <div>
                 <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Dish Name *</label>
                 <Input
-                  placeholder="e.g., Shakshuka"
+                  placeholder="e.g., Misal Pav"
                   value={newDish.name}
                   onChange={(e) => setNewDish({ ...newDish, name: e.target.value })}
                 />
@@ -315,7 +580,7 @@ export function AdminMenuPage() {
               <div>
                 <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Emoji Icon</label>
                 <Input
-                  placeholder="🍳"
+                  placeholder="🍲"
                   value={newDish.imageUrl}
                   onChange={(e) => setNewDish({ ...newDish, imageUrl: e.target.value })}
                   className="text-center text-xl"
@@ -326,7 +591,7 @@ export function AdminMenuPage() {
             <div>
               <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Description</label>
               <Input
-                placeholder="Short description..."
+                placeholder="Spicy sprouted moth bean curry topped with farsan & lemon..."
                 value={newDish.description}
                 onChange={(e) => setNewDish({ ...newDish, description: e.target.value })}
               />
@@ -337,7 +602,7 @@ export function AdminMenuPage() {
                 <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Base Price (₹) *</label>
                 <Input
                   type="number"
-                  placeholder="0"
+                  placeholder="120"
                   value={newDish.price}
                   onChange={(e) => setNewDish({ ...newDish, price: e.target.value })}
                 />
@@ -383,6 +648,12 @@ export function AdminMenuPage() {
                 </button>
               </div>
             </div>
+
+            {/* Modifiers Builder */}
+            <ModifierBuilder
+              modifiers={newDish.modifiers}
+              onChange={(mods) => setNewDish({ ...newDish, modifiers: mods })}
+            />
           </div>
 
           <DialogFooter>
@@ -392,6 +663,7 @@ export function AdminMenuPage() {
             <Button
               className="bg-emerald-600 hover:bg-emerald-500 text-white"
               onClick={handleCreateDish}
+              disabled={!newDish.name.trim() || !newDish.price}
             >
               Add Dish
             </Button>
@@ -402,7 +674,7 @@ export function AdminMenuPage() {
       {/* Edit Dish Dialog */}
       {editingDish && (
         <Dialog open={Boolean(editingDish)} onOpenChange={(open) => !open && setEditingDish(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Dish Details</DialogTitle>
             </DialogHeader>
@@ -484,6 +756,12 @@ export function AdminMenuPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Modifiers Builder */}
+              <ModifierBuilder
+                modifiers={editingDish.modifiers || []}
+                onChange={(mods) => setEditingDish({ ...editingDish, modifiers: mods })}
+              />
             </div>
 
             <DialogFooter>

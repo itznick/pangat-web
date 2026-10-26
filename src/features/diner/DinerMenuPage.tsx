@@ -15,21 +15,20 @@ import type {
   MenuCategory,
   Restaurant,
   SelectedModifier,
-  Order,
   PaymentMethod,
 } from "@/types/domain"
 
 const DEFAULT_RESTAURANT: Restaurant = {
-  id: "rest-001",
-  name: "The Pangat",
-  slug: "pangat",
-  upiVpa: "pangat.bandra@icici",
+  id: "",
+  name: "",
+  slug: "",
+  upiVpa: "",
   gstPercentage: 5,
   isVegOnly: false,
 }
 
 export function DinerMenuPage() {
-  const { restaurantSlug = "pangat", tableId = "04" } = useParams<{
+  const { restaurantSlug = "", tableId = "01" } = useParams<{
     restaurantSlug: string
     tableId: string
   }>()
@@ -48,7 +47,7 @@ export function DinerMenuPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   const outOfStockIds = useKdsStore((s) => s.outOfStockIds)
-  const { dietaryFilter, addItem, total, gstAmount, toOrderItems, clearCart } = useCartStore()
+  const { dietaryFilter, addItem, toOrderItems, clearCart } = useCartStore()
   const { order: activeOrder, placeOrder } = useOrderTrackingStore()
 
   // Load public menu from NestJS backend API
@@ -187,30 +186,9 @@ export function DinerMenuPage() {
       setShowCheckout(false)
       navigate(`/r/${restaurantSlug}/order/${placedOrder.id}`)
     } catch (err: any) {
-      console.warn("Backend API order placement failed; using local fallback:", err)
-      const orderId = `ORD-${Math.floor(Math.random() * 9000 + 1000)}`
-      const gstPct = restaurant.gstPercentage || 5
-      const totalVal = total(gstPct)
-      const gstVal = gstAmount(gstPct)
-
-      const fallbackOrder: Order = {
-        id: orderId,
-        restaurantId: restaurant.id,
-        tableNumber: tableId,
-        items: orderItems,
-        totalAmount: totalVal,
-        gstAmount: gstVal,
-        paymentStatus: paymentMethod === "UPI_INSTANT" ? "PAID" : "PENDING",
-        paymentMethod,
-        customerPhone: mobile,
-        orderStatus: "RECEIVED",
-        createdAt: new Date(),
-      }
-
-      placeOrder(fallbackOrder)
-      clearCart()
-      setShowCheckout(false)
-      navigate(`/r/${restaurantSlug}/order/${orderId}`)
+      console.error("Order placement to backend failed:", err)
+      const msg = err.response?.data?.message || err.message || "Could not fire order to kitchen. Please check network connection."
+      alert(`Order Failed: ${msg}`)
     }
   }
 

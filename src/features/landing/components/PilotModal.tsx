@@ -9,8 +9,13 @@ import {
   ArrowRight,
   Phone,
   Store,
-  User
+  User,
+  MapPin,
+  LayoutGrid,
+  Loader2,
+  Clock,
 } from "lucide-react"
+import { api } from "@/lib/api"
 
 interface PilotModalProps {
   isOpen: boolean
@@ -19,28 +24,65 @@ interface PilotModalProps {
 
 export function PilotModal({ isOpen, onClose }: PilotModalProps) {
   const [submitted, setSubmitted] = React.useState(false)
+  const [submitting, setSubmitting] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [toastVisible, setToastVisible] = React.useState(false)
+
   const [formData, setFormData] = React.useState({
-    cafeName: "",
     ownerName: "",
+    restaurantName: "",
+    city: "Hinjawadi, Pune",
     phone: "",
-    locality: "FC Road / Deccan",
-    tableCount: "16-25 tables",
+    tableCount: "12 tables",
   })
 
   if (!isOpen) return null
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitted(true)
+    setSubmitting(true)
+    setErrorMessage(null)
+
+    try {
+      await api.leads.create({
+        name: formData.ownerName,
+        restaurantName: formData.restaurantName,
+        city: formData.city,
+        phone: formData.phone,
+        tableCount: formData.tableCount,
+      })
+
+      setSubmitted(true)
+      setToastVisible(true)
+      // Auto-hide toast after 5s
+      setTimeout(() => setToastVisible(false), 5000)
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to submit demo request. Please check your network.",
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleReset = () => {
     setSubmitted(false)
+    setErrorMessage(null)
     onClose()
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md animate-in fade-in duration-200">
+      {/* Toast Notification */}
+      {toastVisible && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-emerald-950 border border-emerald-500/50 text-emerald-200 shadow-2xl shadow-emerald-950 animate-in slide-in-from-top duration-300">
+          <Clock className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs sm:text-sm font-semibold">
+            Demo request received! Our team will connect within 4 hours.
+          </span>
+        </div>
+      )}
+
       <div className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-950 text-white p-6 sm:p-9 shadow-2xl max-h-[92vh] overflow-y-auto">
         {/* Close Button */}
         <button
@@ -55,50 +97,38 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="emerald" className="text-xs font-semibold font-sans">
-                Free 7-Day Trial
+                Assisted B2B Provisioning
               </Badge>
               <span className="text-xs text-zinc-400 font-sans">
-                Zero Upfront Card Required
+                Zero Upfront Tech Hassle
               </span>
             </div>
 
             <h3 className="text-2xl font-bold tracking-tight text-white font-heading">
-              Launch Pangat in your cafe this week
+              Book a 15-Minute Live Demo
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed font-sans">
-              We&apos;ll deliver 2 custom acrylic table standees, configure your digital menu, and set up your kitchen phone or tablet in 15 minutes.
+              Our ops engineering team will inspect your floor layout, provision your branded QR standees, and connect your kitchen tablet.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left font-sans">
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Cafe / Restaurant Name
-                </label>
-                <div className="relative">
-                  <Store className="absolute left-3 top-3 w-4 h-4 text-zinc-500" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Roast & Toast / Third Wave Coffee"
-                    value={formData.cafeName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cafeName: e.target.value })
-                    }
-                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
+            {errorMessage && (
+              <div className="mt-4 p-3 rounded-xl bg-red-950/60 border border-red-500/30 text-xs text-red-200 font-sans">
+                {errorMessage}
               </div>
+            )}
 
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left font-sans">
+              {/* Owner Name */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Your Name (Owner / Manager)
+                  Owner / Decision Maker Name
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 w-4 h-4 text-zinc-500" />
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Rohan Deshmukh"
+                    placeholder="e.g. Sagar Jadhav"
                     value={formData.ownerName}
                     onChange={(e) =>
                       setFormData({ ...formData, ownerName: e.target.value })
@@ -108,6 +138,27 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                 </div>
               </div>
 
+              {/* Restaurant Name */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                  Restaurant / Cafe Name
+                </label>
+                <div className="relative">
+                  <Store className="absolute left-3 top-3 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Pangat Misal & Cafe"
+                    value={formData.restaurantName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, restaurantName: e.target.value })
+                    }
+                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* WhatsApp Number */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   WhatsApp Contact Number
@@ -128,43 +179,46 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* City / Area */}
                 <div>
                   <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                    Pune Locality / City
+                    City / Area
                   </label>
-                  <select
-                    value={formData.locality}
-                    onChange={(e) =>
-                      setFormData({ ...formData, locality: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                  >
-                    <option value="FC Road / Deccan">FC Road / Deccan</option>
-                    <option value="Koregaon Park">Koregaon Park</option>
-                    <option value="Baner / Balewadi">Baner / Balewadi</option>
-                    <option value="Viman Nagar / Kalyani">Viman Nagar / Kalyani</option>
-                    <option value="Aundh / Kothrud">Aundh / Kothrud</option>
-                    <option value="Hinjawadi Phase 1-3">Hinjawadi Phase 1-3</option>
-                    <option value="Mumbai / Other City">Mumbai / Other City</option>
-                  </select>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Hinjawadi, Pune"
+                      value={formData.city}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
+                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
                 </div>
 
+                {/* Daily Table Count */}
                 <div>
                   <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                    Dine-in Tables
+                    Daily Table Count
                   </label>
-                  <select
-                    value={formData.tableCount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, tableCount: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                  >
-                    <option value="5-15 tables">5 - 15 tables</option>
-                    <option value="16-25 tables">16 - 25 tables</option>
-                    <option value="26-40 tables">26 - 40 tables</option>
-                    <option value="40+ tables">40+ tables</option>
-                  </select>
+                  <div className="relative">
+                    <LayoutGrid className="absolute left-3 top-3 w-4 h-4 text-zinc-500" />
+                    <select
+                      value={formData.tableCount}
+                      onChange={(e) =>
+                        setFormData({ ...formData, tableCount: e.target.value })
+                      }
+                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="6-12 tables">6 - 12 tables</option>
+                      <option value="13-24 tables">13 - 24 tables</option>
+                      <option value="25-40 tables">25 - 40 tables</option>
+                      <option value="40+ tables">40+ tables</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -172,11 +226,11 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
               <div className="pt-2 text-xs text-zinc-400 space-y-1.5 font-sans">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Free 7-Day Trial · No credit card required upfront</span>
+                  <span>Assisted Table Onboarding · Hardware-free QR Standees</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Flat ₹699/mo thereafter · Zero commission on diner bills</span>
+                  <span>Instant settlement directly to your restaurant UPI VPA</span>
                 </div>
               </div>
 
@@ -184,11 +238,21 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                 <Button
                   type="submit"
                   size="lg"
+                  disabled={submitting}
                   className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm shadow-xl shadow-emerald-950 py-3.5 cursor-pointer font-sans"
                 >
-                  <Sparkles className="w-4 h-4 text-zinc-950" />
-                  <span>Confirm Free 7-Day Trial Setup</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+                      <span>Submitting Request...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-zinc-950" />
+                      <span>Book a Demo</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </Button>
               </div>
             </form>
@@ -200,29 +264,32 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
             </div>
 
             <h3 className="text-2xl font-extrabold text-white font-heading">
-              You&apos;re in! Welcome to Pangat.
+              Demo Request Received!
             </h3>
 
             <p className="text-sm text-zinc-300 max-w-sm mx-auto leading-relaxed">
-              We&apos;ve received your setup request for{" "}
-              <strong className="text-emerald-400">
-                {formData.cafeName || "your cafe"}
-              </strong>
-              . Our Pune team will WhatsApp you within 2 hours to confirm your standee delivery!
+              Our team will connect within <strong className="text-emerald-400">4 hours</strong> via WhatsApp to schedule your personalized live demo and setup for{" "}
+              <strong className="text-zinc-100">
+                {formData.restaurantName || "your restaurant"}
+              </strong>.
             </p>
 
             <div className="p-4 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-left space-y-2">
               <div className="flex justify-between">
-                <span className="text-zinc-400">Contact:</span>
+                <span className="text-zinc-400">Owner:</span>
+                <span className="text-zinc-200 font-bold">{formData.ownerName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">WhatsApp Contact:</span>
                 <span className="text-zinc-200 font-bold">{formData.phone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400">Delivery Zone:</span>
-                <span className="text-zinc-200">{formData.locality}</span>
+                <span className="text-zinc-400">City / Area:</span>
+                <span className="text-zinc-200">{formData.city}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400">Free Trial Period:</span>
-                <span className="text-emerald-400 font-bold">7 Days Full Access</span>
+                <span className="text-zinc-400">Daily Table Count:</span>
+                <span className="text-emerald-400 font-bold">{formData.tableCount}</span>
               </div>
             </div>
 
@@ -230,7 +297,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
               onClick={handleReset}
               className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-bold cursor-pointer"
             >
-              Back to Overview
+              Done
             </Button>
           </div>
         )}
@@ -238,3 +305,6 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
     </div>
   )
 }
+
+export const BookDemoModal = PilotModal
+export type BookDemoModalProps = PilotModalProps
