@@ -43,10 +43,11 @@ export function ProblemSolution() {
         {/* Magic UI MagicCard Bento Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           {/* BENTO 1: Direct Table Ordering (Span 7) */}
-          <MagicCard
-            gradientColor="rgba(16, 185, 129, 0.15)"
-            className="lg:col-span-7 p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
-          >
+          <div id="direct-ordering" className="lg:col-span-7 flex">
+            <MagicCard
+              gradientColor="rgba(16, 185, 129, 0.15)"
+              className="w-full p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
+            >
             {/* Top Text Content with equalized min-height on desktop for laser alignment */}
             <div className="flex-1 flex flex-col justify-start lg:min-h-[195px]">
               <div className="flex items-center justify-between">
@@ -85,12 +86,14 @@ export function ProblemSolution() {
               </div>
             </div>
           </MagicCard>
+          </div>
 
           {/* BENTO 2: 100% Browser-Based / Zero Hardware (Span 5) */}
-          <MagicCard
-            gradientColor="rgba(245, 158, 11, 0.12)"
-            className="lg:col-span-5 p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
-          >
+          <div id="zero-hardware" className="lg:col-span-5 flex">
+            <MagicCard
+              gradientColor="rgba(245, 158, 11, 0.12)"
+              className="w-full p-6 sm:p-8 lg:p-10 flex flex-col justify-between rounded-3xl"
+            >
             {/* Top Text Content with matching min-height on desktop */}
             <div className="flex-1 flex flex-col justify-start lg:min-h-[195px]">
               <div className="flex items-center justify-between">
@@ -127,6 +130,7 @@ export function ProblemSolution() {
               </span>
             </div>
           </MagicCard>
+          </div>
 
           {/* BENTO 3: Instant Upfront UPI Settlement (Span 5) */}
           <MagicCard

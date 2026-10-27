@@ -16,11 +16,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { QrCode, RefreshCw, LayoutGrid, CheckCircle2, Plus, Trash2, Loader2, AlertCircle } from "lucide-react"
+import { useAuthStore } from "@/stores/useAuthStore"
+import { QrCode, RefreshCw, LayoutGrid, CheckCircle2, Plus, Trash2, Loader2, AlertCircle, Printer } from "lucide-react"
 import { cn, isSameTableNumber } from "@/lib/utils"
 import type { TableStatus } from "@/types/domain"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { TableQrModal } from "../components/TableQrModal"
+import { QrCodeImage } from "@/components/ui/QrCodeImage"
 
 const STATUS_CONFIG: Record<TableStatus, { label: string; bg: string; border: string; text: string; badge: string }> = {
   VACANT: {
@@ -64,6 +67,16 @@ export function AdminTablesPage() {
   const [filterStatus, setFilterStatus] = useState<TableStatus | "all">("all")
   const [notification, setNotification] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const currentOutlet = useAuthStore((s) => s.currentOutlet)
+  const outletSlug = currentOutlet?.slug || "pangat"
+  const outletName = currentOutlet?.name || "Pangat Dining"
+
+  // Single Table QR Modal state
+  const [selectedQrTable, setSelectedQrTable] = useState<string | null>(null)
+
+  // Master Batch Print Table QRs state
+  const [batchPrintOpen, setBatchPrintOpen] = useState(false)
 
   // Compute live effective status aligned with open kitchen tickets and settlements
   const effectiveTables = tables.map((t) => {
@@ -190,6 +203,16 @@ export function AdminTablesPage() {
 
           <Button
             size="sm"
+            onClick={() => setBatchPrintOpen(true)}
+            variant="outline"
+            className="gap-1.5 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10 text-xs font-bold cursor-pointer"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            <span>Download All Table QRs (Print Kit)</span>
+          </Button>
+
+          <Button
+            size="sm"
             onClick={handleOpenAddModal}
             className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/30"
           >
@@ -233,39 +256,49 @@ export function AdminTablesPage() {
         </div>
 
         {/* Table grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3.5">
           {filtered.map((table) => {
             const config = STATUS_CONFIG[table.status]
             const displayName =
               table.tableNumber.startsWith("T") || table.tableNumber.startsWith("OD")
                 ? table.tableNumber
                 : `T${table.tableNumber}`
+            const isOutdoor = displayName.toUpperCase().startsWith("OD")
 
             return (
               <div
                 key={table.id}
                 className={cn(
-                  "rounded-2xl border p-4 flex flex-col justify-between gap-3 transition-all duration-200 relative group",
+                  "rounded-2xl border p-4 flex flex-col justify-between gap-3.5 transition-all duration-200 relative group shadow-sm",
                   config.bg,
                   config.border
                 )}
               >
-                {/* Top: Table number & action buttons */}
+                {/* Top: Table Identifier & Status Badge */}
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className={cn("text-2xl font-black tracking-tight", config.text)}>
-                      {displayName}
-                    </span>
+                  <div className="flex items-start justify-between gap-1.5">
+                    <div className="min-w-0">
+                      <span className={cn("text-2xl font-black font-mono tracking-tight block leading-tight", config.text)}>
+                        {displayName}
+                      </span>
+                      <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block mt-0.5">
+                        {isOutdoor ? "Outdoor Table" : "Indoor Table"}
+                      </span>
+                    </div>
 
-                    <div className="flex items-center gap-1">
-                      <div className="text-zinc-500" title="QR Code active">
-                        <QrCode className="h-3.5 w-3.5" />
-                      </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className={cn(
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider",
+                        config.badge
+                      )}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                        {config.label}
+                      </span>
 
                       <button
                         onClick={() => handleDelete(table.id, displayName)}
                         disabled={deletingId === table.id}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
                         title="Delete table"
                       >
                         {deletingId === table.id ? (
@@ -276,29 +309,35 @@ export function AdminTablesPage() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Status badge */}
-                  <div className="mt-2">
-                    <span className={cn(
-                      "inline-block px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide",
-                      config.badge
-                    )}>
-                      {config.label}
-                    </span>
-                  </div>
                 </div>
 
-                {/* Quick status change selector */}
-                <select
-                  className="text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-zinc-800 dark:text-zinc-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full shadow-sm font-medium"
-                  value={table.status}
-                  onChange={(e) => handleStatusChange(table.id, displayName, e.target.value as TableStatus)}
+                {/* Middle: Prominent Full-Width QR Code Button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedQrTable(table.tableNumber)}
+                  className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs group/qr"
+                  title={`View, download and print QR code standee for ${displayName}`}
                 >
-                  <option value="VACANT">Vacant (Gray)</option>
-                  <option value="OCCUPIED">Occupied (Rose)</option>
-                  <option value="PREPPING">Prepping (Amber)</option>
-                  <option value="SERVED">Served (Green)</option>
-                </select>
+                  <QrCode className="h-4 w-4 shrink-0 text-emerald-400 transition-transform group-hover/qr:scale-110" />
+                  <span className="truncate">QR Code & Tent</span>
+                </button>
+
+                {/* Bottom: Quick status change selector */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">
+                    Update Status
+                  </label>
+                  <select
+                    className="text-xs bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 focus:border-emerald-500 rounded-xl px-2.5 py-1.5 text-zinc-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full shadow-inner font-medium transition-colors"
+                    value={table.status}
+                    onChange={(e) => handleStatusChange(table.id, displayName, e.target.value as TableStatus)}
+                  >
+                    <option value="VACANT">Vacant (Available)</option>
+                    <option value="OCCUPIED">Occupied (Unpaid Bill)</option>
+                    <option value="PREPPING">Prepping (In Kitchen)</option>
+                    <option value="SERVED">Served (Bill Settled)</option>
+                  </select>
+                </div>
               </div>
             )
           })}
@@ -401,6 +440,114 @@ export function AdminTablesPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Single Table QR Code Modal */}
+      {selectedQrTable && (
+        <TableQrModal
+          open={Boolean(selectedQrTable)}
+          onClose={() => setSelectedQrTable(null)}
+          tableNumber={selectedQrTable}
+          outletSlug={outletSlug}
+          outletName={outletName}
+        />
+      )}
+
+      {/* Master Batch Table QR Print Kit Modal */}
+      <Dialog open={batchPrintOpen} onOpenChange={setBatchPrintOpen}>
+        <DialogContent className="max-w-3xl bg-zinc-950 border border-zinc-800 text-white p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .batch-print-area, .batch-print-area * {
+                visibility: visible;
+              }
+              .batch-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 20px !important;
+                background: white !important;
+                color: black !important;
+              }
+              .batch-card {
+                page-break-inside: avoid;
+                border: 2px solid #000 !important;
+                padding: 16px !important;
+                text-align: center;
+              }
+            }
+          ` }} />
+
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+                  <Printer className="h-5 w-5 text-emerald-400" />
+                  <span>Batch Table QR Tent Print Kit ({tables.length} Tables)</span>
+                </DialogTitle>
+                <DialogDescription className="text-xs text-zinc-400 mt-1">
+                  Ready-to-print 4x6 acrylic stand templates for all dining tables of {outletName}.
+                </DialogDescription>
+              </div>
+
+              <Button
+                onClick={() => window.print()}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 shadow-md shadow-emerald-950"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print All Sheets</span>
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="batch-print-area grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 py-4">
+            {tables.map((t) => {
+              const origin = typeof window !== "undefined" ? window.location.origin : "https://layerform.in"
+              const qrUrl = `${origin}/r/${outletSlug}/t/${t.tableNumber}`
+              return (
+                <div
+                  key={t.id}
+                  className="batch-card bg-white text-zinc-950 rounded-2xl p-4 border border-zinc-300 shadow-md flex flex-col items-center text-center space-y-2"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                    🍃 PANGAT • {outletName}
+                  </p>
+                  <div className="bg-zinc-900 text-white px-3 py-0.5 rounded-full text-xs font-black tracking-widest uppercase">
+                    Table {t.tableNumber}
+                  </div>
+                  <div className="p-1 bg-white rounded-lg">
+                    <QrCodeImage value={qrUrl} size={140} />
+                  </div>
+                  <p className="text-[10px] font-bold text-zinc-800">
+                    Scan with Phone Camera to Order
+                  </p>
+                  <p className="text-[8px] text-zinc-500 font-mono">
+                    Zero-Wait Table Ordering & Settlements
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+
+          <DialogFooter className="border-t border-zinc-800 pt-3 flex items-center justify-between">
+            <span className="text-xs text-zinc-500">
+              Formatted for standard 4" x 6" acrylic table stands.
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setBatchPrintOpen(false)}
+              className="border-zinc-800 text-zinc-400 hover:text-white text-xs"
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

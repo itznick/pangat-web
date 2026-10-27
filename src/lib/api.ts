@@ -20,6 +20,8 @@ import type {
   AdminOrganizationItem,
   AdminOutletItem,
   DetailedSystemHealth,
+  CustomerFeedbackSummary,
+  OrderQueryParams,
 } from '@/types/domain'
 
 export function resolveApiBaseUrl(): string {
@@ -28,27 +30,33 @@ export function resolveApiBaseUrl(): string {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol || 'http:';
 
-    // If accessed via mobile phone or LAN IP (e.g. 192.168.x.x), route to host machine IP
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    const isLocalHost =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.endsWith('.local') ||
+      /^192\.168\./.test(hostname) ||
+      /^10\./.test(hostname) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname);
+
+    if (isLocalHost && hostname !== 'localhost' && hostname !== '127.0.0.1') {
       if (envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
         return envUrl
           .replace(/\b(localhost|127\.0\.0\.1)\b/g, hostname)
           .replace(/\/+$/, '');
       }
-      if (!envUrl) {
-        return `${protocol}//${hostname}:4000/api/v1`;
+      return `${protocol}//${hostname}:4000/api/v1`;
+    }
+
+    if (!isLocalHost) {
+      if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+        return envUrl.replace(/\/+$/, '');
       }
+      return 'https://pangat-api.onrender.com/api/v1';
     }
   }
 
   if (envUrl) {
     return envUrl.replace(/\/+$/, '');
-  }
-
-  if (typeof window !== 'undefined' && window.location?.hostname) {
-    const protocol = window.location.protocol || 'http:';
-    const hostname = window.location.hostname;
-    return `${protocol}//${hostname}:4000/api/v1`;
   }
 
   return 'http://localhost:4000/api/v1';
@@ -123,6 +131,14 @@ export const api = {
       outlets?: Restaurant[]
     }> =>
       apiClient.post('/auth/login', credentials),
+    kdsPinLogin: (credentials: { pinCode: string; outletSlug?: string; station?: string }): Promise<{
+      accessToken: string
+      user: StaffUser
+      organization?: Organization | null
+      outlets?: Restaurant[]
+      outlet?: Restaurant
+    }> =>
+      apiClient.post('/auth/kds-pin-login', credentials),
     onboard: (data: OnboardPayload): Promise<OnboardResponseData> =>
       apiClient.post('/auth/onboard', data),
     setupSuperAdmin: (data: { name: string; email: string; password: string; phone?: string }): Promise<{
@@ -173,6 +189,13 @@ export const api = {
       apiClient.get(`/restaurants/${slug}`),
     updateSettings: (slug: string, settings: Partial<Restaurant>): Promise<Restaurant> =>
       apiClient.patch(`/restaurants/${slug}/settings`, settings),
+    getFeedback: (slug: string): Promise<CustomerFeedbackSummary> =>
+      apiClient.get(`/restaurants/${slug}/feedback`),
+    submitFeedback: (
+      slug: string,
+      data: { orderId?: string; tableNumber?: string; rating: number; tags?: string[]; comment?: string }
+    ): Promise<any> =>
+      apiClient.post(`/restaurants/${slug}/feedback`, data),
   },
 
   // Tables
@@ -217,14 +240,19 @@ export const api = {
           'X-Idempotency-Key': idempotencyKey,
         },
       }),
-    list: (restaurantSlug?: string): Promise<Order[]> =>
-      apiClient.get('/orders', { params: { restaurantSlug } }),
+    list: (restaurantSlug?: string, params?: OrderQueryParams): Promise<Order[]> =>
+      apiClient.get('/orders', { params: { restaurantSlug, ...params } }),
     get: (id: string): Promise<Order> =>
       apiClient.get(`/orders/${id}`),
     updateStatus: (id: string, status: OrderStatus): Promise<Order> =>
       apiClient.patch(`/orders/${id}/status`, { status }),
     markPaid: (id: string): Promise<Order> =>
       apiClient.patch(`/orders/${id}/mark-paid`),
+    submitFeedback: (
+      id: string,
+      data: { rating: number; tags?: string[]; comment?: string }
+    ): Promise<Order> =>
+      apiClient.post(`/orders/${id}/feedback`, data),
   },
 
   // Leads (Public demo inquiries)

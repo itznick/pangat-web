@@ -122,7 +122,37 @@ export interface OrderFeedback {
   rating: number
   tags: string[]
   comment?: string
-  submittedAt: Date
+  submittedAt: Date | string
+}
+
+export interface CustomerReviewItem {
+  id: string
+  orderId?: string
+  tableNumber: string
+  rating: number
+  tags: string[]
+  comment?: string
+  createdAt: string | Date
+}
+
+export interface CustomerFeedbackSummary {
+  restaurantSlug: string
+  restaurantName: string
+  averageRating: number
+  totalCount: number
+  ratingBreakdown: Record<number, number>
+  tagCounts: Record<string, number>
+  recentReviews: CustomerReviewItem[]
+}
+
+export interface OrderQueryParams {
+  restaurantSlug?: string
+  status?: string
+  paymentStatus?: string
+  startDate?: string
+  endDate?: string
+  page?: number
+  limit?: number
 }
 
 export interface Order {
@@ -137,7 +167,8 @@ export interface Order {
   customerPhone?: string
   orderStatus: OrderStatus
   feedback?: OrderFeedback
-  createdAt: Date
+  settledAt?: Date | string
+  createdAt: Date | string
 }
 
 // ── Menu Category (lightweight, used for nav) ─────────────────────────────────

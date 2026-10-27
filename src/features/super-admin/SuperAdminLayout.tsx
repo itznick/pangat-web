@@ -45,11 +45,9 @@ export function SuperAdminLayout() {
 
   if (!mounted) return null
 
-  const isPlatformAdmin = Boolean(
-    user?.isPlatformAdmin === true || user?.role === 'PLATFORM_SUPER_ADMIN'
-  )
+  const isPlatformSuperAdmin = user?.role === 'PLATFORM_SUPER_ADMIN'
 
-  if (!user || !isPlatformAdmin) {
+  if (!user || !isPlatformSuperAdmin) {
     return <Navigate to="/login" replace />
   }
 

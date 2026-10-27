@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router"
 import { LandingPage } from "@/features/landing"
 import { LoginPage } from "@/features/auth/LoginPage"
+import { KdsPinLoginPage } from "@/features/auth/KdsPinLoginPage"
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary"
 import { SuperAdminLayout, SuperAdminDashboardPage } from "@/features/super-admin"
 
@@ -17,6 +18,7 @@ import {
   AdminTablesPage,
   AdminMenuPage,
   AdminOrdersPage,
+  AdminFeedbackPage,
   AdminSettingsPage,
 } from "@/features/admin"
 
@@ -35,6 +37,11 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/kds-login",
+    element: <KdsPinLoginPage />,
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -104,6 +111,11 @@ export const router = createBrowserRouter([
       {
         path: "orders",
         element: <AdminOrdersPage />,
+        errorElement: <RouteErrorBoundary />,
+      },
+      {
+        path: "feedback",
+        element: <AdminFeedbackPage />,
         errorElement: <RouteErrorBoundary />,
       },
       {

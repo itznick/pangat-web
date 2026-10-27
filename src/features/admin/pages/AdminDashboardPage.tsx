@@ -16,8 +16,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { useAdminStore } from "@/stores/useAdminStore"
+import { useAuthStore } from "@/stores/useAuthStore"
 import { useKdsStore } from "@/stores/useKdsStore"
 import { api } from "@/lib/api"
+import { ZeroStateCard } from "../components/ZeroStateCard"
+import { AddOutletModal } from "../components/AddOutletModal"
 import {
   TrendingUp,
   Users,
@@ -36,6 +39,7 @@ import {
 import { cn, isSameTableNumber } from "@/lib/utils"
 import { TableDrawer } from "../components/dashboard/TableDrawer"
 import { PaymentBreakdownWidget } from "../components/dashboard/PaymentBreakdownWidget"
+import { CustomerFeedbackWidget } from "../components/dashboard/CustomerFeedbackWidget"
 import type { Table, Order, TableStatus } from "@/types/domain"
 
 // ── Metric Card ────────────────────────────────────────────────────────────────
@@ -382,13 +386,16 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
 // ── Main Dashboard Page ────────────────────────────────────────────────────────
 
 export function AdminDashboardPage() {
+  const restaurant = useAdminStore((s) => s.restaurant)
   const todaySales = useAdminStore((s) => s.todaySales)
   const tables = useAdminStore((s) => s.tables)
   const activeOrders = useAdminStore((s) => s.activeOrders)
+  const outlets = useAuthStore((s) => s.outlets)
 
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [showWalkIn, setShowWalkIn] = useState(false)
   const [showStockToggle, setShowStockToggle] = useState(false)
+  const [addOutletOpen, setAddOutletOpen] = useState(false)
 
   // Helper: compute true live status based on real kitchen & settlement state
   const getTableEffectiveStatus = useCallback(
@@ -434,7 +441,7 @@ export function AdminDashboardPage() {
     [activeOrders]
   )
 
-  const elapsedLabel = (createdAt: Date): string => {
+  const elapsedLabel = (createdAt: Date | string): string => {
     const mins = Math.round((Date.now() - new Date(createdAt).getTime()) / 60_000)
     return mins < 1 ? "<1m" : `${mins}m`
   }
@@ -508,8 +515,18 @@ export function AdminDashboardPage() {
       </div>
 
       <div className="flex-1 p-6 space-y-6">
-        {/* ── Metric Cards ──────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {!restaurant && (!outlets || outlets.length === 0) ? (
+          <div className="py-6">
+            <ZeroStateCard onAddOutlet={() => setAddOutletOpen(true)} />
+            <AddOutletModal
+              open={addOutletOpen}
+              onClose={() => setAddOutletOpen(false)}
+            />
+          </div>
+        ) : (
+          <>
+            {/* ── Metric Cards ──────────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Today's Gross Revenue"
             value={`₹${todaySales.totalRevenue.toLocaleString("en-IN")}`}
@@ -628,10 +645,13 @@ export function AdminDashboardPage() {
           </div>
 
           {/* ── Right Column (40%) ─────────────────────────────────────────────── */}
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-5">
             <PaymentBreakdownWidget />
+            <CustomerFeedbackWidget restaurantSlug={restaurant?.slug || ''} />
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* ── Overlays / Drawers ──────────────────────────────────────────────────── */}

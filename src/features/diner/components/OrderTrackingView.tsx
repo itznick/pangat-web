@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import {
   CheckCircle2,
@@ -72,7 +72,13 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
       }
     }
 
-    const onPaid = ({ orderId }: { orderId: string }) => {
+    const onPaid = ({
+      orderId,
+      settledAt,
+    }: {
+      orderId: string
+      settledAt?: string
+    }) => {
       if (orderId === order.id) {
         useOrderTrackingStore.setState((s) =>
           s.order
@@ -80,11 +86,16 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
                 order: {
                   ...s.order,
                   paymentStatus: "PAID",
-                  paymentMethod: "UPI_INSTANT",
+                  settledAt: settledAt || new Date().toISOString(),
                 },
               }
             : s
         )
+        // Automatically trigger 1-Tap Feedback Sheet
+        setShowFeedbackSheet(true)
+        setTimeout(() => {
+          feedbackRef.current?.scrollIntoView({ behavior: "smooth" })
+        }, 300)
       }
     }
 
@@ -110,8 +121,18 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
 
   // Local state for 1-tap feedback
   const [selectedRating, setSelectedRating] = useState<number>(5)
-  const [selectedTags, setSelectedTags] = useState<string[]>(["Fast Service", "Piping Hot"])
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(Boolean(order?.feedback))
+  const [selectedTags, setSelectedTags] = useState<string[]>([
+    "Fast Service",
+    "Piping Hot",
+  ])
+  const [feedbackComment, setFeedbackComment] = useState<string>("")
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(
+    Boolean(order?.feedback)
+  )
+  const [showFeedbackSheet, setShowFeedbackSheet] = useState<boolean>(
+    Boolean(order?.paymentStatus === "PAID" || order?.orderStatus === "COMPLETED")
+  )
+  const feedbackRef = useRef<HTMLDivElement>(null)
 
   const currentStatus: OrderStatus = order?.orderStatus ?? "RECEIVED"
 
@@ -144,12 +165,35 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
     )
   }
 
-  const handleFeedbackSubmit = () => {
+  const handleFeedbackSubmit = async () => {
     submitFeedback({
       rating: selectedRating,
       tags: selectedTags,
     })
     setFeedbackSubmitted(true)
+    const payload = {
+      rating: selectedRating,
+      tags: selectedTags,
+      comment: feedbackComment.trim() || undefined,
+    }
+    if (order?.id) {
+      try {
+        await api.orders.submitFeedback(order.id, payload)
+      } catch (err) {
+        console.warn("Feedback API save error:", err)
+      }
+    }
+    if (restaurantSlug) {
+      try {
+        await api.restaurants.submitFeedback(restaurantSlug, {
+          orderId: order?.id,
+          tableNumber: tableId,
+          ...payload,
+        })
+      } catch (err) {
+        console.warn("Restaurant feedback save error:", err)
+      }
+    }
   }
 
   return (
@@ -275,9 +319,12 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
           )}
         </div>
 
-        {/* 1-Tap Experience Feedback Component (Triggered when order is Served / COMPLETED) */}
-        {currentStatus === "COMPLETED" && (
-          <div className="bg-gradient-to-b from-zinc-900 to-zinc-900/90 rounded-2xl border border-amber-500/30 p-5 shadow-xl space-y-4">
+        {/* 1-Tap Experience Feedback Component (Triggered when order is Served / COMPLETED or Paid) */}
+        {(currentStatus === "COMPLETED" || showFeedbackSheet || order?.paymentStatus === "PAID") && (
+          <div
+            ref={feedbackRef}
+            className="bg-gradient-to-b from-zinc-900 to-zinc-900/90 rounded-2xl border border-amber-500/30 p-5 shadow-xl space-y-4 animate-in fade-in duration-300"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
@@ -335,10 +382,30 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
                   </div>
                 </div>
 
+                {/* Custom feedback comment input (strictly max 250 characters) */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="text-zinc-400 font-medium">
+                      Add a quick note / compliment
+                    </label>
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      {feedbackComment.length}/250
+                    </span>
+                  </div>
+                  <textarea
+                    value={feedbackComment}
+                    onChange={(e) => setFeedbackComment(e.target.value.slice(0, 250))}
+                    maxLength={250}
+                    placeholder="e.g. Piping hot misal, quick service! (max 250 chars)"
+                    rows={2}
+                    className="w-full text-xs bg-zinc-950/80 border border-zinc-800 focus:border-amber-400/60 rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-400/40 resize-none transition-all shadow-inner"
+                  />
+                </div>
+
                 {/* Submit Feedback */}
                 <button
                   onClick={handleFeedbackSubmit}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98]"
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <Heart className="h-3.5 w-3.5 fill-current" />
                   Submit Feedback
@@ -363,14 +430,36 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
           </div>
         )}
 
-        {/* Pay at Counter Action Card (Requirement 10) */}
+        {/* Counter Payment Settled Verified Badge */}
+        {order?.paymentMethod === "PAY_AT_COUNTER" && order?.paymentStatus === "PAID" && (
+          <div className="bg-emerald-950/30 border border-emerald-500/50 rounded-2xl p-4 flex items-center justify-between shadow-lg animate-in fade-in duration-300">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-emerald-300 block">
+                  Payment Settled at Counter • Thank You!
+                </span>
+                <span className="text-[11px] text-zinc-400">
+                  Receipt closed by steward · Total ₹{Number(order.totalAmount || 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-500/30">
+              Verified ✓
+            </span>
+          </div>
+        )}
+
+        {/* Pay at Counter Outstanding Action Card */}
         {isPayAtCounterPending && (
           <div className="bg-amber-950/20 border border-amber-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <Store className="h-4 w-4 text-amber-400" />
                 <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                  Payment Outstanding at Counter
+                  Pending payment at counter
                 </span>
               </div>
               <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">

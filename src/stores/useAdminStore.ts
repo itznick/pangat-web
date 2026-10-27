@@ -99,6 +99,7 @@ interface AdminStore {
   // ── Order / settlement actions ─────────────────────────────────────────────
   addOrder: (order: Order) => void
   settleOrder: (orderId: string, paymentStatus: PaymentStatus) => Promise<void>
+  archiveOrder: (orderId: string) => Promise<void>
 
   // ── Outlet switching ───────────────────────────────────────────────────────
   setRestaurantName: (name: string) => void
@@ -450,7 +451,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     set((s) => {
       const nextOrders = s.activeOrders.map((o) =>
         o.id === orderId
-          ? { ...o, paymentStatus, orderStatus: 'COMPLETED' as const }
+          ? { ...o, paymentStatus }
           : o
       )
       const targetOrder = s.activeOrders.find((o) => o.id === orderId)
@@ -482,11 +483,50 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     try {
       if (paymentStatus === 'PAID') {
         await api.orders.markPaid(orderId)
-      } else {
-        await api.orders.updateStatus(orderId, 'COMPLETED')
       }
     } catch (err) {
       console.error('Failed to settle order via API:', err)
+    }
+  },
+
+  archiveOrder: async (orderId) => {
+    set((s) => {
+      const nextOrders = s.activeOrders.map((o) =>
+        o.id === orderId
+          ? { ...o, orderStatus: 'COMPLETED' as const }
+          : o
+      )
+      const targetOrder = s.activeOrders.find((o) => o.id === orderId)
+      let nextTables = s.tables
+      if (targetOrder) {
+        const tableOrders = nextOrders.filter((o) => isSameTableNumber(o.tableNumber, targetOrder.tableNumber))
+        const openOrders = tableOrders.filter((o) => o.orderStatus !== 'COMPLETED')
+        let nextTableStatus: TableStatus = 'VACANT'
+        if (openOrders.length > 0) {
+          const hasCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING')
+          if (hasCooking) {
+            nextTableStatus = 'PREPPING'
+          } else {
+            const hasUnpaid = openOrders.some((o) => o.paymentStatus === 'PENDING')
+            nextTableStatus = hasUnpaid ? 'OCCUPIED' : 'SERVED'
+          }
+        } else {
+          nextTableStatus = 'VACANT'
+        }
+        nextTables = s.tables.map((t) =>
+          isSameTableNumber(t.tableNumber, targetOrder.tableNumber) ? { ...t, status: nextTableStatus } : t
+        )
+      }
+      return {
+        activeOrders: nextOrders,
+        tables: nextTables,
+      }
+    })
+
+    try {
+      await api.orders.updateStatus(orderId, 'COMPLETED')
+    } catch (err) {
+      console.error('Failed to archive order via API:', err)
     }
   },
 

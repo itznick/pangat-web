@@ -73,12 +73,13 @@ export function HowItWorks() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           {steps.map((step, idx) => {
             const Icon = step.icon
+            const stepId = idx === 1 ? "kds-station" : undefined
             return (
-              <MagicCard
-                key={idx}
-                gradientColor="rgba(16, 185, 129, 0.12)"
-                className="p-6 sm:p-8 md:p-9 flex flex-col justify-between rounded-3xl shadow-xl"
-              >
+              <div key={idx} id={stepId} className="flex">
+                <MagicCard
+                  gradientColor="rgba(16, 185, 129, 0.12)"
+                  className="p-6 sm:p-8 md:p-9 flex flex-col justify-between rounded-3xl shadow-xl w-full"
+                >
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-sans font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-3.5 py-1 rounded-full tabular-nums">
@@ -117,8 +118,9 @@ export function HowItWorks() {
                   <span className="text-emerald-400 font-bold font-sans">→</span>
                 </div>
               </MagicCard>
-            )
-          })}
+            </div>
+          )
+        })}
         </div>
       </div>
     </section>

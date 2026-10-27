@@ -55,10 +55,10 @@ export function ZeroStateCard({ onAddOutlet }: ZeroStateCardProps) {
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <Button
-              onClick={() => navigate('/onboarding')}
-              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2 px-6 shadow-xl shadow-emerald-950"
+              onClick={() => (onAddOutlet ? onAddOutlet() : navigate('/onboarding'))}
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2 px-6 shadow-xl shadow-emerald-950 cursor-pointer"
             >
-              <span>Launch Onboarding Wizard</span>
+              <span>Setup Dining Outlet Now</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
 
@@ -66,7 +66,7 @@ export function ZeroStateCard({ onAddOutlet }: ZeroStateCardProps) {
               <Button
                 variant="outline"
                 onClick={onAddOutlet}
-                className="w-full sm:w-auto border-zinc-700 text-zinc-300 hover:text-white gap-2"
+                className="w-full sm:w-auto border-zinc-700 text-zinc-300 hover:text-white gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Quick Add Outlet</span>

@@ -27,6 +27,20 @@ export function Footer({ onOpenPilot }: FooterProps) {
     })
   }
 
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault()
+    const target = document.querySelector(href)
+    if (target) {
+      const topOffset = 90
+      const elementPosition = target.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - topOffset
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      })
+    }
+  }
+
   const puneNeighborhoods = [
     { name: "FC Road & Deccan", tag: "Student & Cafe Hub" },
     { name: "Koregaon Park", tag: "Specialty Coffee" },
@@ -233,27 +247,9 @@ export function Footer({ onOpenPilot }: FooterProps) {
           {/* Column 2: Product & Architecture (span 2) */}
           <div className="lg:col-span-2 space-y-3">
             <h4 className="text-xs font-sans font-semibold uppercase tracking-wider text-zinc-400">
-              Product
+              Product Information
             </h4>
             <ul className="space-y-2.5 text-sm text-zinc-300 font-sans">
-              <li>
-                <a
-                  href="/admin/dashboard"
-                  className="hover:text-emerald-300 transition-colors font-semibold text-emerald-400 flex items-center gap-1"
-                >
-                  <span>Admin Dashboard</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/login"
-                  className="hover:text-amber-300 transition-colors font-semibold text-amber-400 flex items-center gap-1"
-                >
-                  <span>Owner Login</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </li>
               <li>
                 <button
                   type="button"
@@ -266,7 +262,8 @@ export function Footer({ onOpenPilot }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="#how-it-works"
+                  href="#direct-ordering"
+                  onClick={(e) => scrollToSection(e, "#direct-ordering")}
                   className="hover:text-emerald-400 transition-colors"
                 >
                   Direct Table Ordering
@@ -274,7 +271,8 @@ export function Footer({ onOpenPilot }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="#features"
+                  href="#kds-station"
+                  onClick={(e) => scrollToSection(e, "#kds-station")}
                   className="hover:text-emerald-400 transition-colors"
                 >
                   Kitchen Display (KDS)
@@ -282,7 +280,8 @@ export function Footer({ onOpenPilot }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="#features"
+                  href="#zero-hardware"
+                  onClick={(e) => scrollToSection(e, "#zero-hardware")}
                   className="hover:text-emerald-400 transition-colors"
                 >
                   Zero-Hardware POS
@@ -291,6 +290,7 @@ export function Footer({ onOpenPilot }: FooterProps) {
               <li>
                 <a
                   href="#calculator"
+                  onClick={(e) => scrollToSection(e, "#calculator")}
                   className="hover:text-emerald-400 transition-colors"
                 >
                   Turnover ROI Calculator
@@ -299,6 +299,7 @@ export function Footer({ onOpenPilot }: FooterProps) {
               <li>
                 <a
                   href="#pricing"
+                  onClick={(e) => scrollToSection(e, "#pricing")}
                   className="hover:text-emerald-400 transition-colors"
                 >
                   Flat ₹699/mo Pricing
@@ -381,9 +382,25 @@ export function Footer({ onOpenPilot }: FooterProps) {
               © 2026 Pangat Technologies. Built with pride in Pune, Maharashtra.
             </span>
             <span className="hidden sm:inline text-zinc-700">•</span>
-            <span className="text-zinc-400">
-              Rooted in timeless hospitality.
+            <span className="text-emerald-400 font-semibold">
+              Powered by Pangat
             </span>
+            <span className="hidden sm:inline text-zinc-700">•</span>
+            <button
+              type="button"
+              onClick={onOpenPilot}
+              className="text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+            <span className="hidden sm:inline text-zinc-700">•</span>
+            <button
+              type="button"
+              onClick={onOpenPilot}
+              className="text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+            >
+              Terms of Service
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
