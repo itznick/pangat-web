@@ -68,7 +68,7 @@ export function AdminFeedbackPage() {
     loadFeedback()
   }
 
-  const averageRating = data?.averageRating || 4.8
+  const averageRating = data?.averageRating || 0
   const totalCount = data?.totalCount || 0
   const ratingBreakdown = data?.ratingBreakdown || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
   const tagCounts = data?.tagCounts || {}
@@ -91,7 +91,7 @@ export function AdminFeedbackPage() {
   const positiveReviews =
     (ratingBreakdown[5] || 0) + (ratingBreakdown[4] || 0)
   const satisfactionRate =
-    totalCount > 0 ? Math.round((positiveReviews / totalCount) * 100) : 98
+    totalCount > 0 ? Math.round((positiveReviews / totalCount) * 100) : 0
 
   return (
     <div className="flex flex-col h-full overflow-auto bg-zinc-950 text-zinc-100">
@@ -145,7 +145,7 @@ export function AdminFeedbackPage() {
 
             <div className="my-3 flex items-baseline gap-3">
               <span className="text-4xl font-black font-mono text-white tracking-tight">
-                {averageRating.toFixed(1)}
+                {totalCount > 0 ? averageRating.toFixed(1) : "–"}
               </span>
               <div>
                 <div className="flex items-center gap-0.5 text-amber-400">
@@ -154,18 +154,22 @@ export function AdminFeedbackPage() {
                       key={i}
                       className={cn(
                         "h-4 w-4",
-                        i < Math.round(averageRating) ? "fill-amber-400 text-amber-400" : "text-zinc-700"
+                        totalCount > 0 && i < Math.round(averageRating) ? "fill-amber-400 text-amber-400" : "text-zinc-700"
                       )}
                     />
                   ))}
                 </div>
-                <p className="text-xs text-zinc-400 mt-1">Based on {totalCount} verified diner ratings</p>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {totalCount > 0 ? `Based on ${totalCount} verified diner rating${totalCount === 1 ? "" : "s"}` : "No diner ratings yet"}
+                </p>
               </div>
             </div>
 
             <div className="pt-2 border-t border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
               <span>Customer Satisfaction</span>
-              <span className="text-emerald-400 font-bold">{satisfactionRate}% Positive</span>
+              <span className={cn("font-bold", totalCount > 0 ? "text-emerald-400" : "text-zinc-500")}>
+                {totalCount > 0 ? `${satisfactionRate}% Positive` : "–"}
+              </span>
             </div>
           </div>
 
@@ -210,18 +214,22 @@ export function AdminFeedbackPage() {
             </div>
 
             <div className="flex flex-wrap gap-2 py-1">
-              {Object.entries(tagCounts).map(([tag, count]) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-zinc-950 border border-zinc-800 text-zinc-200"
-                >
-                  <ThumbsUp className="w-3 h-3 text-amber-400" />
-                  <span>{tag}</span>
-                  <span className="text-[10px] font-mono text-amber-400/90 font-bold">
-                    ×{count}
+              {Object.keys(tagCounts).length > 0 ? (
+                Object.entries(tagCounts).map(([tag, count]) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-zinc-950 border border-zinc-800 text-zinc-200"
+                  >
+                    <ThumbsUp className="w-3 h-3 text-amber-400" />
+                    <span>{tag}</span>
+                    <span className="text-[10px] font-mono text-amber-400/90 font-bold">
+                      ×{count}
+                    </span>
                   </span>
-                </span>
-              ))}
+                ))
+              ) : (
+                <p className="text-xs text-zinc-500 italic py-1">No feedback tags received yet.</p>
+              )}
             </div>
 
             <p className="pt-2 border-t border-zinc-800/80 text-[11px] text-zinc-500">

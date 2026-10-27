@@ -75,12 +75,12 @@ export function SuperAdminLayout() {
             {!sidebarCollapsed && (
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-white font-heading">Pangat</span>
-                  <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/40 uppercase">
+                  <span className="text-sm font-bold text-white">Pangat</span>
+                  <span className="text-[10px] font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/40 uppercase">
                     Ops
                   </span>
                 </div>
-                <p className="text-[10px] text-zinc-400 font-mono truncate">Platform Super-Admin</p>
+                <p className="text-[10px] text-zinc-400 truncate">Platform Super-Admin</p>
               </div>
             )}
           </div>
@@ -133,7 +133,7 @@ export function SuperAdminLayout() {
           {/* Quick jump to Merchant Dashboard (Zero impersonation) */}
           <div className="pt-4 mt-4 border-t border-zinc-800/80">
             {!sidebarCollapsed && (
-              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
+              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Portals
               </p>
             )}
@@ -159,13 +159,13 @@ export function SuperAdminLayout() {
         {/* Sidebar Footer: Admin profile & logout */}
         <div className="p-3 border-t border-zinc-800/80 space-y-2">
           <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold font-mono text-xs flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
               {user.name?.charAt(0).toUpperCase() || 'A'}
             </div>
             {!sidebarCollapsed && (
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold text-white truncate">{user.name}</div>
-                <div className="text-[10px] font-mono text-amber-400/90 truncate flex items-center gap-1">
+                <div className="text-[10px] text-amber-400/90 truncate flex items-center gap-1 font-semibold">
                   <Shield className="w-2.5 h-2.5" />
                   <span>PLATFORM SUPER ADMIN</span>
                 </div>

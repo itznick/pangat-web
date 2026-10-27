@@ -21,7 +21,7 @@ function computeSalesSummary(orders) {
   return {
     totalRevenue,
     totalCovers,
-    avgPrepTimeMinutes: avgPrepTimeMinutes || 12,
+    avgPrepTimeMinutes,
     activeKotCount,
   };
 }
@@ -44,7 +44,7 @@ describe('Sales Summary & KOT Metric Engine', () => {
     assert.equal(summary.totalRevenue, 0);
     assert.equal(summary.totalCovers, 0);
     assert.equal(summary.activeKotCount, 0);
-    assert.equal(summary.avgPrepTimeMinutes, 12);
+    assert.equal(summary.avgPrepTimeMinutes, 0);
   });
 });
 

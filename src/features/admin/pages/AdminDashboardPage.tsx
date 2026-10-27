@@ -39,7 +39,6 @@ import {
 import { cn, isSameTableNumber } from "@/lib/utils"
 import { TableDrawer } from "../components/dashboard/TableDrawer"
 import { PaymentBreakdownWidget } from "../components/dashboard/PaymentBreakdownWidget"
-import { CustomerFeedbackWidget } from "../components/dashboard/CustomerFeedbackWidget"
 import type { Table, Order, TableStatus } from "@/types/domain"
 
 // ── Metric Card ────────────────────────────────────────────────────────────────
@@ -549,10 +548,10 @@ export function AdminDashboardPage() {
           />
           <MetricCard
             title="Avg. Prep Time"
-            value={`${todaySales.avgPrepTimeMinutes}m`}
+            value={todaySales.avgPrepTimeMinutes > 0 ? `${todaySales.avgPrepTimeMinutes}m` : "–"}
             subtitle="Per kitchen ticket"
             icon={Timer}
-            trend={-5}
+            trend={todaySales.avgPrepTimeMinutes > 0 ? -5 : undefined}
             accentClass="text-amber-600 dark:text-amber-400"
             bgClass="bg-white dark:bg-amber-950/20 border-zinc-200 dark:border-zinc-800"
             iconBgClass="bg-amber-500/15"
@@ -647,7 +646,6 @@ export function AdminDashboardPage() {
           {/* ── Right Column (40%) ─────────────────────────────────────────────── */}
           <div className="flex flex-col gap-5">
             <PaymentBreakdownWidget />
-            <CustomerFeedbackWidget restaurantSlug={restaurant?.slug || ''} />
           </div>
         </div>
         </>

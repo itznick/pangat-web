@@ -38,7 +38,7 @@ const DEFAULT_RESTAURANT: Restaurant = {
 const DEFAULT_SALES: SalesSummary = {
   totalRevenue: 0,
   totalCovers: 0,
-  avgPrepTimeMinutes: 10,
+  avgPrepTimeMinutes: 0,
   activeKotCount: 0,
 }
 
@@ -61,7 +61,7 @@ function computeSalesSummary(orders: Order[]): SalesSummary {
   return {
     totalRevenue,
     totalCovers,
-    avgPrepTimeMinutes: avgPrepTimeMinutes || 12,
+    avgPrepTimeMinutes,
     activeKotCount,
   }
 }

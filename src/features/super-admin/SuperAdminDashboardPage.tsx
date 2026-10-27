@@ -205,25 +205,25 @@ export function SuperAdminDashboardPage() {
     switch (status) {
       case 'NEW':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
             NEW
           </span>
         )
       case 'CONTACTED':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
             CONTACTED
           </span>
         )
       case 'SCHEDULED':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
             SCHEDULED
           </span>
         )
       case 'ONBOARDED':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
             ONBOARDED
           </span>
         )
@@ -251,7 +251,7 @@ export function SuperAdminDashboardPage() {
               <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 Operations Overview & System Radar
               </h1>
-              <p className="text-xs text-zinc-400 mt-0.5 font-mono">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 Platform-wide multi-tenant throughput, Gross GMV, and real-time connectivity
               </p>
             </div>
@@ -278,7 +278,7 @@ export function SuperAdminDashboardPage() {
               <div className="text-2xl font-mono font-bold text-white">
                 {metrics?.totalOrganizations ?? organizations.length}
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1 font-mono">Hospitality brands</div>
+              <div className="text-[11px] text-zinc-400 mt-1">Hospitality brands</div>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
@@ -292,7 +292,7 @@ export function SuperAdminDashboardPage() {
                   / {metrics?.totalOutlets ?? outlets.length}
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1 font-mono">Live floor branches</div>
+              <div className="text-[11px] text-zinc-400 mt-1">Live floor branches</div>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
@@ -303,7 +303,7 @@ export function SuperAdminDashboardPage() {
               <div className="text-2xl font-mono font-bold text-white">
                 {metrics?.totalOrders ?? 0}
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1 font-mono">Diner table tickets</div>
+              <div className="text-[11px] text-zinc-400 mt-1">Diner table tickets</div>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
@@ -314,7 +314,7 @@ export function SuperAdminDashboardPage() {
               <div className="text-2xl font-mono font-bold text-amber-300">
                 ₹{(metrics?.systemGmv ?? 0).toLocaleString('en-IN')}
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1 font-mono">Direct UPI settlement</div>
+              <div className="text-[11px] text-zinc-400 mt-1">Direct UPI settlement</div>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
@@ -326,7 +326,7 @@ export function SuperAdminDashboardPage() {
                 <span>{systemHealth?.websocket.connectedClients ?? 0}</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
-              <div className="text-[11px] text-emerald-400/90 mt-1 font-mono">
+              <div className="text-[11px] text-emerald-400/90 mt-1">
                 {systemHealth?.websocket.activeOutletRooms.length ?? 0} outlets online
               </div>
             </div>
@@ -339,7 +339,7 @@ export function SuperAdminDashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-white">Recent Inbound Demo Requests</h3>
-                  <Badge variant="outline" className="border-zinc-800 text-zinc-400 font-mono text-[10px]">
+                  <Badge variant="outline" className="border-zinc-800 text-zinc-400 text-[10px]">
                     {leads.length} total
                   </Badge>
                 </div>
@@ -387,7 +387,7 @@ export function SuperAdminDashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-white">Active Organizations Directory</h3>
-                  <Badge variant="outline" className="border-zinc-800 text-zinc-400 font-mono text-[10px]">
+                  <Badge variant="outline" className="border-zinc-800 text-zinc-400 text-[10px]">
                     {organizations.length} brands
                   </Badge>
                 </div>
@@ -407,7 +407,7 @@ export function SuperAdminDashboardPage() {
                     <div>
                       <div className="font-bold text-white flex items-center gap-2">
                         <span>{org.name}</span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
                           {org.outletsCount} {org.outletsCount === 1 ? 'outlet' : 'outlets'}
                         </span>
                       </div>
@@ -447,7 +447,7 @@ export function SuperAdminDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">Inbound Demo Requests & Lead Pipeline</h2>
-              <p className="text-xs text-zinc-400 font-mono mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 Manage merchant inquiries, trigger assisted table setup, and pre-fill provisioner
               </p>
             </div>
@@ -464,7 +464,7 @@ export function SuperAdminDashboardPage() {
                 />
               </div>
 
-              <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 gap-0.5 text-[11px] font-mono">
+              <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 gap-0.5 text-[11px]">
                 {['ALL', 'NEW', 'CONTACTED', 'SCHEDULED', 'ONBOARDED'].map((st) => (
                   <button
                     key={st}
@@ -486,7 +486,7 @@ export function SuperAdminDashboardPage() {
           <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60 font-mono">
+                <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60">
                   <th className="py-3 px-4">Restaurant & Locality</th>
                   <th className="py-3 px-4">Decision Maker / WhatsApp</th>
                   <th className="py-3 px-4">Table Scope</th>
@@ -511,7 +511,7 @@ export function SuperAdminDashboardPage() {
                     <tr key={lead.id} className="hover:bg-zinc-900/40 transition-colors">
                       <td className="py-3 px-4">
                         <div className="font-bold text-white text-sm">{lead.restaurantName}</div>
-                        <div className="text-[11px] text-zinc-400 font-mono">📍 {lead.city}</div>
+                        <div className="text-[11px] text-zinc-400">📍 {lead.city}</div>
                       </td>
 
                       <td className="py-3 px-4">
@@ -531,7 +531,7 @@ export function SuperAdminDashboardPage() {
                       </td>
 
                       <td className="py-3 px-4">
-                        <span className="font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[11px]">
+                        <span className="font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[11px]">
                           {lead.tableCount || '12 tables'}
                         </span>
                       </td>
@@ -554,7 +554,7 @@ export function SuperAdminDashboardPage() {
                         </div>
                       </td>
 
-                      <td className="py-3 px-4 text-zinc-400 font-mono text-[11px]">
+                      <td className="py-3 px-4 text-zinc-400 text-[11px]">
                         {new Date(lead.createdAt).toLocaleDateString('en-IN', {
                           day: '2-digit',
                           month: 'short',
@@ -602,7 +602,7 @@ export function SuperAdminDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">Master Organizations Directory</h2>
-              <p className="text-xs text-zinc-400 font-mono mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 Multi-tenant hospitality accounts, super-owner access credentials, and impersonation
               </p>
             </div>
@@ -633,7 +633,7 @@ export function SuperAdminDashboardPage() {
           <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60 font-mono">
+                <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60">
                   <th className="py-3 px-4">Brand Name</th>
                   <th className="py-3 px-4">Super Owner & Contact</th>
                   <th className="py-3 px-4">Outlets Count</th>
@@ -663,7 +663,7 @@ export function SuperAdminDashboardPage() {
 
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-white bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                        <span className="font-semibold text-white bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
                           {org.outletsCount}
                         </span>
                         <div className="text-[11px] text-zinc-400 truncate max-w-xs">
@@ -676,17 +676,17 @@ export function SuperAdminDashboardPage() {
                       <span className="font-mono font-bold text-amber-300 text-sm">
                         ₹{org.totalGmv.toLocaleString('en-IN')}
                       </span>
-                      <div className="text-[10px] text-zinc-400 font-mono">{org.totalOrders} orders</div>
+                      <div className="text-[10px] text-zinc-400">{org.totalOrders} orders</div>
                     </td>
 
                     <td className="py-3 px-4">
                       {org.status === 'ACTIVE' ? (
-                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-mono text-[11px] font-semibold">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400 text-[11px] font-semibold">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                           <span>ACTIVE</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-zinc-400 font-mono text-[11px]">
+                        <span className="inline-flex items-center gap-1.5 text-zinc-400 text-[11px] font-medium">
                           <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
                           <span>INACTIVE</span>
                         </span>
@@ -753,7 +753,7 @@ export function SuperAdminDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">Live Outlets & Terminals Monitor</h2>
-              <p className="text-xs text-zinc-400 font-mono mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 Real-time WebSocket heartbeat for kitchen KDS terminals and counter POS
               </p>
             </div>
@@ -785,7 +785,7 @@ export function SuperAdminDashboardPage() {
           <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60 font-mono">
+                <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60">
                   <th className="py-3 px-4">Outlet & Slug</th>
                   <th className="py-3 px-4">Hospitality Brand</th>
                   <th className="py-3 px-4">Branch Area</th>
@@ -813,19 +813,19 @@ export function SuperAdminDashboardPage() {
                     </td>
 
                     <td className="py-3 px-4">
-                      <span className="font-mono text-zinc-200 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                      <span className="text-zinc-200 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 font-semibold">
                         {outlet.tablesCount} tables
                       </span>
                     </td>
 
                     <td className="py-3 px-4">
                       {outlet.isOnline ? (
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[11px] font-mono font-bold">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold">
                           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                           <span>ONLINE (Connected)</span>
                         </div>
                       ) : (
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-[11px] font-mono">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-[11px] font-medium">
                           <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
                           <span>OFFLINE (No Terminal)</span>
                         </div>
@@ -855,7 +855,7 @@ export function SuperAdminDashboardPage() {
                           href={`/kds/${outlet.slug}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-2 py-1 rounded border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[11px] font-mono flex items-center gap-1"
+                          className="px-2 py-1 rounded border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[11px] font-semibold flex items-center gap-1"
                         >
                           <span>KDS</span>
                           <ExternalLink className="w-2.5 h-2.5 opacity-60" />
@@ -865,7 +865,7 @@ export function SuperAdminDashboardPage() {
                           href={`/r/${outlet.slug}/t/T01`}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-2 py-1 rounded border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[11px] font-mono flex items-center gap-1"
+                          className="px-2 py-1 rounded border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[11px] font-semibold flex items-center gap-1"
                         >
                           <span>QR</span>
                           <ExternalLink className="w-2.5 h-2.5 opacity-60" />
@@ -893,7 +893,7 @@ export function SuperAdminDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">Platform System Health & Radar</h2>
-              <p className="text-xs text-zinc-400 font-mono mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 PostgreSQL pool connection latency, WebSocket subscribers, and container resources
               </p>
             </div>
@@ -902,7 +902,7 @@ export function SuperAdminDashboardPage() {
               size="sm"
               variant="outline"
               onClick={fetchData}
-              className="border-zinc-800 text-zinc-300 bg-zinc-900 hover:text-white font-mono text-xs"
+              className="border-zinc-800 text-zinc-300 bg-zinc-900 hover:text-white text-xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-1 ${loading ? 'animate-spin' : ''}`} />
               <span>Ping Infrastructure</span>
@@ -913,14 +913,14 @@ export function SuperAdminDashboardPage() {
             {/* Database Panel */}
             <div className="p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-mono text-zinc-300 flex items-center gap-2">
+                <span className="text-xs font-bold text-zinc-200 flex items-center gap-2">
                   <Database className="w-4 h-4 text-emerald-400" />
                   Neon Serverless Database
                 </span>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
 
-              <div className="space-y-2 text-xs font-mono">
+              <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Connection:</span>
                   <span className="text-emerald-400 font-bold">
@@ -929,7 +929,7 @@ export function SuperAdminDashboardPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Query Ping:</span>
-                  <span className="text-zinc-200">
+                  <span className="text-zinc-200 font-mono">
                     {systemHealth?.database.latencyMs ?? 8} ms
                   </span>
                 </div>
@@ -947,23 +947,23 @@ export function SuperAdminDashboardPage() {
             {/* WebSocket Gateway Panel */}
             <div className="p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-mono text-zinc-300 flex items-center gap-2">
+                <span className="text-xs font-bold text-zinc-200 flex items-center gap-2">
                   <Radio className="w-4 h-4 text-blue-400" />
                   Socket.io Events Gateway
                 </span>
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
               </div>
 
-              <div className="space-y-2 text-xs font-mono">
+              <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Connected Terminals:</span>
-                  <span className="text-blue-400 font-bold">
+                  <span className="text-blue-400 font-bold font-mono">
                     {systemHealth?.websocket.connectedClients ?? 0}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Active Outlet Rooms:</span>
-                  <span className="text-zinc-200">
+                  <span className="text-zinc-200 font-mono">
                     {systemHealth?.websocket.activeOutletRooms.length ?? 0}
                   </span>
                 </div>
@@ -973,7 +973,7 @@ export function SuperAdminDashboardPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Broadcast Delay:</span>
-                  <span className="text-emerald-400">&lt; 15 ms</span>
+                  <span className="text-emerald-400 font-mono">&lt; 15 ms</span>
                 </div>
               </div>
             </div>
@@ -981,17 +981,17 @@ export function SuperAdminDashboardPage() {
             {/* Server Container Panel */}
             <div className="p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-mono text-zinc-300 flex items-center gap-2">
+                <span className="text-xs font-bold text-zinc-200 flex items-center gap-2">
                   <Server className="w-4 h-4 text-amber-400" />
                   API Node.js Server
                 </span>
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
               </div>
 
-              <div className="space-y-2 text-xs font-mono">
+              <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Node Runtime:</span>
-                  <span className="text-zinc-200">
+                  <span className="text-zinc-200 font-mono">
                     {systemHealth?.server.nodeVersion || 'Node.js LTS'}
                   </span>
                 </div>
@@ -1003,13 +1003,13 @@ export function SuperAdminDashboardPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Memory RSS:</span>
-                  <span className="text-zinc-200">
+                  <span className="text-zinc-200 font-mono">
                     {systemHealth?.server.memoryRssMb ?? 128} MB
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Memory Heap:</span>
-                  <span className="text-zinc-200">
+                  <span className="text-zinc-200 font-mono">
                     {systemHealth?.server.memoryHeapUsedMb ?? 64} MB
                   </span>
                 </div>

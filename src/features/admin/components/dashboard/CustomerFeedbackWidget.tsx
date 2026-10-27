@@ -46,7 +46,7 @@ export function CustomerFeedbackWidget({
     loadFeedback()
   }, [restaurantSlug])
 
-  const averageRating = data?.averageRating || 4.8
+  const averageRating = data?.averageRating || 0
   const totalCount = data?.totalCount || 0
   const tagCounts = data?.tagCounts || {}
   const recentReviews = data?.recentReviews || []
@@ -79,7 +79,7 @@ export function CustomerFeedbackWidget({
         <div className="flex items-center gap-3">
           <div className="flex items-baseline gap-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/30 px-3 py-1.5 rounded-xl">
             <span className="text-xl font-black text-amber-700 dark:text-amber-400">
-              {averageRating.toFixed(1)}
+              {totalCount > 0 ? averageRating.toFixed(1) : "–"}
             </span>
             <div className="flex items-center text-amber-500">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -87,7 +87,7 @@ export function CustomerFeedbackWidget({
                   key={i}
                   className={cn(
                     "h-3 w-3",
-                    i < Math.round(averageRating)
+                    totalCount > 0 && i < Math.round(averageRating)
                       ? "fill-amber-400 text-amber-400"
                       : "text-zinc-300 dark:text-zinc-700"
                   )}
@@ -95,7 +95,7 @@ export function CustomerFeedbackWidget({
               ))}
             </div>
             <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium ml-1">
-              ({totalCount} reviews)
+              {totalCount > 0 ? `(${totalCount} reviews)` : "(0 reviews)"}
             </span>
           </div>
 
