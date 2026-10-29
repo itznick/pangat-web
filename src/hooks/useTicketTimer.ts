@@ -11,8 +11,9 @@ export interface TicketTimerResult {
 
 /**
  * useTicketTimer – Centralized Single Ticker Hook
- * Reads immutable server order.createdAt (ISO string or Date).
- * Computes Date.now() - new Date(order.createdAt).getTime().
+ * Normalizes input timestamp (ISO string with or without Z, or Date) to UTC milliseconds.
+ * Handles device sleep, background tab suspension, and page visibility changes.
+ * Computes Date.now() - timestamp.
  * Updates tick state every 1000ms.
  * Accurately formats to MM:SS (or HH:MM:SS if > 60m).
  *
@@ -25,13 +26,40 @@ export function useTicketTimer(createdAt: Date | string): TicketTimerResult {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(Date.now())
-    }, 1000)
-    return () => clearInterval(timer)
+    const updateNow = () => setNow(Date.now())
+    const timer = setInterval(updateNow, 1000)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updateNow()
+      }
+    }
+
+    window.addEventListener("focus", updateNow)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener("focus", updateNow)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
   }, [])
 
-  const createdTime = new Date(createdAt).getTime()
+  // Timezone-safe timestamp parser
+  let createdTime = 0
+  if (createdAt instanceof Date) {
+    createdTime = createdAt.getTime()
+  } else if (typeof createdAt === "string") {
+    // If backend sent ISO without timezone offset (e.g. '2026-10-29T14:30:00'), append 'Z'
+    const cleanStr = createdAt.includes("Z") || /[+-]\d{2}:\d{2}$/.test(createdAt)
+      ? createdAt
+      : `${createdAt}Z`
+    createdTime = new Date(cleanStr).getTime()
+    if (isNaN(createdTime)) {
+      createdTime = new Date(createdAt).getTime()
+    }
+  }
+
   const diffMs = isNaN(createdTime) ? 0 : Math.max(0, now - createdTime)
   const totalSeconds = Math.floor(diffMs / 1000)
   const elapsedMinutes = Math.floor(totalSeconds / 60)

@@ -13,8 +13,11 @@
     <script>
       (function() {
         try {
-          var isLanding = window.location.pathname === '/' || window.location.pathname === '';
-          if (isLanding) {
+          var isAuthOrLanding = window.location.pathname === '/' ||
+            window.location.pathname === '' ||
+            window.location.pathname.startsWith('/login') ||
+            window.location.pathname.startsWith('/kds-login');
+          if (isAuthOrLanding) {
             document.documentElement.classList.add('dark');
             document.documentElement.style.colorScheme = 'dark';
             return;

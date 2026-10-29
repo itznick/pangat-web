@@ -58,9 +58,55 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
   const submitFeedback = useOrderTrackingStore((s) => s.submitFeedback)
   const navigate = useNavigate()
 
-  // Real-time socket updates for customer tracking
+  // Real-time socket updates and REST polling fallback for customer tracking
   useEffect(() => {
     if (!order?.id) return
+
+    const fetchLatestOrder = async () => {
+      try {
+        const fresh = await api.orders.get(order.id)
+        if (fresh && fresh.id) {
+          useOrderTrackingStore.setState((s) => {
+            if (!s.order || s.order.id !== fresh.id) return s
+            const isNewlyPaid = s.order.paymentStatus !== "PAID" && fresh.paymentStatus === "PAID"
+            if (isNewlyPaid) {
+              setShowFeedbackSheet(true)
+            }
+            return {
+              order: {
+                ...s.order,
+                orderStatus: fresh.orderStatus,
+                paymentStatus: fresh.paymentStatus,
+                settledAt: fresh.settledAt || s.order.settledAt,
+              },
+            }
+          })
+        }
+      } catch {
+        // Fallback safely if disconnected
+      }
+    }
+
+    // 1. Initial fetch on mount / ID change
+    fetchLatestOrder()
+
+    // 2. Continuous 5s polling fallback while payment or order is pending
+    const pollInterval = setInterval(() => {
+      const current = useOrderTrackingStore.getState().order
+      if (current && (current.paymentStatus === "PENDING" || current.orderStatus !== "COMPLETED")) {
+        fetchLatestOrder()
+      }
+    }, 5000)
+
+    // 3. Re-sync on window focus / visibility change
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchLatestOrder()
+      }
+    }
+    window.addEventListener("focus", fetchLatestOrder)
+    document.addEventListener("visibilitychange", handleVisibility)
+
     joinOrderRoom(order.id)
     const socket = getSocket()
 
@@ -101,10 +147,15 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
 
     socket.on("order:status", onStatus)
     socket.on("order:paid", onPaid)
+    socket.on("connect", fetchLatestOrder)
 
     return () => {
+      clearInterval(pollInterval)
+      window.removeEventListener("focus", fetchLatestOrder)
+      document.removeEventListener("visibilitychange", handleVisibility)
       socket.off("order:status", onStatus)
       socket.off("order:paid", onPaid)
+      socket.off("connect", fetchLatestOrder)
     }
   }, [order?.id])
 
@@ -439,7 +490,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
               </div>
               <div>
                 <span className="text-xs font-bold text-emerald-300 block">
-                  Payment Settled at Counter • Thank You!
+                  Paid at Counter • Thank You!
                 </span>
                 <span className="text-[11px] text-zinc-400">
                   Receipt closed by steward · Total ₹{Number(order.totalAmount || 0).toFixed(2)}
@@ -459,7 +510,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
               <div className="flex items-center gap-2">
                 <Store className="h-4 w-4 text-amber-400" />
                 <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                  Pending payment at counter
+                  Payment due at counter
                 </span>
               </div>
               <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">

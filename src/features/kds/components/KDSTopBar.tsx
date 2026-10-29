@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router"
-import { Clock, Volume2, VolumeX, MonitorSpeaker, Wifi, ArrowLeft } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
 import { useKdsStore } from "@/stores/useKdsStore"
 import { useAuthStore } from "@/stores/useAuthStore"
+import {
+  ArrowLeft,
+  Clock,
+  Volume2,
+  VolumeX,
+  Wifi,
+  MonitorSpeaker,
+  LogOut,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
 function useLiveClock() {
@@ -23,7 +31,7 @@ interface KDSTopBarProps {
 export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const setRole = useAuthStore((s) => s.setRole)
+  const logout = useAuthStore((s) => s.logout)
 
   const soundEnabled = useKdsStore((s) => s.soundEnabled)
   const setSoundEnabled = useKdsStore((s) => s.setSoundEnabled)
@@ -38,27 +46,31 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
     hour12: false,
   })
 
+  const isChefOnly = user?.role === "CHEF" || user?.role === "STEWARD"
+
   const handleReturnToDashboard = () => {
-    // If user was testing the CHEF persona, revert to SUPER_OWNER
-    if (user?.role === "CHEF") {
-      setRole("SUPER_OWNER")
+    // Never escalate permissions locally. If kitchen staff, return to login/exit.
+    if (isChefOnly) {
+      logout()
+      navigate("/login?tab=pin", { replace: true })
+      return
     }
     navigate("/admin/dashboard")
   }
 
   return (
     <div className="flex items-center justify-between px-6 py-3 bg-zinc-900 border-b border-zinc-800 shrink-0">
-      {/* Left: Back button + Title */}
+      {/* Left: Exit/Back button + Title */}
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
           size="sm"
           onClick={handleReturnToDashboard}
           className="gap-1.5 bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200 text-xs font-semibold cursor-pointer transition-colors"
-          title="Return to Admin Dashboard"
+          title={isChefOnly ? "Exit Kitchen Station" : "Return to Admin Dashboard"}
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Dashboard
+          {isChefOnly ? <LogOut className="h-3.5 w-3.5" /> : <ArrowLeft className="h-3.5 w-3.5" />}
+          {isChefOnly ? "Exit Station" : "Dashboard"}
         </Button>
 
         <div className="flex items-center gap-3">
