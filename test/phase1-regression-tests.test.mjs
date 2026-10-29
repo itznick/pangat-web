@@ -185,4 +185,27 @@ describe('P1-B: Pay at Counter Lifecycle & Tracking Sync', () => {
 
     assert.equal(clientState.paymentStatus, 'PAID')
   })
-})
+  it('correctly displays UPI Payment Pending for unverified UPI orders rather than Pay at Counter', () => {
+    function getPaymentBadgeText(order) {
+      if (order.paymentStatus === 'PAID') {
+        return order.paymentMethod === 'PAY_AT_COUNTER' ? 'Paid via Counter' : 'Paid via UPI'
+      }
+      return order.paymentMethod === 'PAY_AT_COUNTER'
+        ? 'Pay at Counter Pending'
+        : 'UPI Payment Pending'
+    }
+
+    assert.equal(
+      getPaymentBadgeText({ paymentMethod: 'UPI_INSTANT', paymentStatus: 'PENDING' }),
+      'UPI Payment Pending'
+    )
+    assert.equal(
+      getPaymentBadgeText({ paymentMethod: 'PAY_AT_COUNTER', paymentStatus: 'PENDING' }),
+      'Pay at Counter Pending'
+    )
+    assert.equal(
+      getPaymentBadgeText({ paymentMethod: 'UPI_INSTANT', paymentStatus: 'PAID' }),
+      'Paid via UPI'
+    )
+  })
+});

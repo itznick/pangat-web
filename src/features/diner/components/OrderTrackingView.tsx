@@ -58,6 +58,21 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
   const submitFeedback = useOrderTrackingStore((s) => s.submitFeedback)
   const navigate = useNavigate()
 
+  // Local state for 1-tap feedback
+  const [selectedRating, setSelectedRating] = useState<number>(5)
+  const [selectedTags, setSelectedTags] = useState<string[]>([
+    "Fast Service",
+    "Piping Hot",
+  ])
+  const [feedbackComment, setFeedbackComment] = useState<string>("")
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(
+    Boolean(order?.feedback)
+  )
+  const [showFeedbackSheet, setShowFeedbackSheet] = useState<boolean>(
+    Boolean(order?.paymentStatus === "PAID" || order?.orderStatus === "COMPLETED")
+  )
+  const feedbackRef = useRef<HTMLDivElement>(null)
+
   // Real-time socket updates and REST polling fallback for customer tracking
   useEffect(() => {
     if (!order?.id) return
@@ -157,9 +172,14 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
       socket.off("order:paid", onPaid)
       socket.off("connect", fetchLatestOrder)
     }
-  }, [order?.id])
+  }, [order?.id, order?.trackingToken])
 
   const handlePayOnlineUpi = async () => {
+    const vpa = "pangat@icici"
+    const upiUri = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(restaurantSlug || "Pangat Restaurant")}&am=${Number(order?.totalAmount || 0).toFixed(2)}&cu=INR&tr=${order?.id || ""}`
+    if (typeof window !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      window.location.href = upiUri
+    }
     payOnlineUpi()
     if (order?.id) {
       try {
@@ -169,21 +189,6 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
       }
     }
   }
-
-  // Local state for 1-tap feedback
-  const [selectedRating, setSelectedRating] = useState<number>(5)
-  const [selectedTags, setSelectedTags] = useState<string[]>([
-    "Fast Service",
-    "Piping Hot",
-  ])
-  const [feedbackComment, setFeedbackComment] = useState<string>("")
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(
-    Boolean(order?.feedback)
-  )
-  const [showFeedbackSheet, setShowFeedbackSheet] = useState<boolean>(
-    Boolean(order?.paymentStatus === "PAID" || order?.orderStatus === "COMPLETED")
-  )
-  const feedbackRef = useRef<HTMLDivElement>(null)
 
   const currentStatus: OrderStatus = order?.orderStatus ?? "RECEIVED"
 
@@ -209,6 +214,8 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
   const tokenId = order ? order.id.slice(-3).toUpperCase() : "04"
   const isPayAtCounterPending =
     order?.paymentMethod === "PAY_AT_COUNTER" && order?.paymentStatus === "PENDING"
+  const isUpiPending =
+    order?.paymentMethod === "UPI_INSTANT" && order?.paymentStatus === "PENDING"
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -481,8 +488,8 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
           </div>
         )}
 
-        {/* Counter Payment Settled Verified Badge */}
-        {order?.paymentMethod === "PAY_AT_COUNTER" && order?.paymentStatus === "PAID" && (
+        {/* Payment Settled Verified Badge */}
+        {order?.paymentStatus === "PAID" && (
           <div className="bg-emerald-950/30 border border-emerald-500/50 rounded-2xl p-4 flex items-center justify-between shadow-lg animate-in fade-in duration-300">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
@@ -490,10 +497,14 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
               </div>
               <div>
                 <span className="text-xs font-bold text-emerald-300 block">
-                  Paid at Counter • Thank You!
+                  {order.paymentMethod === "PAY_AT_COUNTER"
+                    ? "Paid at Counter • Thank You!"
+                    : "Paid via UPI • Thank You!"}
                 </span>
                 <span className="text-[11px] text-zinc-400">
-                  Receipt closed by steward · Total ₹{Number(order.totalAmount || 0).toFixed(2)}
+                  {order.paymentMethod === "PAY_AT_COUNTER"
+                    ? "Receipt closed by steward"
+                    : "Instant payment verified"} · Total ₹{Number(order.totalAmount || 0).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -530,6 +541,33 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
           </div>
         )}
 
+        {/* UPI Instant Outstanding Action Card */}
+        {isUpiPending && (
+          <div className="bg-emerald-950/20 border border-emerald-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
+                  UPI Payment Pending
+                </span>
+              </div>
+              <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20">
+                ₹{Number(order.totalAmount || 0).toFixed(2)}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Your order is sent to the kitchen. Tap below to launch your UPI payment app or confirm settlement with the steward:
+            </p>
+            <button
+              onClick={handlePayOnlineUpi}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Pay via UPI App (₹{Number(order.totalAmount || 0).toFixed(2)})
+            </button>
+          </div>
+        )}
+
         {/* Order Summary & Items List */}
         {order && (
           <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 shadow-lg space-y-3">
@@ -544,7 +582,9 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Pay at Counter Pending
+                    {order.paymentMethod === "PAY_AT_COUNTER"
+                      ? "Pay at Counter Pending"
+                      : "UPI Payment Pending"}
                   </span>
                 )}
               </div>
