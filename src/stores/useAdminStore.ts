@@ -52,7 +52,14 @@ function computeSalesSummary(orders: Order[]): SalesSummary {
   let avgPrepTimeMinutes = 0
   if (orders.length > 0) {
     const totalElapsedMins = orders.reduce((sum, o) => {
-      const ms = Date.now() - new Date(o.createdAt).getTime()
+      const createdStr = typeof o.createdAt === 'string' && !o.createdAt.includes('Z') && !/[+-]\d{2}:\d{2}$/.test(o.createdAt)
+        ? `${o.createdAt}Z`
+        : o.createdAt
+      const createdMs = new Date(createdStr).getTime()
+      const endMs = o.orderStatus === 'COMPLETED' && o.settledAt
+        ? new Date(o.settledAt).getTime()
+        : Date.now()
+      const ms = Math.max(0, endMs - (isNaN(createdMs) ? Date.now() : createdMs))
       return sum + Math.max(1, Math.round(ms / 60_000))
     }, 0)
     avgPrepTimeMinutes = Math.min(60, Math.round(totalElapsedMins / orders.length))

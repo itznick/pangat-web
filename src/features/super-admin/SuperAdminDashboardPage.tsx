@@ -103,7 +103,7 @@ export function SuperAdminDashboardPage() {
   // Impersonate merchant outlet
   const handleImpersonate = (outlet: { id: string; name: string; slug: string; branchArea?: string }) => {
     sessionStorage.setItem('pangat_impersonate_outlet', JSON.stringify(outlet))
-    navigate(`/admin/dashboard?impersonate=${outlet.id}`)
+    navigate(`/admin/dashboard?impersonate=${outlet.slug || outlet.id}`)
   }
 
   // Reset owner password

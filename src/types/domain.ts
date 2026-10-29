@@ -157,6 +157,7 @@ export interface OrderQueryParams {
 
 export interface Order {
   id: string
+  trackingToken?: string
   restaurantId: string
   tableNumber: string
   items: OrderItem[]

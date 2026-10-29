@@ -286,6 +286,7 @@ export function AdminLayout() {
       return null
     }
   })
+  const [impersonationError, setImpersonationError] = useState<string | null>(null)
 
   // Auto-resolve outlets if empty on mount
   useEffect(() => {
@@ -355,12 +356,13 @@ export function AdminLayout() {
               setImpersonatingOutlet(res)
               setCurrentOutlet(res)
               sessionStorage.setItem("pangat_impersonate_outlet", JSON.stringify(res))
+            } else {
+              setImpersonationError(`Could not resolve restaurant '${impersonateSlugOrId}'`)
             }
-          }).catch(() => {})
+          }).catch(() => {
+            setImpersonationError(`Restaurant '${impersonateSlugOrId}' not found`)
+          })
         }
-      } else if (!impersonatingOutlet && outlets && outlets.length > 0) {
-        setImpersonatingOutlet(outlets[0])
-        setCurrentOutlet(outlets[0])
       }
     } else if (user?.organizationId) {
       // Merchant Owner Scoping: strictly ensure currentOutlet belongs to user's organization
@@ -379,7 +381,11 @@ export function AdminLayout() {
     }
   }, [currentOutlet?.slug])
 
-  // RBAC Enforcement: If role is CHEF, strictly restrict from /admin/*
+  // RBAC Enforcement: If role is CHEF or unauthenticated, redirect safely
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
   if (user?.role === "CHEF") {
     const chefSlug = currentOutlet?.slug || user?.restaurantSlug || "pangat"
     return <Navigate to={`/kds/${chefSlug}`} replace />
@@ -408,6 +414,22 @@ export function AdminLayout() {
         <AdminSidebarContent onOpenAddOutlet={() => setAddOutletOpen(true)} />
       </Sidebar>
       <SidebarInset>
+        {/* Impersonation Error Alert */}
+        {isPlatformSuperAdmin && impersonationError && (
+          <div className="bg-rose-500/15 border-b border-rose-500/30 text-rose-300 px-4 py-2.5 text-xs font-semibold flex items-center justify-between">
+            <span>{impersonationError}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setImpersonationError(null)
+                navigate('/super-admin')
+              }}
+              className="text-xs underline hover:text-white"
+            >
+              Return to Super Admin
+            </button>
+          </div>
+        )}
         {/* Impersonation Banner for Super-Admin */}
         {isPlatformSuperAdmin && impersonatingOutlet && (
           <div className="sticky top-0 z-50 bg-amber-400 text-zinc-950 px-4 py-2.5 text-xs font-semibold flex items-center justify-between border-b border-amber-500 shadow-md">

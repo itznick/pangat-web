@@ -103,7 +103,7 @@ export function KdsPinLoginPage() {
   }, [pinCode, outletSlug, station])
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex flex-col justify-between selection:bg-amber-500 selection:text-zinc-950">
+    <div className="dark min-h-screen bg-zinc-950 text-white flex flex-col justify-between selection:bg-amber-500 selection:text-zinc-950">
       {/* Top Bar */}
       <header className="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">

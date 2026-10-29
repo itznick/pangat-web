@@ -92,7 +92,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-zinc-950 text-white antialiased flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
+    <div className="dark relative min-h-screen bg-zinc-950 text-white antialiased flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
       {/* Header */}
       <header className="relative z-20 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-xs">
         <Link to="/" className="flex items-center gap-2.5">

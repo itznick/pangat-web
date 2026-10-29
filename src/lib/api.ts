@@ -242,8 +242,8 @@ export const api = {
       }),
     list: (restaurantSlug?: string, params?: OrderQueryParams): Promise<Order[]> =>
       apiClient.get('/orders', { params: { restaurantSlug, ...params } }),
-    get: (id: string): Promise<Order> =>
-      apiClient.get(`/orders/${id}`),
+    get: (id: string, token?: string): Promise<Order> =>
+      apiClient.get(`/orders/${id}`, { params: token ? { token } : undefined }),
     updateStatus: (id: string, status: OrderStatus): Promise<Order> =>
       apiClient.patch(`/orders/${id}/status`, { status }),
     markPaid: (id: string): Promise<Order> =>
