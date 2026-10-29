@@ -64,7 +64,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
 
     const fetchLatestOrder = async () => {
       try {
-        const fresh = await api.orders.get(order.id)
+        const fresh = await api.orders.get(order.trackingToken || order.id, order.trackingToken)
         if (fresh && fresh.id) {
           useOrderTrackingStore.setState((s) => {
             if (!s.order || s.order.id !== fresh.id) return s
