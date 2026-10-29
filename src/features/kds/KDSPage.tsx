@@ -14,6 +14,7 @@ export function KDSPage() {
 
   const tickets = useKdsStore((s) => s.tickets)
   const advanceTicket = useKdsStore((s) => s.advanceTicket)
+  const sendBackTicket = useKdsStore((s) => s.sendBackTicket)
   const archiveTicket = useKdsStore((s) => s.archiveTicket)
   const chimeCount = useKdsStore((s) => s.chimeCount)
   const soundEnabled = useKdsStore((s) => s.soundEnabled)
@@ -108,6 +109,7 @@ export function KDSPage() {
                     ticket={ticket}
                     onAdvance={advanceTicket}
                     onArchive={archiveTicket}
+                    onSendBack={sendBackTicket}
                   />
                 ))
               )}

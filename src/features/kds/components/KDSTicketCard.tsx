@@ -1,4 +1,5 @@
-import { ChefHat, AlertCircle, Clock } from "lucide-react"
+import { useState } from "react"
+import { ChefHat, AlertCircle, Clock, Undo2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Order, OrderStatus } from "@/types/domain"
 import { useTicketTimer } from "@/hooks/useTicketTimer"
@@ -7,6 +8,7 @@ interface KDSTicketCardProps {
   ticket: Order
   onAdvance: (ticketId: string) => void
   onArchive: (ticketId: string) => void
+  onSendBack?: (ticketId: string, targetStatus: OrderStatus, reason: string) => void
 }
 
 const STATUS_CONFIG: Record<
@@ -62,11 +64,23 @@ const STATUS_CONFIG: Record<
     actionClass: "",
     pulse: false,
   },
+  CANCELLED: {
+    border: "border-rose-900/40",
+    bg: "bg-rose-950/20",
+    headerBg: "bg-rose-950/40",
+    badgeText: "Cancelled",
+    badgeBg: "bg-rose-500/20 border-rose-500/40 text-rose-400",
+    actionLabel: "",
+    actionClass: "",
+    pulse: false,
+  },
 }
 
-export function KDSTicketCard({ ticket, onAdvance, onArchive }: KDSTicketCardProps) {
+export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDSTicketCardProps) {
   const timer = useTicketTimer(ticket.createdAt)
-  const config = STATUS_CONFIG[ticket.orderStatus]
+  const config = STATUS_CONFIG[ticket.orderStatus] || STATUS_CONFIG.RECEIVED
+  const [showSendBackModal, setShowSendBackModal] = useState(false)
+  const [sendBackReason, setSendBackReason] = useState("")
 
   const handleAction = () => {
     if (ticket.orderStatus === "READY") {
@@ -75,6 +89,16 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive }: KDSTicketCardPro
       onAdvance(ticket.id)
     }
   }
+
+  const handleSendBackConfirm = () => {
+    if (!sendBackReason.trim()) return
+    const target: OrderStatus = ticket.orderStatus === "READY" ? "PREPARING" : "RECEIVED"
+    onSendBack?.(ticket.id, target, sendBackReason.trim())
+    setShowSendBackModal(false)
+    setSendBackReason("")
+  }
+
+  const canSendBack = (ticket.orderStatus === "PREPARING" || ticket.orderStatus === "READY") && !!onSendBack
 
   return (
     <div
@@ -138,7 +162,7 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive }: KDSTicketCardPro
               </span>
               <span className="text-sm font-semibold text-zinc-200">{item.name}</span>
             </div>
-            {item.selectedModifiers.length > 0 && (
+            {item.selectedModifiers && item.selectedModifiers.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1 ml-6">
                 {item.selectedModifiers.map((mod, mIdx) => (
                   <span
@@ -165,13 +189,55 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive }: KDSTicketCardPro
         ))}
       </div>
 
+      {/* Send Back Reason Popover/Modal */}
+      {showSendBackModal && (
+        <div className="px-4 py-3 border-t border-rose-500/30 bg-rose-950/40 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300">
+            <Undo2 className="h-3.5 w-3.5" />
+            Send back to {ticket.orderStatus === "READY" ? "In Prep" : "New Order"}
+          </div>
+          <input
+            type="text"
+            placeholder="Mandatory reason (e.g. remake item, allergy correction)"
+            value={sendBackReason}
+            onChange={(e) => setSendBackReason(e.target.value)}
+            className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-rose-500"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowSendBackModal(false)}
+              className="flex-1 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSendBackConfirm}
+              disabled={!sendBackReason.trim()}
+              className="flex-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-bold"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Action */}
-      {ticket.orderStatus !== "COMPLETED" && (
-        <div className="px-4 py-3 border-t border-zinc-800/50">
+      {ticket.orderStatus !== "COMPLETED" && ticket.orderStatus !== "CANCELLED" && (
+        <div className="px-4 py-3 border-t border-zinc-800/50 flex gap-2">
+          {canSendBack && !showSendBackModal && (
+            <button
+              type="button"
+              onClick={() => setShowSendBackModal(true)}
+              className="p-2.5 rounded-xl border border-zinc-700 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs transition-colors flex items-center justify-center"
+              title={`Send back to ${ticket.orderStatus === "READY" ? "PREPARING" : "RECEIVED"}`}
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={handleAction}
             className={cn(
-              "w-full py-2.5 px-4 rounded-xl text-sm transition-all duration-150 active:scale-[0.98]",
+              "flex-1 py-2.5 px-4 rounded-xl text-sm transition-all duration-150 active:scale-[0.98]",
               config.actionClass
             )}
           >

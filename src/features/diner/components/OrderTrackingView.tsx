@@ -11,6 +11,7 @@ import {
   Sparkles,
   Heart,
   Check,
+  XCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useOrderTrackingStore } from "@/stores/useCartStore"
@@ -263,6 +264,34 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
       </div>
 
       <div className="flex-1 px-4 py-5 space-y-5 max-w-md mx-auto w-full">
+        {/* Order Cancelled Banner */}
+        {currentStatus === "CANCELLED" && (
+          <div className="bg-rose-950/40 border border-rose-500/40 rounded-2xl p-5 text-center space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold uppercase">
+              <XCircle className="h-3.5 w-3.5" />
+              Order Cancelled
+            </div>
+            <p className="text-sm font-semibold text-rose-200">
+              This order has been cancelled by the restaurant.
+            </p>
+            {order?.cancellationReason && (
+              <p className="text-xs text-rose-300/80 bg-rose-900/30 rounded-lg p-2 border border-rose-800/40 font-mono">
+                Reason: {order.cancellationReason}
+              </p>
+            )}
+            {order?.paymentStatus === "REFUND_PENDING" && (
+              <p className="text-xs text-amber-300 font-medium">
+                A refund request of ₹{Number(order.totalAmount || 0).toFixed(2)} is pending settlement.
+              </p>
+            )}
+            {order?.paymentStatus === "REFUNDED" && (
+              <p className="text-xs text-emerald-300 font-medium">
+                Refund of ₹{Number(order.refundAmount || order.totalAmount || 0).toFixed(2)} has been settled.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Token Card */}
         <div className="text-center py-5 bg-zinc-900 rounded-2xl border border-zinc-800 shadow-lg">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600/20 border border-emerald-600/30 mb-2">

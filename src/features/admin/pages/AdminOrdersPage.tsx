@@ -84,12 +84,32 @@ const PAYMENT_CONFIG: Record<
     bg: "bg-rose-500/10 border-rose-500/30",
     icon: XCircle,
   },
+  REFUND_PENDING: {
+    label: "Refund Pending",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10 border-amber-500/30",
+    icon: Clock,
+  },
+  PARTIALLY_REFUNDED: {
+    label: "Partially Refunded",
+    color: "text-purple-400",
+    bg: "bg-purple-500/10 border-purple-500/30",
+    icon: CheckCircle2,
+  },
+  REFUNDED: {
+    label: "Refunded",
+    color: "text-zinc-400",
+    bg: "bg-zinc-700/20 border-zinc-600 text-zinc-400",
+    icon: CheckCircle2,
+  },
 }
 
 export function AdminOrdersPage() {
   const activeOrders = useAdminStore((s) => s.activeOrders)
   const settleOrder = useAdminStore((s) => s.settleOrder)
   const archiveOrder = useAdminStore((s) => s.archiveOrder)
+  const cancelOrder = useAdminStore((s) => s.cancelOrder)
+  const processRefund = useAdminStore((s) => s.processRefund)
   const currentOutlet = useAuthStore((s) => s.currentOutlet)
   const outletSlug = currentOutlet?.slug || "pangat"
 
@@ -109,6 +129,12 @@ export function AdminOrdersPage() {
   // Modals state
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<Order | null>(null)
   const [selectedFeedbackOrder, setSelectedFeedbackOrder] = useState<Order | null>(null)
+  const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null)
+  const [cancelReason, setCancelReason] = useState("")
+  const [refundOrder, setRefundOrder] = useState<Order | null>(null)
+  const [refundAmount, setRefundAmount] = useState("")
+  const [refundReason, setRefundReason] = useState("")
+  const [refundMethod, setRefundMethod] = useState<'COUNTER_CASH' | 'PROVIDER_CONFIRMED'>('COUNTER_CASH')
 
   // Fetch Archived Orders from API
   const fetchArchivedOrders = async () => {
@@ -138,10 +164,10 @@ export function AdminOrdersPage() {
     }
   }, [activeTab, outletSlug, startDate, endDate])
 
-  // Active orders filtered: strictly exclude COMPLETED
+  // Active orders filtered: strictly exclude COMPLETED and CANCELLED
   const activeFiltered = useMemo(() => {
     return activeOrders.filter((order) => {
-      if (order.orderStatus === "COMPLETED") return false
+      if (order.orderStatus === "COMPLETED" || order.orderStatus === "CANCELLED") return false
       const matchSearch =
         order.id.toLowerCase().includes(search.toLowerCase()) ||
         order.tableNumber.includes(search) ||
@@ -151,10 +177,10 @@ export function AdminOrdersPage() {
     })
   }, [activeOrders, search, statusFilter])
 
-  // Archived orders filtered: strictly include only COMPLETED
+  // Archived orders filtered: include COMPLETED and CANCELLED
   const archivedFiltered = useMemo(() => {
     return archivedOrders.filter((order) => {
-      if (order.orderStatus !== "COMPLETED") return false
+      if (order.orderStatus !== "COMPLETED" && order.orderStatus !== "CANCELLED") return false
       const matchSearch =
         order.id.toLowerCase().includes(search.toLowerCase()) ||
         order.tableNumber.includes(search) ||
@@ -425,6 +451,39 @@ export function AdminOrdersPage() {
                           >
                             <Check className="h-3 w-3" />
                             <span>Mark Paid</span>
+                          </button>
+                        )}
+
+                        {activeTab === "active" && order.orderStatus !== "COMPLETED" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCancellingOrder(order)
+                              setCancelReason("")
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                            title="Cancel Order"
+                          >
+                            <XCircle className="h-3 w-3" />
+                            <span>Cancel</span>
+                          </button>
+                        )}
+
+                        {(order.paymentStatus === "REFUND_PENDING" || order.paymentStatus === "PARTIALLY_REFUNDED") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRefundOrder(order)
+                              const remaining = Math.max(0, Number(order.totalAmount || 0) - Number(order.refundAmount || 0))
+                              setRefundAmount(remaining > 0 ? remaining.toString() : "")
+                              setRefundReason("")
+                              setRefundMethod("COUNTER_CASH")
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                            title="Process Refund"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            <span>Refund</span>
                           </button>
                         )}
 
@@ -783,6 +842,123 @@ export function AdminOrdersPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Cancel Order Dialog ────────────────────────────────────────────── */}
+      <Dialog open={Boolean(cancellingOrder)} onOpenChange={(open) => !open && setCancellingOrder(null)}>
+        <DialogContent className="max-w-md bg-zinc-950 border border-zinc-800 text-zinc-100 p-6 shadow-2xl space-y-4">
+          <div className="flex items-center gap-2 text-rose-400 font-bold text-base">
+            <XCircle className="w-5 h-5" />
+            <span>Cancel Order #{cancellingOrder?.id.slice(-6).toUpperCase()}</span>
+          </div>
+          <p className="text-xs text-zinc-400">
+            Cancelling this order is an audited action. If the order was already paid, a refund request will automatically be created.
+          </p>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-300">Mandatory Cancellation Reason</label>
+            <Input
+              placeholder="e.g. Diner changed mind, kitchen stock issue"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="bg-zinc-900 border-zinc-700 text-zinc-100 text-xs"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setCancellingOrder(null)} className="border-zinc-800 text-zinc-400 text-xs">
+              Back
+            </Button>
+            <Button
+              size="sm"
+              disabled={!cancelReason.trim()}
+              onClick={async () => {
+                if (cancellingOrder && cancelReason.trim()) {
+                  try {
+                    await cancelOrder(cancellingOrder.id, cancelReason.trim())
+                    setCancellingOrder(null)
+                  } catch (e) {
+                    alert((e as any)?.response?.data?.message || 'Failed to cancel order')
+                  }
+                }
+              }}
+              className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+            >
+              Confirm Cancellation
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Process Refund Dialog ──────────────────────────────────────────── */}
+      <Dialog open={Boolean(refundOrder)} onOpenChange={(open) => !open && setRefundOrder(null)}>
+        <DialogContent className="max-w-md bg-zinc-950 border border-zinc-800 text-zinc-100 p-6 shadow-2xl space-y-4">
+          <div className="flex items-center gap-2 text-purple-400 font-bold text-base">
+            <RotateCcw className="w-5 h-5" />
+            <span>Process Refund for Order #{refundOrder?.id.slice(-6).toUpperCase()}</span>
+          </div>
+          <p className="text-xs text-zinc-400">
+            Total Order Amount: ₹{Number(refundOrder?.totalAmount || 0).toFixed(2)} | Already Refunded: ₹{Number(refundOrder?.refundAmount || 0).toFixed(2)}
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-zinc-300 block mb-1">Refund Amount (₹)</label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Amount"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                className="bg-zinc-900 border-zinc-700 text-zinc-100 text-xs"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-zinc-300 block mb-1">Refund Settlement Method</label>
+              <select
+                value={refundMethod}
+                onChange={(e) => setRefundMethod(e.target.value as any)}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-xs text-zinc-200"
+              >
+                <option value="COUNTER_CASH">Counter Cash Refund</option>
+                <option value="PROVIDER_CONFIRMED">Verified Provider Gateway Refund</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-zinc-300 block mb-1">Refund Reason</label>
+              <Input
+                placeholder="e.g. Overcharged, cancelled by guest"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                className="bg-zinc-900 border-zinc-700 text-zinc-100 text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setRefundOrder(null)} className="border-zinc-800 text-zinc-400 text-xs">
+              Back
+            </Button>
+            <Button
+              size="sm"
+              disabled={!refundAmount || Number(refundAmount) <= 0 || !refundReason.trim()}
+              onClick={async () => {
+                if (refundOrder && refundAmount && refundReason.trim()) {
+                  try {
+                    await processRefund(refundOrder.id, {
+                      refundMethod,
+                      amount: Number(refundAmount),
+                      reason: refundReason.trim(),
+                      idempotencyKey: `refund_${refundOrder.id}_${Date.now()}`,
+                    })
+                    setRefundOrder(null)
+                  } catch (e) {
+                    alert((e as any)?.response?.data?.message || 'Failed to process refund')
+                  }
+                }
+              }}
+              className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+            >
+              Confirm Refund
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -246,6 +246,29 @@ export const api = {
       apiClient.get(`/orders/${id}`, { params: token ? { token } : undefined }),
     updateStatus: (id: string, status: OrderStatus): Promise<Order> =>
       apiClient.patch(`/orders/${id}/status`, { status }),
+    regressStatus: (id: string, data: { targetStatus: OrderStatus; reason: string }): Promise<Order> =>
+      apiClient.patch(`/orders/${id}/regress-status`, data),
+    cancel: (id: string, data: { reason: string; notes?: string }): Promise<Order> =>
+      apiClient.post(`/orders/${id}/cancel`, data),
+    editItems: (id: string, data: {
+      items: {
+        menuItemId: string
+        name: string
+        price?: number
+        quantity: number
+        selectedModifiers?: { name: string; price?: number }[]
+        notes?: string
+      }[]
+    }): Promise<Order> =>
+      apiClient.patch(`/orders/${id}/items`, data),
+    processRefund: (id: string, data: {
+      refundMethod: 'COUNTER_CASH' | 'PROVIDER_CONFIRMED'
+      amount?: number
+      reason: string
+      idempotencyKey: string
+      providerReference?: string
+    }): Promise<Order> =>
+      apiClient.post(`/orders/${id}/refund`, data),
     markPaid: (id: string): Promise<Order> =>
       apiClient.patch(`/orders/${id}/mark-paid`),
     submitFeedback: (

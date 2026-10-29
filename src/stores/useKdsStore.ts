@@ -25,6 +25,7 @@ interface KdsStore {
   // ── Mutations ──────────────────────────────────────────────────────────────
   addTicket: (order: Order) => void
   advanceTicket: (orderId: string) => Promise<void>
+  sendBackTicket: (orderId: string, targetStatus: OrderStatus, reason: string) => Promise<void>
   archiveTicket: (orderId: string) => Promise<void>
   toggleOutOfStock: (menuItemId: string) => Promise<void>
   setSoundEnabled: (v: boolean) => void
@@ -63,7 +64,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         api.menu.getItems().catch(() => []),
       ])
 
-      const kdsTickets = Array.isArray(orders) ? orders.filter((o) => o && o.orderStatus !== 'COMPLETED') : []
+      const kdsTickets = Array.isArray(orders) ? orders.filter((o) => o && o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED') : []
       const outOfStock = new Set(
         Array.isArray(menuItems) ? menuItems.filter((m) => m && !m.isAvailable).map((m) => m.id) : []
       )
@@ -98,7 +99,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
 
     socket.on('order:status', ({ orderId, status }: { orderId: string; status: any }) => {
       set((s) => {
-        if (status === 'COMPLETED') {
+        if (status === 'COMPLETED' || status === 'CANCELLED') {
           return { tickets: s.tickets.filter((t) => t.id !== orderId) }
         }
         const updated = s.tickets.map((t) =>
@@ -111,6 +112,12 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         }
       })
     })
+
+    socket.on('order:updated', (order: Order) => {
+      set((s) => ({
+        tickets: s.tickets.map((t) => (t.id === order.id ? { ...t, ...order } : t)),
+      }))
+    })
   },
 
   addTicket: (order) =>
@@ -118,6 +125,24 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
       tickets: [order, ...s.tickets],
       chimeCount: s.soundEnabled ? s.chimeCount + 1 : s.chimeCount,
     })),
+
+  sendBackTicket: async (orderId: string, targetStatus: OrderStatus, reason: string) => {
+    // Optimistic regression
+    set((s) => ({
+      tickets: s.tickets.map((t) =>
+        t.id === orderId ? { ...t, orderStatus: targetStatus } : t
+      ),
+    }))
+
+    try {
+      await api.orders.regressStatus(orderId, { targetStatus, reason })
+    } catch (err) {
+      console.error(`Failed to regress ticket ${orderId}:`, err)
+      // Re-fetch to rollback on failure
+      const slug = get().tickets[0]?.restaurantId
+      if (slug) get().fetchTickets(slug)
+    }
+  },
 
   advanceTicket: async (orderId) => {
     const currentTicket = get().tickets.find((t) => t.id === orderId)
