@@ -112,11 +112,11 @@ export interface OrderItem {
   notes?: string
 }
 
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED'
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_PENDING' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
 
 export type PaymentMethod = 'UPI_INSTANT' | 'PAY_AT_COUNTER'
 
-export type OrderStatus = 'RECEIVED' | 'PREPARING' | 'READY' | 'COMPLETED'
+export type OrderStatus = 'RECEIVED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED'
 
 export interface OrderFeedback {
   rating: number
@@ -167,6 +167,14 @@ export interface Order {
   paymentMethod?: PaymentMethod
   customerPhone?: string
   orderStatus: OrderStatus
+  cancellationReason?: string
+  cancelledAt?: Date | string
+  cancelledByStaffId?: string
+  refundAmount?: number
+  refundReason?: string
+  refundedAt?: Date | string
+  refundedByStaffId?: string
+  version?: number
   feedback?: OrderFeedback
   settledAt?: Date | string
   createdAt: Date | string

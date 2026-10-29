@@ -46,7 +46,7 @@ function computeSalesSummary(orders: Order[]): SalesSummary {
   const paidOrders = orders.filter((o) => o.paymentStatus === 'PAID')
   const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0)
   const totalCovers = orders.length
-  const activeOrders = orders.filter((o) => o.orderStatus !== 'COMPLETED')
+  const activeOrders = orders.filter((o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED')
   const activeKotCount = activeOrders.length
 
   let avgPrepTimeMinutes = 0
@@ -107,6 +107,9 @@ interface AdminStore {
   addOrder: (order: Order) => void
   settleOrder: (orderId: string, paymentStatus: PaymentStatus) => Promise<void>
   archiveOrder: (orderId: string) => Promise<void>
+  cancelOrder: (orderId: string, reason: string) => Promise<void>
+  editOrderItems: (orderId: string, items: any[]) => Promise<void>
+  processRefund: (orderId: string, refundData: any) => Promise<void>
 
   // ── Outlet switching ───────────────────────────────────────────────────────
   setRestaurantName: (name: string) => void
@@ -224,7 +227,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         let nextTables = s.tables
         if (targetOrder) {
           const tableOrders = nextOrders.filter((o) => isSameTableNumber(o.tableNumber, targetOrder.tableNumber))
-          const openOrders = tableOrders.filter((o) => o.orderStatus !== 'COMPLETED')
+          const openOrders = tableOrders.filter((o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED')
           let nextTableStatus: TableStatus = 'VACANT'
           if (openOrders.length > 0) {
             const hasCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING')
@@ -242,6 +245,18 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         return {
           activeOrders: nextOrders,
           tables: nextTables,
+          todaySales: computeSalesSummary(nextOrders),
+        }
+      })
+    })
+
+    socket.on('order:updated', (updatedOrder: Order) => {
+      set((s) => {
+        const nextOrders = s.activeOrders.map((o) =>
+          o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o
+        )
+        return {
+          activeOrders: nextOrders,
           todaySales: computeSalesSummary(nextOrders),
         }
       })
@@ -493,6 +508,80 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       }
     } catch (err) {
       console.error('Failed to settle order via API:', err)
+    }
+  },
+
+  cancelOrder: async (orderId: string, reason: string) => {
+    try {
+      const updated = await api.orders.cancel(orderId, { reason })
+      set((s) => {
+        const nextOrders = s.activeOrders.map((o) =>
+          o.id === orderId ? { ...o, ...updated, orderStatus: 'CANCELLED' as const } : o
+        )
+        const targetOrder = s.activeOrders.find((o) => o.id === orderId)
+        let nextTables = s.tables
+        if (targetOrder) {
+          const tableOrders = nextOrders.filter((o) => isSameTableNumber(o.tableNumber, targetOrder.tableNumber))
+          const openOrders = tableOrders.filter((o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED')
+          let nextTableStatus: TableStatus = 'VACANT'
+          if (openOrders.length > 0) {
+            const hasCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING')
+            if (hasCooking) {
+              nextTableStatus = 'PREPPING'
+            } else {
+              const hasUnpaid = openOrders.some((o) => o.paymentStatus === 'PENDING')
+              nextTableStatus = hasUnpaid ? 'OCCUPIED' : 'SERVED'
+            }
+          }
+          nextTables = s.tables.map((t) =>
+            isSameTableNumber(t.tableNumber, targetOrder.tableNumber) ? { ...t, status: nextTableStatus } : t
+          )
+        }
+        return {
+          activeOrders: nextOrders,
+          tables: nextTables,
+          todaySales: computeSalesSummary(nextOrders),
+        }
+      })
+    } catch (err) {
+      console.error('Failed to cancel order via API:', err)
+      throw err
+    }
+  },
+
+  editOrderItems: async (orderId: string, items: any[]) => {
+    try {
+      const updated = await api.orders.editItems(orderId, { items })
+      set((s) => {
+        const nextOrders = s.activeOrders.map((o) =>
+          o.id === orderId ? { ...o, ...updated } : o
+        )
+        return {
+          activeOrders: nextOrders,
+          todaySales: computeSalesSummary(nextOrders),
+        }
+      })
+    } catch (err) {
+      console.error('Failed to edit order items via API:', err)
+      throw err
+    }
+  },
+
+  processRefund: async (orderId: string, refundData: any) => {
+    try {
+      const updated = await api.orders.processRefund(orderId, refundData)
+      set((s) => {
+        const nextOrders = s.activeOrders.map((o) =>
+          o.id === orderId ? { ...o, ...updated } : o
+        )
+        return {
+          activeOrders: nextOrders,
+          todaySales: computeSalesSummary(nextOrders),
+        }
+      })
+    } catch (err) {
+      console.error('Failed to process refund via API:', err)
+      throw err
     }
   },
 
