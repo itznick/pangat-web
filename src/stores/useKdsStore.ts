@@ -8,7 +8,17 @@ import type { Order, OrderStatus } from '@/types/domain'
 import { api } from '@/lib/api'
 import { getSocket, joinKdsRoom } from '@/lib/socket'
 
-export type KdsTicketStatus = Extract<OrderStatus, 'RECEIVED' | 'PREPARING' | 'READY'>
+export type KdsTicketStatus = Extract<OrderStatus, 'RECEIVED' | 'PREPARING' | 'READY' | 'DISPATCHED'>
+
+export function getNextKdsStatus(order: Order): OrderStatus {
+  if (order.orderStatus === 'RECEIVED') return 'PREPARING'
+  if (order.orderStatus === 'PREPARING') return 'READY'
+  if (order.orderType === 'DELIVERY') {
+    if (order.orderStatus === 'READY') return 'DISPATCHED'
+    if (order.orderStatus === 'DISPATCHED') return 'COMPLETED'
+  }
+  return 'COMPLETED'
+}
 
 interface KdsStore {
   tickets: Order[]
@@ -33,12 +43,6 @@ interface KdsStore {
 
   // ── Selectors ──────────────────────────────────────────────────────────────
   ticketsByStatus: (status: KdsTicketStatus) => Order[]
-}
-
-const ADVANCE: Record<KdsTicketStatus, OrderStatus> = {
-  RECEIVED: 'PREPARING',
-  PREPARING: 'READY',
-  READY: 'COMPLETED',
 }
 
 let kdsSocketListening = false
@@ -97,7 +101,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
       }))
     })
 
-    socket.on('order:status', ({ orderId, status }: { orderId: string; status: any }) => {
+    socket.on('order:status', ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
       set((s) => {
         if (status === 'COMPLETED' || status === 'CANCELLED') {
           return { tickets: s.tickets.filter((t) => t.id !== orderId) }
@@ -148,7 +152,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     const currentTicket = get().tickets.find((t) => t.id === orderId)
     if (!currentTicket) return
 
-    const nextStatus = ADVANCE[currentTicket.orderStatus as KdsTicketStatus] ?? currentTicket.orderStatus
+    const nextStatus = getNextKdsStatus(currentTicket)
 
     // Optimistic update
     set((s) => {

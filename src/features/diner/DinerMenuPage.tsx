@@ -16,6 +16,7 @@ import type {
   Restaurant,
   SelectedModifier,
   PaymentMethod,
+  OrderType,
 } from "@/types/domain"
 
 const DEFAULT_RESTAURANT: Restaurant = {
@@ -155,12 +156,13 @@ export function DinerMenuPage() {
     setSelectedItem(null)
   }
 
-  const handleProceedToPay = async ({
-    mobile,
-    paymentMethod,
-  }: {
+  const handleProceedToPay = async (data: {
     mobile: string
     paymentMethod: PaymentMethod
+    orderType: OrderType
+    customerName?: string
+    deliveryAddress?: string
+    deliveryInstructions?: string
   }) => {
     const orderItems = toOrderItems()
     const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -170,9 +172,13 @@ export function DinerMenuPage() {
       const placedOrder = await api.orders.create(
         {
           restaurantSlug,
-          tableNumber: tableId,
-          paymentMethod,
-          customerPhone: mobile,
+          orderType: data.orderType,
+          tableNumber: data.orderType === "DINE_IN" ? tableId : undefined,
+          customerName: data.customerName,
+          customerPhone: data.mobile,
+          deliveryAddress: data.deliveryAddress,
+          deliveryInstructions: data.deliveryInstructions,
+          paymentMethod: data.paymentMethod,
           items: orderItems,
         },
         idempotencyKey,
@@ -347,6 +353,7 @@ export function DinerMenuPage() {
         <CheckoutDrawer
           open={showCheckout}
           onClose={() => setShowCheckout(false)}
+          tableId={tableId}
           onProceedToPay={handleProceedToPay}
         />
 

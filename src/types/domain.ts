@@ -112,11 +112,13 @@ export interface OrderItem {
   notes?: string
 }
 
+export type OrderType = 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY'
+
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_PENDING' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
 
 export type PaymentMethod = 'UPI_INSTANT' | 'PAY_AT_COUNTER'
 
-export type OrderStatus = 'RECEIVED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED'
+export type OrderStatus = 'RECEIVED' | 'PREPARING' | 'READY' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED'
 
 export interface OrderFeedback {
   rating: number
@@ -159,13 +161,22 @@ export interface Order {
   id: string
   trackingToken?: string
   restaurantId: string
-  tableNumber: string
+  orderType?: OrderType
+  tableNumber?: string | null
+  customerName?: string | null
+  customerPhone?: string | null
+  deliveryAddress?: string | null
+  deliveryInstructions?: string | null
+  deliveryFee?: number
+  dispatchedAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  dispatchedByStaffId?: string | null
   items: OrderItem[]
   totalAmount: number
   gstAmount: number
+  subtotal?: number
   paymentStatus: PaymentStatus
   paymentMethod?: PaymentMethod
-  customerPhone?: string
   orderStatus: OrderStatus
   cancellationReason?: string
   cancelledAt?: Date | string

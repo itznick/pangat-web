@@ -37,12 +37,15 @@ export function KDSPage() {
 
   const newTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "RECEIVED"), [tickets])
   const inPrepTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "PREPARING"), [tickets])
-  const readyTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "READY"), [tickets])
+  const readyTickets = useMemo(
+    () => tickets.filter((t) => t.orderStatus === "READY" || t.orderStatus === "DISPATCHED"),
+    [tickets]
+  )
 
   const columns = useMemo(() => [
     { label: "New Orders", count: newTickets.length, tickets: newTickets, color: "text-blue-400", dotColor: "bg-blue-500" },
     { label: "In Prep", count: inPrepTickets.length, tickets: inPrepTickets, color: "text-amber-400", dotColor: "bg-amber-500" },
-    { label: "Ready for Pickup", count: readyTickets.length, tickets: readyTickets, color: "text-emerald-400", dotColor: "bg-emerald-500" },
+    { label: "Ready & Dispatched", count: readyTickets.length, tickets: readyTickets, color: "text-emerald-400", dotColor: "bg-emerald-500" },
   ], [newTickets, inPrepTickets, readyTickets])
 
   return (

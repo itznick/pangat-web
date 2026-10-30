@@ -8,6 +8,7 @@ import type {
   Order,
   TableStatus,
   OrderStatus,
+  OrderType,
   PaymentMethod,
   OnboardPayload,
   OnboardResponseData,
@@ -108,9 +109,13 @@ export interface PublicMenuResponse {
 
 export interface CreateOrderPayload {
   restaurantSlug: string
-  tableNumber: string
-  paymentMethod?: PaymentMethod
+  orderType?: OrderType
+  tableNumber?: string
+  customerName?: string
   customerPhone?: string
+  deliveryAddress?: string
+  deliveryInstructions?: string
+  paymentMethod?: PaymentMethod
   items: {
     menuItemId: string
     name: string
@@ -194,7 +199,7 @@ export const api = {
     submitFeedback: (
       slug: string,
       data: { orderId?: string; tableNumber?: string; rating: number; tags?: string[]; comment?: string }
-    ): Promise<any> =>
+    ): Promise<unknown> =>
       apiClient.post(`/restaurants/${slug}/feedback`, data),
   },
 

@@ -37,9 +37,12 @@ import {
   RotateCcw,
   Star,
   MessageSquare,
+  ShoppingBag,
+  Bike,
+  Utensils,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { PaymentStatus, Order } from "@/types/domain"
+import type { PaymentStatus, Order, OrderType } from "@/types/domain"
 
 function formatDateTime(dateInput: Date | string | undefined): string {
   if (!dateInput) return "—"
@@ -119,6 +122,7 @@ export function AdminOrdersPage() {
   // Shared search & filters
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all")
+  const [typeFilter, setTypeFilter] = useState<OrderType | "all">("all")
 
   // Archived Tab Date filters
   const [startDate, setStartDate] = useState("")
@@ -170,12 +174,14 @@ export function AdminOrdersPage() {
       if (order.orderStatus === "COMPLETED" || order.orderStatus === "CANCELLED") return false
       const matchSearch =
         order.id.toLowerCase().includes(search.toLowerCase()) ||
-        order.tableNumber.includes(search) ||
+        (order.tableNumber ?? "").includes(search) ||
+        (order.customerName ?? "").toLowerCase().includes(search.toLowerCase()) ||
         order.items.some((i) => i.name.toLowerCase().includes(search.toLowerCase()))
       const matchStatus = statusFilter === "all" || order.paymentStatus === statusFilter
-      return matchSearch && matchStatus
+      const matchType = typeFilter === "all" || (order.orderType || "DINE_IN") === typeFilter
+      return matchSearch && matchStatus && matchType
     })
-  }, [activeOrders, search, statusFilter])
+  }, [activeOrders, search, statusFilter, typeFilter])
 
   // Archived orders filtered: include COMPLETED and CANCELLED
   const archivedFiltered = useMemo(() => {
@@ -183,12 +189,14 @@ export function AdminOrdersPage() {
       if (order.orderStatus !== "COMPLETED" && order.orderStatus !== "CANCELLED") return false
       const matchSearch =
         order.id.toLowerCase().includes(search.toLowerCase()) ||
-        order.tableNumber.includes(search) ||
+        (order.tableNumber ?? "").includes(search) ||
+        (order.customerName ?? "").toLowerCase().includes(search.toLowerCase()) ||
         order.items.some((i) => i.name.toLowerCase().includes(search.toLowerCase()))
       const matchStatus = statusFilter === "all" || order.paymentStatus === statusFilter
-      return matchSearch && matchStatus
+      const matchType = typeFilter === "all" || (order.orderType || "DINE_IN") === typeFilter
+      return matchSearch && matchStatus && matchType
     })
-  }, [archivedOrders, search, statusFilter])
+  }, [archivedOrders, search, statusFilter, typeFilter])
 
   const currentDisplayList = activeTab === "active" ? activeFiltered : archivedFiltered
 
@@ -318,7 +326,34 @@ export function AdminOrdersPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Order Type Filter */}
+            {(["all", "DINE_IN", "TAKEAWAY", "DELIVERY"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTypeFilter(t)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5",
+                  typeFilter === t
+                    ? "bg-emerald-600 border-emerald-600 text-white"
+                    : "bg-transparent border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                )}
+              >
+                {t === "all" ? (
+                  "All Types"
+                ) : t === "DINE_IN" ? (
+                  <><Utensils className="h-3 w-3" /> Dine-In</>
+                ) : t === "TAKEAWAY" ? (
+                  <><ShoppingBag className="h-3 w-3" /> Takeaway</>
+                ) : (
+                  <><Bike className="h-3 w-3" /> Delivery</>
+                )}
+              </button>
+            ))}
+
+            <div className="w-[1px] h-5 bg-zinc-800 mx-1" />
+
+            {/* Payment Filter */}
             {(["all", "PAID", "PENDING", "FAILED"] as const).map((s) => (
               <button
                 key={s}
@@ -343,7 +378,7 @@ export function AdminOrdersPage() {
               <TableRow className="border-zinc-800/80 hover:bg-transparent">
                 <TableHead className="text-zinc-400">Order ID</TableHead>
                 <TableHead className="text-zinc-400">Placed Date & Time</TableHead>
-                <TableHead className="text-zinc-400">Table</TableHead>
+                <TableHead className="text-zinc-400">Fulfillment / Table</TableHead>
                 <TableHead className="text-zinc-400">Items</TableHead>
                 <TableHead className="text-zinc-400">Payment Method</TableHead>
                 <TableHead className="text-zinc-400">Status</TableHead>
@@ -387,9 +422,29 @@ export function AdminOrdersPage() {
                     </TableCell>
 
                     <TableCell>
-                      <span className="font-bold text-white bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-700 text-xs">
-                        Table {order.tableNumber}
-                      </span>
+                      {order.orderType === "TAKEAWAY" ? (
+                        <span className="font-bold text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-xs inline-flex items-center gap-1.5">
+                          <ShoppingBag className="h-3.5 w-3.5" />
+                          <span>{order.customerName || "Takeaway"}</span>
+                        </span>
+                      ) : order.orderType === "DELIVERY" ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/30 text-xs inline-flex items-center gap-1.5 w-fit">
+                            <Bike className="h-3.5 w-3.5" />
+                            <span>{order.customerName || "Delivery"}</span>
+                          </span>
+                          {order.deliveryAddress && (
+                            <span className="text-[10px] text-zinc-500 truncate max-w-[150px]">
+                              {order.deliveryAddress}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="font-bold text-white bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-700 text-xs inline-flex items-center gap-1.5">
+                          <Utensils className="h-3.5 w-3.5 text-zinc-400" />
+                          <span>Table {order.tableNumber || "—"}</span>
+                        </span>
+                      )}
                     </TableCell>
 
                     <TableCell>
@@ -451,6 +506,44 @@ export function AdminOrdersPage() {
                           >
                             <Check className="h-3 w-3" />
                             <span>Mark Paid</span>
+                          </button>
+                        )}
+
+                        {activeTab === "active" && order.orderType === "DELIVERY" && order.orderStatus === "READY" && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await api.orders.updateStatus(order.id, "DISPATCHED")
+                                fetchArchivedOrders()
+                              } catch (e: any) {
+                                alert(e?.response?.data?.message || "Failed to dispatch order")
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                            title="Dispatch delivery order"
+                          >
+                            <Bike className="h-3 w-3" />
+                            <span>Dispatch</span>
+                          </button>
+                        )}
+
+                        {activeTab === "active" && order.orderType === "DELIVERY" && order.orderStatus === "DISPATCHED" && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await api.orders.updateStatus(order.id, "COMPLETED")
+                                fetchArchivedOrders()
+                              } catch (e: any) {
+                                alert(e?.response?.data?.message || "Failed to mark delivered")
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                            title="Mark delivery completed"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span>Delivered</span>
                           </button>
                         )}
 
@@ -601,9 +694,13 @@ export function AdminOrdersPage() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-zinc-500 block">Dining Table</span>
+                    <span className="text-[10px] text-zinc-500 block">Fulfillment</span>
                     <span className="font-bold text-white">
-                      Table {selectedReceiptOrder.tableNumber}
+                      {selectedReceiptOrder.orderType === "TAKEAWAY"
+                        ? `Takeaway (${selectedReceiptOrder.customerName || "Parcel"})`
+                        : selectedReceiptOrder.orderType === "DELIVERY"
+                        ? `Delivery (${selectedReceiptOrder.customerName || "Customer"})`
+                        : `Table ${selectedReceiptOrder.tableNumber || "—"}`}
                     </span>
                   </div>
                   <div>

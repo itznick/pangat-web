@@ -143,6 +143,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
       const created = await api.orders.create(
         {
           restaurantSlug: 'pangat',
+          orderType: 'DINE_IN',
           tableNumber: targetTable.tableNumber,
           paymentMethod: 'PAY_AT_COUNTER' as any,
           items: orderItems,

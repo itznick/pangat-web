@@ -15,21 +15,36 @@ import {
   CheckCircle2,
   Wallet,
   Sparkles,
+  Utensils,
+  ShoppingBag,
+  Bike,
 } from "lucide-react"
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/stores/useCartStore"
 import { cn } from "@/lib/utils"
-import type { PaymentMethod } from "@/types/domain"
+import type { PaymentMethod, OrderType } from "@/types/domain"
 
 interface CheckoutDrawerProps {
   open: boolean
   onClose: () => void
-  onProceedToPay: (data: { mobile: string; paymentMethod: PaymentMethod }) => void
+  tableId?: string
+  onProceedToPay: (data: {
+    mobile: string
+    paymentMethod: PaymentMethod
+    orderType: OrderType
+    customerName?: string
+    deliveryAddress?: string
+    deliveryInstructions?: string
+  }) => void
 }
 
-export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawerProps) {
+export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: CheckoutDrawerProps) {
+  const [orderType, setOrderType] = useState<OrderType>("DINE_IN")
+  const [customerName, setCustomerName] = useState("")
+  const [deliveryAddress, setDeliveryAddress] = useState("")
+  const [deliveryInstructions, setDeliveryInstructions] = useState("")
   const [mobile, setMobile] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI_INSTANT")
   const [otp, setOtp] = useState("")
@@ -38,13 +53,19 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
   const entries = useCartStore((s) => s.entries)
   const subtotal = useCartStore((s) => s.subtotal())
   const gst = useCartStore((s) => s.gstAmount(5))
-  const total = useCartStore((s) => s.total(5))
+  const baseTotal = useCartStore((s) => s.total(5))
   const incrementItem = useCartStore((s) => s.incrementItem)
   const decrementItem = useCartStore((s) => s.decrementItem)
+
+  const deliveryFee = orderType === "DELIVERY" ? 30.0 : 0.0
+  const finalTotal = baseTotal + deliveryFee
 
   // Mobile number validation (Indian 10-digit starting with 6-9)
   const isMobileValid = /^[6-9]\d{9}$/.test(mobile)
   const isOtpValid = otp === "1234"
+
+  const isNameValid = orderType === "DINE_IN" || customerName.trim().length > 0
+  const isAddressValid = orderType !== "DELIVERY" || deliveryAddress.trim().length > 0
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "").slice(0, 10)
@@ -58,7 +79,7 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
 
   const handleSubmit = () => {
     setHasAttemptedSubmit(true)
-    if (!isMobileValid) return
+    if (!isMobileValid || !isNameValid || !isAddressValid) return
 
     if (paymentMethod === "PAY_AT_COUNTER" && !isOtpValid) {
       return
@@ -67,6 +88,10 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
     onProceedToPay({
       mobile,
       paymentMethod,
+      orderType,
+      customerName: customerName.trim() || undefined,
+      deliveryAddress: orderType === "DELIVERY" ? deliveryAddress.trim() : undefined,
+      deliveryInstructions: orderType === "DELIVERY" ? deliveryInstructions.trim() : undefined,
     })
   }
 
@@ -80,7 +105,7 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
             </div>
             <div>
               <DrawerTitle className="text-base font-bold text-zinc-100">Checkout & Order</DrawerTitle>
-              <p className="text-[11px] text-zinc-500 font-medium">Review items & payment option</p>
+              <p className="text-[11px] text-zinc-500 font-medium">Review items & fulfillment option</p>
             </div>
           </div>
           <button
@@ -93,11 +118,124 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
       </DrawerHeader>
 
       <DrawerContent className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-6">
+        {/* Order Type Selection */}
+        <div className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+            Fulfillment Type
+          </span>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setOrderType("DINE_IN")}
+              className={cn(
+                "p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all",
+                orderType === "DINE_IN"
+                  ? "bg-emerald-500/15 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/40"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+              )}
+            >
+              <Utensils className="h-4 w-4" />
+              <span>Dine-In</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrderType("TAKEAWAY")}
+              className={cn(
+                "p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all",
+                orderType === "TAKEAWAY"
+                  ? "bg-amber-500/15 border-amber-500 text-amber-300 ring-1 ring-amber-500/40"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+              )}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              <span>Takeaway</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrderType("DELIVERY")}
+              className={cn(
+                "p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all",
+                orderType === "DELIVERY"
+                  ? "bg-purple-500/15 border-purple-500 text-purple-300 ring-1 ring-purple-500/40"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+              )}
+            >
+              <Bike className="h-4 w-4" />
+              <span>Delivery</span>
+            </button>
+          </div>
+
+          {orderType === "DINE_IN" && tableId && (
+            <p className="text-[11px] text-zinc-400 bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
+              Serving to Table: <span className="font-bold text-emerald-400">{tableId}</span>
+            </p>
+          )}
+        </div>
+
+        {/* Customer details for Takeaway and Delivery */}
+        {orderType !== "DINE_IN" && (
+          <div className="space-y-3 bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-800/80">
+            <div>
+              <label className="text-xs font-semibold text-zinc-300 block mb-1">
+                {orderType === "TAKEAWAY" ? "Pickup Customer Name *" : "Customer Name *"}
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Priya Sharma"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className={cn(
+                  "w-full h-10 px-3 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all",
+                  hasAttemptedSubmit && !isNameValid
+                    ? "border-rose-500/80 bg-rose-950/10"
+                    : "border-zinc-750 focus:border-emerald-500/70"
+                )}
+              />
+            </div>
+
+            {orderType === "DELIVERY" && (
+              <>
+                <div>
+                  <label className="text-xs font-semibold text-zinc-300 block mb-1">
+                    Delivery Address *
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Flat/House number, Building, Street, Landmark"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    className={cn(
+                      "w-full p-2.5 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all resize-none",
+                      hasAttemptedSubmit && !isAddressValid
+                        ? "border-rose-500/80 bg-rose-950/10"
+                        : "border-zinc-750 focus:border-emerald-500/70"
+                    )}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-zinc-300 block mb-1">
+                    Delivery Instructions (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Leave with security, gate code 1234"
+                    value={deliveryInstructions}
+                    onChange={(e) => setDeliveryInstructions(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-zinc-900 border border-zinc-750 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/70"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Cart Items List */}
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-400 px-0.5">
             <span>Items Ordered</span>
-            <span className="text-zinc-500 font-medium">{entries.length} {entries.length === 1 ? 'item' : 'items'}</span>
+            <span className="text-zinc-500 font-medium">
+              {entries.length} {entries.length === 1 ? "item" : "items"}
+            </span>
           </div>
 
           <div className="space-y-2.5">
@@ -142,7 +280,9 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
                     >
                       <Minus className="h-3 w-3 text-zinc-300" />
                     </button>
-                    <span className="text-sm font-bold text-zinc-100 w-4 text-center">{entry.quantity}</span>
+                    <span className="text-sm font-bold text-zinc-100 w-4 text-center">
+                      {entry.quantity}
+                    </span>
                     <button
                       onClick={() => incrementItem(entry._localId)}
                       className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors"
@@ -173,17 +313,26 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
             </span>
             <span className="text-zinc-200 font-medium">₹{Number(gst || 0).toFixed(2)}</span>
           </div>
+          {orderType === "DELIVERY" && (
+            <div className="flex justify-between text-sm">
+              <span className="text-purple-300 flex items-center gap-1">
+                <Bike className="h-3 w-3 text-purple-400" />
+                Delivery Fee
+              </span>
+              <span className="text-purple-300 font-medium">₹{deliveryFee.toFixed(2)}</span>
+            </div>
+          )}
           <Separator className="bg-zinc-800/90 my-1" />
           <div className="flex justify-between items-center pt-0.5">
             <div>
               <span className="text-sm font-bold text-zinc-100">Total Payable</span>
-              <p className="text-[11px] text-zinc-500">Includes all applicable taxes</p>
+              <p className="text-[11px] text-zinc-500">Includes all applicable charges</p>
             </div>
-            <span className="text-lg font-black text-emerald-400">₹{Number(total || 0).toFixed(2)}</span>
+            <span className="text-lg font-black text-emerald-400">₹{finalTotal.toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Spacious & Elevated Payment Selector (Enhanced layout) */}
+        {/* Payment Selector */}
         <div className="space-y-3 pt-1">
           <div className="flex items-center justify-between px-0.5">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
@@ -205,7 +354,6 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
               )}
             >
               <div className="flex items-start gap-3.5">
-                {/* Radio Circle */}
                 <div
                   className={cn(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 flex-shrink-0",
@@ -219,12 +367,10 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
                   )}
                 </div>
 
-                {/* Icon Box */}
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
                   <Zap className="h-5 w-5 text-emerald-400" />
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
@@ -253,7 +399,6 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
               )}
             >
               <div className="flex items-start gap-3.5">
-                {/* Radio Circle */}
                 <div
                   className={cn(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 flex-shrink-0",
@@ -267,12 +412,10 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
                   )}
                 </div>
 
-                {/* Icon Box */}
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
                   <Store className="h-5 w-5 text-amber-400" />
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
@@ -283,7 +426,7 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
                     </span>
                   </div>
                   <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                    Order fires to kitchen immediately; settle bill at counter via Cash, Card, or QR before leaving.
+                    Order fires to kitchen immediately; settle bill at counter via Cash, Card, or QR.
                   </p>
                 </div>
               </div>
@@ -340,16 +483,14 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
               <div>
                 <p className="text-xs font-bold text-zinc-100">Anti-Prank Order Verification</p>
                 <p className="text-[11px] text-zinc-400 mt-0.5">
-                  To protect our kitchen from fake QR fires, please enter the demo code below.
+                  To protect our kitchen from fake fires, please enter the demo code below.
                 </p>
               </div>
             </div>
 
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400 font-medium">
-                  Enter 4-Digit Code:
-                </span>
+                <span className="text-xs text-zinc-400 font-medium">Enter 4-Digit Code:</span>
                 <span className="text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30">
                   Demo OTP: 1234
                 </span>
@@ -402,12 +543,12 @@ export function CheckoutDrawer({ open, onClose, onProceedToPay }: CheckoutDrawer
           {paymentMethod === "UPI_INSTANT" ? (
             <>
               <Zap className="h-4 w-4 mr-1.5" />
-              Proceed to UPI Pay • ₹{Number(total || 0).toFixed(2)}
+              Proceed to UPI Pay • ₹{finalTotal.toFixed(2)}
             </>
           ) : (
             <>
               <Store className="h-4 w-4 mr-1.5" />
-              Confirm & Fire to Kitchen • ₹{Number(total || 0).toFixed(2)}
+              Confirm & Fire to Kitchen • ₹{finalTotal.toFixed(2)}
             </>
           )}
         </Button>
