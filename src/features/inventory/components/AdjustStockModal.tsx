@@ -110,7 +110,7 @@ export function AdjustStockModal({
             </div>
           )}
 
-          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-between">
+          <div className="p-3 bg-zinc-100/70 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Target Ingredient</p>
               <p className="font-semibold text-zinc-900 dark:text-zinc-100">{ingredient.name}</p>
@@ -132,7 +132,7 @@ export function AdjustStockModal({
                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${
                   mode === "ADD"
                     ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300"
-                    : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-850"
+                    : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
                 <TrendingUp className="w-4 h-4" />
@@ -144,7 +144,7 @@ export function AdjustStockModal({
                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${
                   mode === "DEDUCT"
                     ? "bg-rose-50 dark:bg-rose-950/40 border-rose-500 text-rose-700 dark:text-rose-300"
-                    : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-850"
+                    : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
                 <TrendingDown className="w-4 h-4" />

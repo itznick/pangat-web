@@ -175,7 +175,7 @@ export function ReceiveStockModal({
                 return (
                   <div
                     key={idx}
-                    className="p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-lg border border-zinc-200 dark:border-zinc-700/60 flex items-center gap-2"
+                    className="p-3 bg-zinc-100/70 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-2"
                   >
                     <div className="flex-1 min-w-[160px]">
                       <select

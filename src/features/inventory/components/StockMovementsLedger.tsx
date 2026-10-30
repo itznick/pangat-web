@@ -85,12 +85,12 @@ export function StockMovementsLedger({ restaurantId }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1 max-w-sm">
           <div className="relative w-full">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400 dark:text-zinc-500" />
             <Input
               placeholder="Search by ingredient, reason, or order ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9"
+              className="pl-9 h-9 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 rounded-xl text-xs"
             />
           </div>
         </div>
@@ -99,7 +99,7 @@ export function StockMovementsLedger({ restaurantId }: Props) {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="h-9 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none"
+            className="h-9 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none"
           >
             <option value="ALL">All Movement Types</option>
             <option value="OPENING_STOCK">Opening Stock</option>
@@ -113,7 +113,7 @@ export function StockMovementsLedger({ restaurantId }: Props) {
           <button
             onClick={fetchMovements}
             disabled={loading}
-            className="h-9 px-3 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-850 flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400 transition-colors"
+            className="h-9 px-3 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -121,7 +121,7 @@ export function StockMovementsLedger({ restaurantId }: Props) {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xl">
         {loading ? (
           <div className="py-16 flex flex-col items-center justify-center text-zinc-500 gap-2">
             <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
@@ -134,7 +134,7 @@ export function StockMovementsLedger({ restaurantId }: Props) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 dark:bg-zinc-850 text-xs uppercase tracking-wider text-zinc-500 border-b border-zinc-200 dark:border-zinc-800 font-semibold">
+              <thead className="bg-zinc-100/60 dark:bg-zinc-900 text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 font-semibold">
                 <tr>
                   <th className="py-3 px-4">Timestamp</th>
                   <th className="py-3 px-4">Ingredient</th>
@@ -157,7 +157,7 @@ export function StockMovementsLedger({ restaurantId }: Props) {
                   return (
                     <tr
                       key={mov.id}
-                      className="hover:bg-zinc-50/70 dark:hover:bg-zinc-850/50 transition-colors"
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                     >
                       <td className="py-3 px-4 text-xs font-mono text-zinc-500 whitespace-nowrap">
                         {new Date(mov.createdAt).toLocaleString("en-IN", {
