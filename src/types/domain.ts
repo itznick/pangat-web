@@ -382,3 +382,73 @@ export interface DetailedSystemHealth {
     timestamp: string
   }
 }
+
+// ── Inventory & Recipes ───────────────────────────────────────────────────────
+
+export type UnitOfMeasure = 'KG' | 'GRAM' | 'LITRE' | 'ML' | 'PIECE' | 'PACKET'
+
+export type StockMovementType =
+  | 'OPENING_STOCK'
+  | 'RECEIVED'
+  | 'MANUAL_ADJUSTMENT'
+  | 'ORDER_CONSUMPTION'
+  | 'ORDER_CANCELLATION_REVERSAL'
+  | 'WASTAGE'
+
+export interface Ingredient {
+  id: string
+  restaurantId: string
+  name: string
+  sku?: string | null
+  unit: UnitOfMeasure
+  currentStock: number
+  minimumStock: number
+  costPerUnit: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface StockMovement {
+  id: string
+  restaurantId: string
+  ingredientId: string
+  type: StockMovementType
+  quantity: number
+  balanceAfter: number
+  reason: string
+  referenceOrderId?: string | null
+  actorStaffId?: string | null
+  idempotencyKey: string
+  createdAt: string
+  ingredient?: Ingredient
+  actor?: StaffUser
+}
+
+export interface RecipeIngredient {
+  id: string
+  recipeId: string
+  ingredientId: string
+  quantity: number
+  unit: UnitOfMeasure
+  ingredient?: Ingredient
+}
+
+export interface Recipe {
+  id: string
+  restaurantId: string
+  menuItemId: string
+  version: number
+  isActive: boolean
+  notes?: string | null
+  ingredients: RecipeIngredient[]
+  menuItem?: MenuItem
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InventoryAlerts {
+  outOfStock: Ingredient[]
+  lowStock: Ingredient[]
+  healthyCount: number
+}

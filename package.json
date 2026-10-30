@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "node --test test/ui-unit-tests.test.mjs",
+    "test": "node --test test/ui-unit-tests.test.mjs test/inventory-ui.test.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

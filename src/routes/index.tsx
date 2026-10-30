@@ -21,6 +21,7 @@ import {
   AdminFeedbackPage,
   AdminSettingsPage,
 } from "@/features/admin"
+import { AdminInventoryPage } from "@/features/inventory"
 
 export const router = createBrowserRouter([
   // ─── Public / Landing ────────────────────────────────────────────────────
@@ -116,6 +117,11 @@ export const router = createBrowserRouter([
       {
         path: "orders",
         element: <AdminOrdersPage />,
+        errorElement: <RouteErrorBoundary />,
+      },
+      {
+        path: "inventory",
+        element: <AdminInventoryPage />,
         errorElement: <RouteErrorBoundary />,
       },
       {

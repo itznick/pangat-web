@@ -23,6 +23,11 @@ import type {
   DetailedSystemHealth,
   CustomerFeedbackSummary,
   OrderQueryParams,
+  Ingredient,
+  StockMovement,
+  StockMovementType,
+  Recipe,
+  InventoryAlerts,
 } from '@/types/domain'
 
 export function resolveApiBaseUrl(): string {
@@ -321,5 +326,109 @@ export const api = {
       apiClient.get('/admin/outlets'),
     getSystemHealth: (): Promise<DetailedSystemHealth> =>
       apiClient.get('/admin/system-health'),
+  },
+
+  // Restaurant Inventory & Recipes
+  inventory: {
+    listIngredients: (restaurantId: string, activeOnly?: boolean): Promise<Ingredient[]> =>
+      apiClient.get('/inventory/ingredients', {
+        params: { restaurantId, activeOnly: activeOnly ? 'true' : undefined },
+      }),
+    createIngredient: (data: {
+      restaurantId: string
+      name: string
+      sku?: string
+      unit: string
+      openingStock?: number
+      minimumStock?: number
+      costPerUnit?: number
+    }): Promise<Ingredient> =>
+      apiClient.post('/inventory/ingredients', data),
+    updateIngredient: (
+      id: string,
+      restaurantId: string,
+      data: {
+        name?: string
+        sku?: string
+        unit?: string
+        minimumStock?: number
+        costPerUnit?: number
+        isActive?: boolean
+      }
+    ): Promise<Ingredient> =>
+      apiClient.patch(`/inventory/ingredients/${id}`, data, {
+        params: { restaurantId },
+      }),
+    adjustStock: (
+      id: string,
+      restaurantId: string,
+      data: {
+        quantityDelta: number
+        reason: string
+        type?: StockMovementType
+      }
+    ): Promise<{ ingredient: Ingredient; movement: StockMovement }> =>
+      apiClient.post(`/inventory/ingredients/${id}/adjust`, data, {
+        params: { restaurantId },
+      }),
+    receiveStock: (data: {
+      restaurantId: string
+      invoiceNumber?: string
+      supplierName?: string
+      items: Array<{
+        ingredientId: string
+        quantity: number
+        costPerUnit?: number
+        notes?: string
+      }>
+    }): Promise<{ receivedMovements: StockMovement[]; updatedIngredients: Ingredient[] }> =>
+      apiClient.post('/inventory/receive', data),
+    listMovements: (
+      restaurantId: string,
+      query?: {
+        ingredientId?: string
+        type?: StockMovementType
+        startDate?: string
+        endDate?: string
+        page?: number
+        limit?: number
+      }
+    ): Promise<{
+      items: StockMovement[]
+      total: number
+      page: number
+      limit: number
+      totalPages: number
+    }> =>
+      apiClient.get('/inventory/movements', {
+        params: { restaurantId, ...query },
+      }),
+    getAlerts: (restaurantId: string): Promise<InventoryAlerts> =>
+      apiClient.get('/inventory/alerts', {
+        params: { restaurantId },
+      }),
+    listRecipes: (restaurantId: string): Promise<Recipe[]> =>
+      apiClient.get('/inventory/recipes', {
+        params: { restaurantId },
+      }),
+    getRecipeForMenuItem: (menuItemId: string, restaurantId: string): Promise<Recipe> =>
+      apiClient.get(`/inventory/recipes/menu-item/${menuItemId}`, {
+        params: { restaurantId },
+      }),
+    upsertRecipe: (
+      restaurantId: string,
+      data: {
+        menuItemId: string
+        notes?: string
+        ingredients: Array<{
+          ingredientId: string
+          quantity: number
+          unit: string
+        }>
+      }
+    ): Promise<Recipe> =>
+      apiClient.post('/inventory/recipes', data, {
+        params: { restaurantId },
+      }),
   },
 }
