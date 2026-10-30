@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChefHat, AlertCircle, Clock, Undo2 } from "lucide-react"
+import { ChefHat, AlertCircle, Clock, Undo2, Bike, ShoppingBag, Utensils, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Order, OrderStatus } from "@/types/domain"
 import { useTicketTimer } from "@/hooks/useTicketTimer"
@@ -48,10 +48,20 @@ const STATUS_CONFIG: Record<
     border: "border-emerald-500/40",
     bg: "bg-emerald-950/20",
     headerBg: "bg-emerald-950/30",
-    badgeText: "Ready for Pickup",
+    badgeText: "Ready",
     badgeBg: "bg-emerald-500/20 border-emerald-500/40 text-emerald-400",
     actionLabel: "Archive",
     actionClass: "bg-zinc-700 hover:bg-zinc-600 text-zinc-200 font-semibold",
+    pulse: false,
+  },
+  DISPATCHED: {
+    border: "border-purple-500/40",
+    bg: "bg-purple-950/20",
+    headerBg: "bg-purple-950/30",
+    badgeText: "Out for Delivery",
+    badgeBg: "bg-purple-500/20 border-purple-500/40 text-purple-400",
+    actionLabel: "Mark Delivered",
+    actionClass: "bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/30",
     pulse: false,
   },
   COMPLETED: {
@@ -82,9 +92,16 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
   const [showSendBackModal, setShowSendBackModal] = useState(false)
   const [sendBackReason, setSendBackReason] = useState("")
 
+  const isDelivery = ticket.orderType === "DELIVERY"
+  const isTakeaway = ticket.orderType === "TAKEAWAY"
+
   const handleAction = () => {
     if (ticket.orderStatus === "READY") {
-      onArchive(ticket.id)
+      if (isDelivery) {
+        onAdvance(ticket.id) // READY -> DISPATCHED
+      } else {
+        onArchive(ticket.id) // READY -> COMPLETED
+      }
     } else {
       onAdvance(ticket.id)
     }
@@ -92,13 +109,34 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
 
   const handleSendBackConfirm = () => {
     if (!sendBackReason.trim()) return
-    const target: OrderStatus = ticket.orderStatus === "READY" ? "PREPARING" : "RECEIVED"
+    let target: OrderStatus = "RECEIVED"
+    if (ticket.orderStatus === "READY") {
+      target = "PREPARING"
+    } else if (ticket.orderStatus === "DISPATCHED") {
+      target = "READY"
+    }
     onSendBack?.(ticket.id, target, sendBackReason.trim())
     setShowSendBackModal(false)
     setSendBackReason("")
   }
 
-  const canSendBack = (ticket.orderStatus === "PREPARING" || ticket.orderStatus === "READY") && !!onSendBack
+  const canSendBack =
+    (ticket.orderStatus === "PREPARING" ||
+      ticket.orderStatus === "READY" ||
+      ticket.orderStatus === "DISPATCHED") &&
+    !!onSendBack
+
+  // Dynamic Ready label based on type
+  const readyBadgeText = isDelivery
+    ? "Ready to Dispatch"
+    : isTakeaway
+    ? "Ready for Pickup"
+    : "Ready to Serve"
+
+  const readyActionLabel = isDelivery ? "Dispatch Order" : isTakeaway ? "Hand Over" : "Archive"
+
+  const currentActionLabel =
+    ticket.orderStatus === "READY" ? readyActionLabel : config.actionLabel
 
   return (
     <div
@@ -121,23 +159,49 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
             #{ticket.id.slice(-3).toUpperCase()}
           </span>
           <span className="text-zinc-500">·</span>
-          <span className="text-sm font-bold text-zinc-200">Table {ticket.tableNumber}</span>
+          {ticket.orderType === "TAKEAWAY" ? (
+            <span className="text-xs font-bold text-amber-300 inline-flex items-center gap-1">
+              <ShoppingBag className="h-3.5 w-3.5" />
+              {ticket.customerName || "Parcel"}
+            </span>
+          ) : ticket.orderType === "DELIVERY" ? (
+            <span className="text-xs font-bold text-purple-300 inline-flex items-center gap-1">
+              <Bike className="h-3.5 w-3.5" />
+              {ticket.customerName || "Delivery"}
+            </span>
+          ) : (
+            <span className="text-sm font-bold text-zinc-200 inline-flex items-center gap-1">
+              <Utensils className="h-3.5 w-3.5 text-zinc-400" />
+              Table {ticket.tableNumber || "—"}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold", config.badgeBg)}>
-            {config.badgeText}
+          <div
+            className={cn(
+              "flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold",
+              config.badgeBg
+            )}
+          >
+            {ticket.orderStatus === "READY" ? readyBadgeText : config.badgeText}
           </div>
         </div>
       </div>
 
       {/* Timer */}
-      <div className={cn(
-        "flex items-center justify-between px-4 py-2 text-xs font-mono border-b",
-        ticket.orderStatus === "RECEIVED" ? "border-blue-500/20" :
-        ticket.orderStatus === "PREPARING" ? "border-amber-500/20" :
-        "border-emerald-500/20"
-      )}>
+      <div
+        className={cn(
+          "flex items-center justify-between px-4 py-2 text-xs font-mono border-b",
+          ticket.orderStatus === "RECEIVED"
+            ? "border-blue-500/20"
+            : ticket.orderStatus === "PREPARING"
+            ? "border-amber-500/20"
+            : ticket.orderStatus === "DISPATCHED"
+            ? "border-purple-500/20"
+            : "border-emerald-500/20"
+        )}
+      >
         <div className="flex items-center gap-1.5">
           <Clock className={cn("h-3.5 w-3.5", timer.isOverdue ? "text-rose-400" : "text-zinc-500")} />
           <span className="text-[11px] font-sans text-zinc-500 font-medium">Elapsed:</span>
@@ -152,14 +216,25 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
         )}
       </div>
 
+      {/* Delivery details if applicable */}
+      {ticket.orderType === "DELIVERY" && ticket.deliveryAddress && (
+        <div className="px-4 py-2 bg-purple-950/20 border-b border-purple-500/20 text-xs text-purple-200 flex items-start gap-1.5">
+          <MapPin className="h-3.5 w-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="truncate font-semibold">{ticket.deliveryAddress}</p>
+            {ticket.deliveryInstructions && (
+              <p className="text-[11px] text-purple-300/80 italic">{ticket.deliveryInstructions}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Items */}
       <div className="px-4 py-3 flex-1 space-y-2.5">
         {ticket.items.map((item, idx) => (
           <div key={idx}>
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-bold text-zinc-100">
-                {item.quantity}×
-              </span>
+              <span className="text-sm font-bold text-zinc-100">{item.quantity}×</span>
               <span className="text-sm font-semibold text-zinc-200">{item.name}</span>
             </div>
             {item.selectedModifiers && item.selectedModifiers.length > 0 && (
@@ -189,16 +264,21 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
         ))}
       </div>
 
-      {/* Send Back Reason Popover/Modal */}
+      {/* Send Back Reason Popover */}
       {showSendBackModal && (
         <div className="px-4 py-3 border-t border-rose-500/30 bg-rose-950/40 space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300">
             <Undo2 className="h-3.5 w-3.5" />
-            Send back to {ticket.orderStatus === "READY" ? "In Prep" : "New Order"}
+            Send back to{" "}
+            {ticket.orderStatus === "DISPATCHED"
+              ? "Ready"
+              : ticket.orderStatus === "READY"
+              ? "In Prep"
+              : "New Order"}
           </div>
           <input
             type="text"
-            placeholder="Mandatory reason (e.g. remake item, allergy correction)"
+            placeholder="Mandatory reason (e.g. remake item, rider delay)"
             value={sendBackReason}
             onChange={(e) => setSendBackReason(e.target.value)}
             className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-rose-500"
@@ -229,7 +309,7 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
               type="button"
               onClick={() => setShowSendBackModal(true)}
               className="p-2.5 rounded-xl border border-zinc-700 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs transition-colors flex items-center justify-center"
-              title={`Send back to ${ticket.orderStatus === "READY" ? "PREPARING" : "RECEIVED"}`}
+              title="Send back ticket"
             >
               <Undo2 className="h-4 w-4" />
             </button>
@@ -238,16 +318,18 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
             onClick={handleAction}
             className={cn(
               "flex-1 py-2.5 px-4 rounded-xl text-sm transition-all duration-150 active:scale-[0.98]",
-              config.actionClass
+              ticket.orderStatus === "READY" && isDelivery
+                ? "bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-lg shadow-purple-600/30"
+                : config.actionClass
             )}
           >
             {ticket.orderStatus === "RECEIVED" && (
               <span className="flex items-center justify-center gap-2">
                 <ChefHat className="h-4 w-4" />
-                {config.actionLabel}
+                {currentActionLabel}
               </span>
             )}
-            {ticket.orderStatus !== "RECEIVED" && config.actionLabel}
+            {ticket.orderStatus !== "RECEIVED" && currentActionLabel}
           </button>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router"
 import {
   CheckCircle2,
@@ -12,6 +12,8 @@ import {
   Heart,
   Check,
   XCircle,
+  Bike,
+  MapPin,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useOrderTrackingStore } from "@/stores/useCartStore"
@@ -23,27 +25,6 @@ interface OrderTrackingViewProps {
   restaurantSlug: string
   tableId: string
 }
-
-const TRACKING_STEPS = [
-  {
-    key: "RECEIVED" as OrderStatus,
-    label: "Received",
-    icon: CheckCircle2,
-    description: "Your order has been received by the kitchen",
-  },
-  {
-    key: "PREPARING" as OrderStatus,
-    label: "In Kitchen",
-    icon: ChefHat,
-    description: "Chef is actively preparing your dishes",
-  },
-  {
-    key: "READY" as OrderStatus,
-    label: "Ready!",
-    icon: CheckCircle2,
-    description: "Your order is plated and ready to serve",
-  },
-]
 
 const FEEDBACK_TAGS = [
   "Fast Service",
@@ -193,23 +174,113 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
 
   const currentStatus: OrderStatus = order?.orderStatus ?? "RECEIVED"
 
-  // Status mapping:
-  // RECEIVED  -> step 0 reached
-  // PREPARING -> step 0, 1 reached
-  // READY     -> step 0, 1, 2 reached (all 3 green!)
-  // COMPLETED -> all 3 reached + Served celebration mode
+  const trackingSteps = useMemo(() => {
+    if (order?.orderType === "DELIVERY") {
+      return [
+        {
+          key: "RECEIVED" as OrderStatus,
+          label: "Order Placed",
+          icon: CheckCircle2,
+          description: "Your order has been received by the kitchen",
+        },
+        {
+          key: "PREPARING" as OrderStatus,
+          label: "In Kitchen",
+          icon: ChefHat,
+          description: "Chef is actively preparing your dishes",
+        },
+        {
+          key: "READY" as OrderStatus,
+          label: "Packed & Ready",
+          icon: CheckCircle2,
+          description: "Order is packed and ready for dispatch",
+        },
+        {
+          key: "DISPATCHED" as OrderStatus,
+          label: "Out for Delivery",
+          icon: Bike,
+          description: "Rider is heading to your delivery address",
+        },
+      ]
+    }
+    if (order?.orderType === "TAKEAWAY") {
+      return [
+        {
+          key: "RECEIVED" as OrderStatus,
+          label: "Received",
+          icon: CheckCircle2,
+          description: "Your order has been received by the kitchen",
+        },
+        {
+          key: "PREPARING" as OrderStatus,
+          label: "In Kitchen",
+          icon: ChefHat,
+          description: "Chef is actively preparing your parcel",
+        },
+        {
+          key: "READY" as OrderStatus,
+          label: "Ready for Pickup!",
+          icon: CheckCircle2,
+          description: "Your parcel is ready at the counter",
+        },
+      ]
+    }
+    return [
+      {
+        key: "RECEIVED" as OrderStatus,
+        label: "Received",
+        icon: CheckCircle2,
+        description: "Your order has been received by the kitchen",
+      },
+      {
+        key: "PREPARING" as OrderStatus,
+        label: "In Kitchen",
+        icon: ChefHat,
+        description: "Chef is actively preparing your dishes",
+      },
+      {
+        key: "READY" as OrderStatus,
+        label: "Ready!",
+        icon: CheckCircle2,
+        description: "Your order is plated and ready to serve",
+      },
+    ]
+  }, [order?.orderType])
+
   const getStepState = (idx: number) => {
-    if (currentStatus === "COMPLETED" || currentStatus === "READY") {
+    if (currentStatus === "COMPLETED") {
       return { isCompleted: true, isActive: false }
     }
-    if (currentStatus === "PREPARING") {
-      if (idx === 0) return { isCompleted: true, isActive: false }
-      if (idx === 1) return { isCompleted: false, isActive: true }
+    if (order?.orderType === "DELIVERY") {
+      if (currentStatus === "DISPATCHED") {
+        if (idx <= 2) return { isCompleted: true, isActive: false }
+        if (idx === 3) return { isCompleted: false, isActive: true }
+        return { isCompleted: false, isActive: false }
+      }
+      if (currentStatus === "READY") {
+        if (idx <= 1) return { isCompleted: true, isActive: false }
+        if (idx === 2) return { isCompleted: false, isActive: true }
+        return { isCompleted: false, isActive: false }
+      }
+      if (currentStatus === "PREPARING") {
+        if (idx === 0) return { isCompleted: true, isActive: false }
+        if (idx === 1) return { isCompleted: false, isActive: true }
+        return { isCompleted: false, isActive: false }
+      }
+      if (idx === 0) return { isCompleted: false, isActive: true }
+      return { isCompleted: false, isActive: false }
+    } else {
+      if (currentStatus === "READY") {
+        return { isCompleted: true, isActive: false }
+      }
+      if (currentStatus === "PREPARING") {
+        if (idx === 0) return { isCompleted: true, isActive: false }
+        if (idx === 1) return { isCompleted: false, isActive: true }
+        return { isCompleted: false, isActive: false }
+      }
+      if (idx === 0) return { isCompleted: false, isActive: true }
       return { isCompleted: false, isActive: false }
     }
-    // RECEIVED
-    if (idx === 0) return { isCompleted: false, isActive: true }
-    return { isCompleted: false, isActive: false }
   }
 
   const tokenId = order ? order.id.slice(-3).toUpperCase() : "04"
@@ -297,12 +368,40 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600/20 border border-emerald-600/30 mb-2">
             <Hash className="h-3.5 w-3.5 text-emerald-400" />
             <span className="text-emerald-400 font-bold text-xs uppercase tracking-wide">
-              Table Order Token
+              {order?.orderType === "TAKEAWAY"
+                ? "Takeaway Token"
+                : order?.orderType === "DELIVERY"
+                ? "Delivery Token"
+                : "Table Order Token"}
             </span>
           </div>
           <div className="text-5xl font-black text-zinc-100 tracking-tight">#{tokenId}</div>
-          <p className="text-xs text-zinc-400 mt-1.5">Show this to your server</p>
+          <p className="text-xs text-zinc-400 mt-1.5">
+            {order?.orderType === "TAKEAWAY"
+              ? "Show this at counter for pickup"
+              : order?.orderType === "DELIVERY"
+              ? "Tracking reference for your delivery"
+              : "Show this to your server"}
+          </p>
         </div>
+
+        {/* Delivery Destination card if delivery order */}
+        {order?.orderType === "DELIVERY" && order?.deliveryAddress && (
+          <div className="bg-purple-950/20 border border-purple-500/30 rounded-2xl p-4 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
+              <MapPin className="h-3.5 w-3.5 text-purple-400" />
+              Delivery Address
+            </div>
+            <p className="text-xs text-zinc-200 font-medium leading-relaxed">
+              {order.deliveryAddress}
+            </p>
+            {order.deliveryInstructions && (
+              <p className="text-[11px] text-purple-300/80 italic">
+                Note: {order.deliveryInstructions}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Step Progress Tracker */}
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 shadow-lg">
@@ -313,10 +412,10 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
 
           {/* Stepper with explicit segment connectors - zero overflow */}
           <div className="space-y-0">
-            {TRACKING_STEPS.map((step, idx) => {
+            {trackingSteps.map((step, idx) => {
               const { isCompleted, isActive } = getStepState(idx)
               const StepIcon = step.icon
-              const isLast = idx === TRACKING_STEPS.length - 1
+              const isLast = idx === trackingSteps.length - 1
 
               // Connector segment state
               const nextStepState = !isLast ? getStepState(idx + 1) : null
