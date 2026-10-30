@@ -66,6 +66,11 @@ export const router = createBrowserRouter([
 
   // ─── Diner Flow ──────────────────────────────────────────────────────────
   {
+    path: "/r/:restaurantSlug",
+    element: <DinerMenuPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: "/r/:restaurantSlug/t/:tableId",
     element: <DinerMenuPage />,
     errorElement: <RouteErrorBoundary />,

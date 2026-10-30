@@ -29,9 +29,9 @@ const DEFAULT_RESTAURANT: Restaurant = {
 }
 
 export function DinerMenuPage() {
-  const { restaurantSlug = "", tableId = "01" } = useParams<{
+  const { restaurantSlug = "", tableId } = useParams<{
     restaurantSlug: string
-    tableId: string
+    tableId?: string
   }>()
   const navigate = useNavigate()
 
@@ -40,6 +40,8 @@ export function DinerMenuPage() {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [showCustomization, setShowCustomization] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
 
   // Dynamic API state
   const [restaurant, setRestaurant] = useState<Restaurant>(DEFAULT_RESTAURANT)
@@ -157,15 +159,21 @@ export function DinerMenuPage() {
   }
 
   const handleProceedToPay = async (data: {
-    mobile: string
+    mobile?: string
     paymentMethod: PaymentMethod
     orderType: OrderType
+    tableNumber?: string
     customerName?: string
     deliveryAddress?: string
     deliveryInstructions?: string
   }) => {
     const orderItems = toOrderItems()
     const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const finalTableNumber =
+      data.orderType === "DINE_IN" ? (data.tableNumber || tableId || "01") : undefined
+
+    setIsSubmittingOrder(true)
+    setOrderError(null)
 
     try {
       // 1. Submit order to NestJS backend API
@@ -173,7 +181,7 @@ export function DinerMenuPage() {
         {
           restaurantSlug,
           orderType: data.orderType,
-          tableNumber: data.orderType === "DINE_IN" ? tableId : undefined,
+          tableNumber: finalTableNumber,
           customerName: data.customerName,
           customerPhone: data.mobile,
           deliveryAddress: data.deliveryAddress,
@@ -187,27 +195,36 @@ export function DinerMenuPage() {
       // 2. Set in diner tracking store (persisted to localStorage)
       placeOrder(placedOrder)
 
-      // 3. Reset cart & navigate to live order tracking
+      // 3. Reset cart & navigate to live order tracking with token
       clearCart()
       setShowCheckout(false)
-      navigate(`/r/${restaurantSlug}/order/${placedOrder.id}`)
+      navigate(`/r/${restaurantSlug}/order/${placedOrder.id}?token=${placedOrder.trackingToken || ""}`)
     } catch (err: any) {
       console.error("Order placement to backend failed:", err)
-      const msg = err.response?.data?.message || err.message || "Could not fire order to kitchen. Please check network connection."
-      alert(`Order Failed: ${msg}`)
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Could not fire order to kitchen. Please check network connection."
+      const formattedMsg = Array.isArray(msg) ? msg.join(", ") : String(msg)
+      setOrderError(formattedMsg)
+    } finally {
+      setIsSubmittingOrder(false)
     }
   }
 
   // Active in-flight order tracker banner
   const hasInFlightOrder =
     activeOrder &&
-    activeOrder.tableNumber === tableId &&
+    (!tableId || activeOrder.tableNumber === tableId) &&
     activeOrder.orderStatus !== "COMPLETED"
 
   return (
     <div className="min-h-screen bg-zinc-950">
       <div className="max-w-md mx-auto relative">
-        <DinerTopBar cafeName={restaurant.name} tableId={tableId} />
+        <DinerTopBar
+          cafeName={restaurant.name || (isLoading ? "Loading..." : "Pangat Dining")}
+          tableId={tableId || (activeOrder?.tableNumber ?? "Takeaway")}
+        />
 
         {/* In-flight Active Order Reminder Banner (Session Persistence) */}
         {hasInFlightOrder && (
@@ -352,13 +369,21 @@ export function DinerMenuPage() {
         {/* Checkout Drawer */}
         <CheckoutDrawer
           open={showCheckout}
-          onClose={() => setShowCheckout(false)}
+          onClose={() => {
+            setShowCheckout(false)
+            setOrderError(null)
+          }}
           tableId={tableId}
+          isSubmitting={isSubmittingOrder}
+          errorMessage={orderError}
           onProceedToPay={handleProceedToPay}
         />
 
         {/* Floating Cart Pill */}
-        <FloatingCartPill onViewOrder={() => setShowCheckout(true)} />
+        <FloatingCartPill onViewOrder={() => {
+          setOrderError(null)
+          setShowCheckout(true)
+        }} />
       </div>
     </div>
   )

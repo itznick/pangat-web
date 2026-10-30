@@ -24,6 +24,8 @@ import type { OrderStatus } from "@/types/domain"
 interface OrderTrackingViewProps {
   restaurantSlug: string
   tableId: string
+  orderId?: string
+  trackingToken?: string
 }
 
 const FEEDBACK_TAGS = [
@@ -34,7 +36,12 @@ const FEEDBACK_TAGS = [
   "Polite Staff",
 ]
 
-export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingViewProps) {
+export function OrderTrackingView({
+  restaurantSlug,
+  tableId,
+  orderId,
+  trackingToken,
+}: OrderTrackingViewProps) {
   const order = useOrderTrackingStore((s) => s.order)
   const payOnlineUpi = useOrderTrackingStore((s) => s.payOnlineUpi)
   const submitFeedback = useOrderTrackingStore((s) => s.submitFeedback)
@@ -57,25 +64,28 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
 
   // Real-time socket updates and REST polling fallback for customer tracking
   useEffect(() => {
-    if (!order?.id) return
+    const activeOrderId = order?.id || orderId
+    const activeToken = order?.trackingToken || trackingToken
+    if (!activeOrderId) return
 
     const fetchLatestOrder = async () => {
       try {
-        const fresh = await api.orders.get(order.trackingToken || order.id, order.trackingToken)
+        const fresh = await api.orders.get(activeToken || activeOrderId, activeToken)
         if (fresh && fresh.id) {
           useOrderTrackingStore.setState((s) => {
-            if (!s.order || s.order.id !== fresh.id) return s
-            const isNewlyPaid = s.order.paymentStatus !== "PAID" && fresh.paymentStatus === "PAID"
+            const isNewlyPaid = s.order?.paymentStatus !== "PAID" && fresh.paymentStatus === "PAID"
             if (isNewlyPaid) {
               setShowFeedbackSheet(true)
             }
             return {
-              order: {
-                ...s.order,
-                orderStatus: fresh.orderStatus,
-                paymentStatus: fresh.paymentStatus,
-                settledAt: fresh.settledAt || s.order.settledAt,
-              },
+              order: s.order
+                ? {
+                    ...s.order,
+                    orderStatus: fresh.orderStatus,
+                    paymentStatus: fresh.paymentStatus,
+                    settledAt: fresh.settledAt || s.order.settledAt,
+                  }
+                : fresh,
             }
           })
         }
@@ -90,7 +100,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
     // 2. Continuous 5s polling fallback while payment or order is pending
     const pollInterval = setInterval(() => {
       const current = useOrderTrackingStore.getState().order
-      if (current && (current.paymentStatus === "PENDING" || current.orderStatus !== "COMPLETED")) {
+      if (!current || current.paymentStatus === "PENDING" || current.orderStatus !== "COMPLETED") {
         fetchLatestOrder()
       }
     }, 5000)
@@ -104,11 +114,11 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
     window.addEventListener("focus", fetchLatestOrder)
     document.addEventListener("visibilitychange", handleVisibility)
 
-    joinOrderRoom(order.id)
+    joinOrderRoom(activeOrderId)
     const socket = getSocket()
 
-    const onStatus = ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
-      if (orderId === order.id) {
+    const onStatus = ({ orderId: incomingId, status }: { orderId: string; status: OrderStatus }) => {
+      if (incomingId === activeOrderId) {
         useOrderTrackingStore.setState((s) =>
           s.order ? { order: { ...s.order, orderStatus: status } } : s
         )
@@ -116,13 +126,13 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
     }
 
     const onPaid = ({
-      orderId,
+      orderId: incomingId,
       settledAt,
     }: {
       orderId: string
       settledAt?: string
     }) => {
-      if (orderId === order.id) {
+      if (incomingId === activeOrderId) {
         useOrderTrackingStore.setState((s) =>
           s.order
             ? {
@@ -154,7 +164,7 @@ export function OrderTrackingView({ restaurantSlug, tableId }: OrderTrackingView
       socket.off("order:paid", onPaid)
       socket.off("connect", fetchLatestOrder)
     }
-  }, [order?.id, order?.trackingToken])
+  }, [order?.id, order?.trackingToken, orderId, trackingToken])
 
   const handlePayOnlineUpi = async () => {
     const vpa = "pangat@icici"

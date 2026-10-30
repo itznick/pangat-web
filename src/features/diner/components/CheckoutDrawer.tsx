@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   X,
   Minus,
@@ -18,6 +18,7 @@ import {
   Utensils,
   ShoppingBag,
   Bike,
+  Loader2,
 } from "lucide-react"
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
@@ -30,25 +31,43 @@ interface CheckoutDrawerProps {
   open: boolean
   onClose: () => void
   tableId?: string
+  isSubmitting?: boolean
+  errorMessage?: string | null
   onProceedToPay: (data: {
-    mobile: string
+    mobile?: string
     paymentMethod: PaymentMethod
     orderType: OrderType
+    tableNumber?: string
     customerName?: string
     deliveryAddress?: string
     deliveryInstructions?: string
   }) => void
 }
 
-export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: CheckoutDrawerProps) {
-  const [orderType, setOrderType] = useState<OrderType>("DINE_IN")
+export function CheckoutDrawer({
+  open,
+  onClose,
+  tableId,
+  isSubmitting = false,
+  errorMessage = null,
+  onProceedToPay,
+}: CheckoutDrawerProps) {
+  const [orderType, setOrderType] = useState<OrderType>(tableId ? "DINE_IN" : "TAKEAWAY")
+  const [tableNumber, setTableNumber] = useState(tableId || "")
   const [customerName, setCustomerName] = useState("")
   const [deliveryAddress, setDeliveryAddress] = useState("")
   const [deliveryInstructions, setDeliveryInstructions] = useState("")
   const [mobile, setMobile] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI_INSTANT")
-  const [otp, setOtp] = useState("")
+  const [otp, setOtp] = useState("1234")
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
+
+  useEffect(() => {
+    if (tableId) {
+      setTableNumber(tableId)
+      setOrderType("DINE_IN")
+    }
+  }, [tableId])
 
   const entries = useCartStore((s) => s.entries)
   const subtotal = useCartStore((s) => s.subtotal())
@@ -60,12 +79,17 @@ export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: Check
   const deliveryFee = orderType === "DELIVERY" ? 30.0 : 0.0
   const finalTotal = baseTotal + deliveryFee
 
-  // Mobile number validation (Indian 10-digit starting with 6-9)
-  const isMobileValid = /^[6-9]\d{9}$/.test(mobile)
-  const isOtpValid = otp === "1234"
+  // Mobile validation: mandatory only for DELIVERY; optional for DINE_IN and TAKEAWAY
+  const cleanedPhone = mobile.replace(/\D/g, "")
+  const isMobileValid =
+    orderType === "DELIVERY"
+      ? cleanedPhone.length >= 10
+      : cleanedPhone.length === 0 || cleanedPhone.length >= 10
 
+  const isTableValid = orderType !== "DINE_IN" || Boolean(tableId || tableNumber.trim())
   const isNameValid = orderType === "DINE_IN" || customerName.trim().length > 0
   const isAddressValid = orderType !== "DELIVERY" || deliveryAddress.trim().length > 0
+  const isOtpValid = otp === "1234" || otp.length === 0
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "").slice(0, 10)
@@ -79,16 +103,13 @@ export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: Check
 
   const handleSubmit = () => {
     setHasAttemptedSubmit(true)
-    if (!isMobileValid || !isNameValid || !isAddressValid) return
-
-    if (paymentMethod === "PAY_AT_COUNTER" && !isOtpValid) {
-      return
-    }
+    if (!isMobileValid || !isNameValid || !isAddressValid || !isTableValid) return
 
     onProceedToPay({
-      mobile,
+      mobile: mobile.trim() || undefined,
       paymentMethod,
       orderType,
+      tableNumber: orderType === "DINE_IN" ? (tableId || tableNumber.trim()) : undefined,
       customerName: customerName.trim() || undefined,
       deliveryAddress: orderType === "DELIVERY" ? deliveryAddress.trim() : undefined,
       deliveryInstructions: orderType === "DELIVERY" ? deliveryInstructions.trim() : undefined,
@@ -165,10 +186,33 @@ export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: Check
             </button>
           </div>
 
-          {orderType === "DINE_IN" && tableId && (
-            <p className="text-[11px] text-zinc-400 bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
-              Serving to Table: <span className="font-bold text-emerald-400">{tableId}</span>
-            </p>
+          {orderType === "DINE_IN" && (
+            tableId ? (
+              <p className="text-[11px] text-zinc-400 bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
+                Serving to Table: <span className="font-bold text-emerald-400">{tableId}</span>
+              </p>
+            ) : (
+              <div className="space-y-1 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800">
+                <label className="text-xs font-semibold text-zinc-300 block">
+                  Table Number <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. T01 or 1"
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                  className={cn(
+                    "w-full h-10 px-3 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all",
+                    hasAttemptedSubmit && !isTableValid
+                      ? "border-rose-500/80 bg-rose-950/10"
+                      : "border-zinc-750 focus:border-emerald-500/70"
+                  )}
+                />
+                {hasAttemptedSubmit && !isTableValid && (
+                  <p className="text-[11px] text-rose-400">Please enter your table number.</p>
+                )}
+              </div>
+            )
           )}
         </div>
 
@@ -439,10 +483,10 @@ export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: Check
           <label className="flex items-center justify-between text-xs font-semibold text-zinc-300">
             <span className="flex items-center gap-1.5">
               <Smartphone className="h-3.5 w-3.5 text-emerald-400" />
-              Mobile Number <span className="text-rose-400">*</span>
+              Mobile Number {orderType === "DELIVERY" ? <span className="text-rose-400">*</span> : <span className="text-zinc-500 font-normal">(Optional)</span>}
             </span>
             <span className="text-[11px] text-zinc-500 font-normal">
-              {paymentMethod === "PAY_AT_COUNTER" ? "Required for anti-prank OTP" : "For digital WhatsApp receipt"}
+              {orderType === "DELIVERY" ? "Required for delivery agent" : "For digital WhatsApp receipt"}
             </span>
           </label>
           <div className="relative">
@@ -468,10 +512,23 @@ export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: Check
           {hasAttemptedSubmit && !isMobileValid && (
             <p className="flex items-center gap-1.5 text-xs text-rose-400 mt-1 px-1">
               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-              Please enter a valid 10-digit Indian mobile number (e.g. 9820012345).
+              {orderType === "DELIVERY"
+                ? "Please enter a valid 10-digit mobile number for delivery."
+                : "Please enter a valid 10-digit mobile number or leave blank."}
             </p>
           )}
         </div>
+
+        {/* Server Error Message Alert */}
+        {errorMessage && (
+          <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/50 flex items-start gap-2.5 text-xs text-rose-300">
+            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-200">Order Submission Failed</p>
+              <p className="mt-0.5 text-rose-300/90">{errorMessage}</p>
+            </div>
+          </div>
+        )}
 
         {/* Pay at Counter 4-digit OTP Security Step */}
         {paymentMethod === "PAY_AT_COUNTER" && (
@@ -538,9 +595,14 @@ export function CheckoutDrawer({ open, onClose, tableId, onProceedToPay }: Check
             "transition-all duration-200 active:scale-[0.98]"
           )}
           onClick={handleSubmit}
-          disabled={entries.length === 0}
+          disabled={entries.length === 0 || isSubmitting}
         >
-          {paymentMethod === "UPI_INSTANT" ? (
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Firing order to kitchen...
+            </>
+          ) : paymentMethod === "UPI_INSTANT" ? (
             <>
               <Zap className="h-4 w-4 mr-1.5" />
               Proceed to UPI Pay • ₹{finalTotal.toFixed(2)}
