@@ -30,6 +30,7 @@ import {
   Loader2,
   Star,
   Boxes,
+  CreditCard,
 } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -46,6 +47,7 @@ const NAV_ITEMS = [
   { label: "Menu & Modifiers", path: "/admin/menu", icon: UtensilsCrossed, emoji: "🍽️", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Orders & Settlements", path: "/admin/orders", icon: Receipt, emoji: "🧾", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Inventory & Recipes", path: "/admin/inventory", icon: Boxes, emoji: "📦", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
+  { label: "Subscription & Billing", path: "/admin/subscription", icon: CreditCard, emoji: "💳", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Feedback & Ratings", path: "/admin/feedback", icon: Star, emoji: "⭐", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Settings", path: "/admin/settings", icon: Settings, emoji: "⚙️", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
 ] as const

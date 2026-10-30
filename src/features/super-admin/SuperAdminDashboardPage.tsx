@@ -8,6 +8,7 @@ import type {
   AdminOrganizationItem,
   AdminOutletItem,
   DetailedSystemHealth,
+  SubscriptionPlan,
 } from '@/types/domain'
 import { ProvisionRestaurantModal } from './components/ProvisionRestaurantModal'
 import { ResetPasswordModal } from './components/ResetPasswordModal'
@@ -34,6 +35,7 @@ import {
   Wifi,
   ChevronRight,
   Eye,
+  CreditCard,
 } from 'lucide-react'
 
 export function SuperAdminDashboardPage() {
@@ -47,6 +49,7 @@ export function SuperAdminDashboardPage() {
   const [organizations, setOrganizations] = React.useState<AdminOrganizationItem[]>([])
   const [outlets, setOutlets] = React.useState<AdminOutletItem[]>([])
   const [systemHealth, setSystemHealth] = React.useState<DetailedSystemHealth | null>(null)
+  const [subscriptionPlans, setSubscriptionPlans] = React.useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = React.useState(true)
 
   // Filters
@@ -79,18 +82,20 @@ export function SuperAdminDashboardPage() {
   const fetchData = React.useCallback(async () => {
     setLoading(true)
     try {
-      const [metricsRes, leadsRes, orgsRes, outletsRes, healthRes] = await Promise.all([
+      const [metricsRes, leadsRes, orgsRes, outletsRes, healthRes, plansRes] = await Promise.all([
         api.admin.getMetrics().catch(() => null),
         api.admin.listLeads().catch(() => []),
         api.admin.listOrganizations().catch(() => []),
         api.admin.listOutlets().catch(() => []),
         api.admin.getSystemHealth().catch(() => null),
+        api.subscriptions.listPlans().catch(() => []),
       ])
       if (metricsRes) setMetrics(metricsRes)
       if (leadsRes) setLeads(leadsRes)
       if (orgsRes) setOrganizations(orgsRes)
       if (outletsRes) setOutlets(outletsRes)
       if (healthRes) setSystemHealth(healthRes)
+      if (plansRes) setSubscriptionPlans(plansRes)
     } finally {
       setLoading(false)
     }
@@ -1014,6 +1019,112 @@ export function SuperAdminDashboardPage() {
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 6. SAAS SUBSCRIPTIONS & BILLING TAB ──────────────────────────── */}
+      {activeTab === 'subscriptions' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <CreditCard className="w-6 h-6 text-indigo-400" />
+                SaaS Subscription & Plan Monetization
+              </h1>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Multi-tenant billing tiers, recurring MRR/ARR, 18% SaaS GST tax calculation, and trial lifecycle.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchData}
+              disabled={loading}
+              className="border-zinc-800 text-zinc-300 hover:text-white bg-zinc-900"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh Plans</span>
+            </Button>
+          </div>
+
+          {/* Pricing Plans Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {subscriptionPlans.map((plan) => {
+              const base = plan.pricing?.basePrice ?? plan.basePrice
+              const tax = plan.pricing?.taxAmount ?? Math.round(base * 0.18 * 100) / 100
+              const total = plan.pricing?.totalPayable ?? Math.round((base + tax) * 100) / 100
+
+              return (
+                <div
+                  key={plan.id}
+                  className="p-5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white text-base">{plan.name}</span>
+                    <Badge variant="outline" className="text-xs bg-zinc-900 text-zinc-300 border-zinc-700">
+                      {plan.code}
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-zinc-400 min-h-[32px]">{plan.description}</p>
+
+                  <div className="pt-3 border-t border-zinc-800">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-mono font-bold text-white">₹{base}</span>
+                      <span className="text-xs text-zinc-400">/ mo</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      + 18% GST (₹{tax}) = <strong className="text-zinc-200">₹{total}</strong> payable
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs text-zinc-300 pt-2 border-t border-zinc-900">
+                    <div>Outlets: <strong className="text-white">{plan.maxOutlets === -1 ? 'Unlimited' : plan.maxOutlets}</strong></div>
+                    <div>Tables / Outlet: <strong className="text-white">{plan.maxTablesPerOutlet === -1 ? 'Unlimited' : plan.maxTablesPerOutlet}</strong></div>
+                    <div className="text-zinc-400 text-[11px]">Features: {Array.isArray(plan.features) ? plan.features.join(', ') : plan.features}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Subscribed Organizations Overview */}
+          <div className="p-5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+            <h3 className="font-bold text-white text-sm">Active Organizations & Subscription Tiers</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-zinc-900 text-zinc-400 uppercase tracking-wider font-semibold border-b border-zinc-800">
+                  <tr>
+                    <th className="py-2.5 px-3">Organization</th>
+                    <th className="py-2.5 px-3">Plan Tier</th>
+                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Outlets</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900">
+                  {organizations.map((org) => (
+                    <tr key={org.id} className="hover:bg-zinc-900/40">
+                      <td className="py-2.5 px-3 font-medium text-white">{org.name}</td>
+                      <td className="py-2.5 px-3">
+                        <Badge variant="outline" className="text-[11px] bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
+                          GROWTH (Trial)
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <Badge variant="outline" className="text-[11px] bg-amber-500/10 text-amber-400 border-amber-500/30">
+                          TRIAL (14d)
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
+                        {org.outlets?.length || 1}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

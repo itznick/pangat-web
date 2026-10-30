@@ -28,6 +28,8 @@ import type {
   StockMovementType,
   Recipe,
   InventoryAlerts,
+  SubscriptionPlan,
+  SubscriptionDetailsResponse,
 } from '@/types/domain'
 
 export function resolveApiBaseUrl(): string {
@@ -430,5 +432,19 @@ export const api = {
       apiClient.post('/inventory/recipes', data, {
         params: { restaurantId },
       }),
+  },
+
+  // Multi-Tenant SaaS Subscriptions & Invoicing
+  subscriptions: {
+    listPlans: (): Promise<SubscriptionPlan[]> =>
+      apiClient.get('/subscriptions/plans'),
+    getMySubscription: (): Promise<SubscriptionDetailsResponse> =>
+      apiClient.get('/subscriptions/my-subscription'),
+    listAllPlansForAdmin: (): Promise<SubscriptionPlan[]> =>
+      apiClient.get('/subscriptions/admin/plans'),
+    createPlan: (data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> =>
+      apiClient.post('/subscriptions/admin/plans', data),
+    updatePlan: (id: string, data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> =>
+      apiClient.patch(`/subscriptions/admin/plans/${id}`, data),
   },
 }

@@ -452,3 +452,83 @@ export interface InventoryAlerts {
   lowStock: Ingredient[]
   healthyCount: number
 }
+
+// ── SaaS Subscriptions & Billing ──────────────────────────────────────────────
+
+export type SubscriptionStatus =
+  | 'TRIAL'
+  | 'ACTIVE'
+  | 'PAST_DUE'
+  | 'GRACE_PERIOD'
+  | 'HALTED'
+  | 'CANCELLED'
+  | 'EXPIRED'
+
+export type BillingInterval = 'MONTHLY' | 'YEARLY'
+
+export type SubscriptionInvoiceStatus = 'DRAFT' | 'PAID' | 'FAILED' | 'REFUNDED'
+
+export interface PlanPricing {
+  basePrice: number
+  taxPercentage: number
+  taxAmount: number
+  totalPayable: number
+  currency: string
+  billingInterval?: BillingInterval
+  displaySummary?: string
+}
+
+export interface SubscriptionPlan {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  billingInterval: BillingInterval
+  basePrice: number
+  currency: string
+  taxPercentage: number
+  maxOutlets: number
+  maxTablesPerOutlet: number
+  features: string[]
+  pricing: PlanPricing
+  razorpayPlanId?: string | null
+  isActive?: boolean
+}
+
+export interface OrganizationSubscription {
+  id: string
+  organizationId: string
+  planId: string
+  status: SubscriptionStatus
+  currentPeriodStart: string
+  currentPeriodEnd: string
+  trialEndsAt?: string | null
+  gracePeriodEndsAt?: string | null
+  razorpaySubscriptionId?: string | null
+  cancelAtPeriodEnd: boolean
+  plan: SubscriptionPlan
+}
+
+export interface SubscriptionInvoice {
+  id: string
+  organizationId: string
+  subscriptionId: string
+  invoiceNumber: string
+  billingPeriodStart: string
+  billingPeriodEnd: string
+  baseAmount: number
+  taxPercentage: number
+  taxAmount: number
+  totalAmount: number
+  status: SubscriptionInvoiceStatus
+  razorpayPaymentId?: string | null
+  paidAt?: string | null
+  invoicePdfUrl?: string | null
+  createdAt: string
+}
+
+export interface SubscriptionDetailsResponse {
+  subscription: OrganizationSubscription
+  plan: SubscriptionPlan
+  invoices: SubscriptionInvoice[]
+}

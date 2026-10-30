@@ -16,6 +16,7 @@ import {
   Layers,
   ArrowUpRight,
   Shield,
+  CreditCard,
 } from 'lucide-react'
 
 export const OPS_TABS = [
@@ -23,6 +24,7 @@ export const OPS_TABS = [
   { id: 'leads', label: 'Inbound Leads', icon: Inbox, emoji: '📥' },
   { id: 'organizations', label: 'Organizations', icon: Building2, emoji: '🏢' },
   { id: 'outlets', label: 'Outlets & Branches', icon: Store, emoji: '🏪' },
+  { id: 'subscriptions', label: 'SaaS Subscriptions', icon: CreditCard, emoji: '💳' },
   { id: 'health', label: 'System Health', icon: Activity, emoji: '🛠' },
 ] as const
 
