@@ -307,27 +307,27 @@ export function AdminMenuPage() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-auto bg-zinc-950">
+    <div className="flex flex-col h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Page header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-4">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem><BreadcrumbLink>Admin</BreadcrumbLink></BreadcrumbItem>
+              <BreadcrumbItem><BreadcrumbLink className="text-zinc-500 dark:text-zinc-400">Admin</BreadcrumbLink></BreadcrumbItem>
               <BreadcrumbSeparator />
-              <BreadcrumbItem><BreadcrumbPage>Menu & Modifiers</BreadcrumbPage></BreadcrumbItem>
+              <BreadcrumbItem><BreadcrumbPage className="text-zinc-900 dark:text-zinc-100 font-medium">Menu & Modifiers</BreadcrumbPage></BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-100 mt-1">Menu Management</h1>
+          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">Menu Management</h1>
         </div>
 
         <div className="flex items-center gap-2.5">
           <Button
             onClick={() => setShowCategoryDialog(true)}
             variant="outline"
-            className="gap-1.5 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-600 bg-zinc-900"
+            className="gap-1.5 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white bg-white dark:bg-zinc-900 text-xs font-semibold shadow-xs"
           >
-            <FolderPlus className="h-4 w-4 text-emerald-400" />
+            <FolderPlus className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
             Add Category
           </Button>
 
@@ -338,9 +338,9 @@ export function AdminMenuPage() {
               }
               setShowAddDialog(true)
             }}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25"
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
             Add New Dish
           </Button>
         </div>
@@ -348,44 +348,44 @@ export function AdminMenuPage() {
 
       <div className="flex-1 p-6 space-y-4">
         {/* Filters row */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap justify-between">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-zinc-500" />
             <Input
               placeholder="Search dishes..."
-              className="pl-9"
+              className="pl-9 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs rounded-xl h-9 shadow-xs"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-zinc-500" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="h-4 w-4 text-zinc-400" />
             <Select
               value={categoryFilter}
               onValueChange={(v) => setCategoryFilter(v)}
               options={[{ value: "all", label: "All Categories" }, ...categoryOpts]}
-              className="min-w-[180px]"
+              className="min-w-[180px] text-xs"
             />
           </div>
 
-          <p className="text-xs text-zinc-500 ml-auto font-medium">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
             {filtered.length} item{filtered.length !== 1 ? "s" : ""}
           </p>
         </div>
 
         {/* Data table */}
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden shadow-xs">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="border-b border-zinc-200/80 dark:border-zinc-800/80 hover:bg-transparent">
                 <TableHead className="w-10" />
-                <TableHead>Item</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Modifiers</TableHead>
-                <TableHead>Available</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Item</TableHead>
+                <TableHead className="text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Category</TableHead>
+                <TableHead className="text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Price</TableHead>
+                <TableHead className="text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Modifiers</TableHead>
+                <TableHead className="text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Available</TableHead>
+                <TableHead className="text-right text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -394,7 +394,7 @@ export function AdminMenuPage() {
                 const modifierCount = item.modifiers?.length || 0
 
                 return (
-                  <TableRow key={item.id}>
+                  <TableRow key={item.id} className="border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/70 dark:hover:bg-zinc-850/40 transition-colors">
                     {/* Emoji */}
                     <TableCell>
                       <span className="text-xl">{item.imageUrl}</span>
@@ -412,18 +412,18 @@ export function AdminMenuPage() {
                           <div className={cn("w-1.5 h-1.5 rounded-full", item.isVeg ? "bg-emerald-500" : "bg-rose-500")} />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-zinc-100 flex items-center gap-1">
+                          <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
                             {item.name}
-                            {item.isPopular && <Star className="h-3 w-3 text-amber-400 fill-current" />}
+                            {item.isPopular && <Star className="h-3 w-3 text-amber-500 fill-current" />}
                           </p>
-                          <p className="text-xs text-zinc-500 line-clamp-1 max-w-[220px]">{item.description}</p>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1 max-w-[220px]">{item.description}</p>
                         </div>
                       </div>
                     </TableCell>
 
                     {/* Category */}
                     <TableCell>
-                      <span className="px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-xs text-zinc-400">
+                      <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 font-medium">
                         {catName}
                       </span>
                     </TableCell>
@@ -435,7 +435,7 @@ export function AdminMenuPage() {
                           <span className="text-zinc-400 text-sm">₹</span>
                           <input
                             type="number"
-                            className="w-20 bg-zinc-800 border border-emerald-500 rounded-lg px-2 py-1 text-sm text-zinc-100 focus:outline-none"
+                            className="w-20 bg-white dark:bg-zinc-800 border border-emerald-500 rounded-lg px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none"
                             value={editingPrice.value}
                             onChange={(e) => setEditingPrice({ id: item.id, value: e.target.value })}
                             onBlur={() => handleSavePrice(item.id)}
@@ -449,10 +449,10 @@ export function AdminMenuPage() {
                       ) : (
                         <button
                           onClick={() => setEditingPrice({ id: item.id, value: String(item.price) })}
-                          className="flex items-center gap-1 text-sm font-semibold text-zinc-200 hover:text-emerald-400 transition-colors group"
+                          className="flex items-center gap-1 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors group tabular-nums"
                         >
                           ₹{item.price}
-                          <Pencil className="h-3 w-3 text-zinc-600 group-hover:text-emerald-400 transition-colors" />
+                          <Pencil className="h-3 w-3 text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
                         </button>
                       )}
                     </TableCell>
@@ -460,14 +460,14 @@ export function AdminMenuPage() {
                     {/* Modifiers badge */}
                     <TableCell>
                       {modifierCount === 0 ? (
-                        <span className="text-xs text-zinc-600">—</span>
+                        <span className="text-xs text-zinc-400 dark:text-zinc-600">—</span>
                       ) : (
                         <div className="flex flex-wrap items-center gap-1">
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1">
                             <Layers className="h-3 w-3" />
                             {modifierCount} {modifierCount === 1 ? "group" : "groups"}
                           </span>
-                          <span className="text-[11px] text-zinc-400 truncate max-w-[140px]">
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate max-w-[140px]">
                             {item.modifiers.map((m) => m.name).filter(Boolean).join(", ")}
                           </span>
                         </div>
@@ -487,7 +487,7 @@ export function AdminMenuPage() {
                       <button
                         onClick={() => setEditingDish({ ...item, modifiers: item.modifiers || [] })}
                         title="Edit dish details & modifiers"
-                        className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-emerald-400 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
