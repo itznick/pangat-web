@@ -72,7 +72,7 @@ export function TableQrModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md bg-zinc-950 border border-zinc-800 text-white p-0 overflow-hidden shadow-2xl">
+      <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white p-0 overflow-hidden shadow-2xl">
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             body * {
@@ -107,12 +107,12 @@ export function TableQrModal({
         ` }} />
 
         {/* Modal Header */}
-        <div className="p-6 bg-gradient-to-b from-zinc-900 to-zinc-950 border-b border-zinc-800 text-center relative no-print">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 mb-2">
+        <div className="p-6 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-center relative no-print">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 mb-2">
             <QrCode className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-bold text-white">Dynamic Table QR Code</h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Dynamic Table QR Code</h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
             Table {tableNumber} • {outletName}
           </p>
         </div>
@@ -162,14 +162,14 @@ export function TableQrModal({
           </div>
 
           {/* Direct URL Bar */}
-          <div className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs no-print">
-            <span className="font-mono text-zinc-400 truncate max-w-[240px] text-[11px]">
+          <div className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs no-print">
+            <span className="font-mono text-zinc-600 dark:text-zinc-400 truncate max-w-[240px] text-[11px]">
               {qrUrl}
             </span>
             <button
               type="button"
               onClick={handleCopyLink}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 cursor-pointer shrink-0 ml-2"
+              className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 font-semibold flex items-center gap-1 cursor-pointer shrink-0 ml-2"
             >
               {copied ? (
                 <>
@@ -187,11 +187,11 @@ export function TableQrModal({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-4 bg-zinc-900 border-t border-zinc-800 flex items-center justify-between gap-2 no-print">
+        <div className="p-4 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2 no-print">
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-zinc-800 text-zinc-400 hover:text-white text-xs cursor-pointer"
+            className="border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs cursor-pointer"
           >
             Close
           </Button>
@@ -200,7 +200,8 @@ export function TableQrModal({
             <Button
               onClick={handleDownloadPng}
               disabled={!dataUrl || downloading}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs gap-1.5 border border-zinc-700 cursor-pointer"
+              variant="outline"
+              className="border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium text-xs gap-1.5 cursor-pointer shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download PNG (1024px)</span>
@@ -208,7 +209,7 @@ export function TableQrModal({
 
             <Button
               onClick={handlePrint}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 shadow-md shadow-emerald-950 cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-1.5 shadow-xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print Table Tent</span>

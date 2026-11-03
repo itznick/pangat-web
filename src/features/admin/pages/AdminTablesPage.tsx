@@ -28,31 +28,31 @@ import { QrCodeImage } from "@/components/ui/QrCodeImage"
 const STATUS_CONFIG: Record<TableStatus, { label: string; bg: string; border: string; text: string; badge: string }> = {
   VACANT: {
     label: "Vacant",
-    bg: "bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 shadow-sm",
+    bg: "bg-white dark:bg-zinc-900/70 hover:bg-zinc-50 dark:hover:bg-zinc-850/50 shadow-xs",
     border: "border-zinc-200 dark:border-zinc-800",
-    text: "text-zinc-600 dark:text-zinc-400 font-bold",
+    text: "text-zinc-700 dark:text-zinc-300 font-bold",
     badge: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
   },
   OCCUPIED: {
     label: "Occupied / Unpaid",
-    bg: "bg-rose-50/70 dark:bg-rose-950/20 hover:bg-rose-50 dark:hover:bg-rose-950/30 shadow-sm",
-    border: "border-rose-200 dark:border-rose-500/40",
-    text: "text-rose-800 dark:text-rose-300 font-black",
-    badge: "bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-500/40",
+    bg: "bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-50/80 dark:hover:bg-rose-950/30 shadow-xs",
+    border: "border-rose-200 dark:border-rose-900/40",
+    text: "text-rose-700 dark:text-rose-300 font-black",
+    badge: "bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30",
   },
   PREPPING: {
     label: "Prepping",
-    bg: "bg-amber-50/70 dark:bg-amber-950/20 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-sm",
-    border: "border-amber-200 dark:border-amber-500/40",
-    text: "text-amber-800 dark:text-amber-300 font-black",
-    badge: "bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-500/40",
+    bg: "bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-50/80 dark:hover:bg-amber-950/30 shadow-xs",
+    border: "border-amber-200 dark:border-amber-900/40",
+    text: "text-amber-700 dark:text-amber-300 font-black",
+    badge: "bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
   },
   SERVED: {
     label: "Served / Paid",
-    bg: "bg-emerald-50/70 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-sm",
-    border: "border-emerald-200 dark:border-emerald-500/40",
-    text: "text-emerald-800 dark:text-emerald-300 font-black",
-    badge: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40",
+    bg: "bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/30 shadow-xs",
+    border: "border-emerald-200 dark:border-emerald-900/40",
+    text: "text-emerald-700 dark:text-emerald-300 font-black",
+    badge: "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
   },
 }
 
@@ -179,9 +179,9 @@ export function AdminTablesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-auto bg-zinc-950">
+    <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Page header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -190,12 +190,12 @@ export function AdminTablesPage() {
               <BreadcrumbItem><BreadcrumbPage>Floor & Tables</BreadcrumbPage></BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-100 mt-1">Floor & Table Management</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">Floor & Table Management</h1>
         </div>
 
         <div className="flex items-center gap-3">
           {notification && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg animate-in fade-in">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg animate-in fade-in">
               <CheckCircle2 className="h-3.5 w-3.5" />
               {notification}
             </span>
@@ -205,16 +205,16 @@ export function AdminTablesPage() {
             size="sm"
             onClick={() => setBatchPrintOpen(true)}
             variant="outline"
-            className="gap-1.5 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10 text-xs font-bold cursor-pointer"
+            className="gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer shadow-xs"
           >
             <Printer className="h-3.5 w-3.5" />
-            <span>Download All Table QRs (Print Kit)</span>
+            <span>Download All QRs (Print Kit)</span>
           </Button>
 
           <Button
             size="sm"
             onClick={handleOpenAddModal}
-            className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/30"
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs"
           >
             <Plus className="h-3.5 w-3.5" />
             Add Table
@@ -225,7 +225,7 @@ export function AdminTablesPage() {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="gap-2 border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs"
+            className="gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs shadow-xs"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
             Refresh Floor
@@ -243,8 +243,8 @@ export function AdminTablesPage() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 capitalize cursor-pointer",
                 filterStatus === status
-                  ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-950/40"
-                  : "bg-transparent border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+                  ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-xs"
+                  : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200 shadow-xs"
               )}
             >
               {status === "all" ? "All Tables" : STATUS_CONFIG[status].label}
@@ -328,7 +328,7 @@ export function AdminTablesPage() {
                     Update Status
                   </label>
                   <select
-                    className="text-xs bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 focus:border-emerald-500 rounded-xl px-2.5 py-1.5 text-zinc-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full shadow-inner font-medium transition-colors"
+                    className="text-xs bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 border border-zinc-200 dark:border-zinc-800 focus:border-emerald-500 rounded-xl px-2.5 py-1.5 text-zinc-900 dark:text-zinc-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full font-medium transition-colors shadow-xs"
                     value={table.status}
                     onChange={(e) => handleStatusChange(table.id, displayName, e.target.value as TableStatus)}
                   >
@@ -344,9 +344,9 @@ export function AdminTablesPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="py-20 flex flex-col items-center justify-center text-center bg-zinc-900/50 rounded-2xl border border-zinc-800 p-8">
-            <LayoutGrid className="h-10 w-10 text-zinc-600 mb-3" />
-            <h3 className="text-sm font-bold text-zinc-300">No tables found</h3>
+          <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-zinc-900/50 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-xs">
+            <LayoutGrid className="h-10 w-10 text-zinc-400 dark:text-zinc-600 mb-3" />
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-300">No tables found</h3>
             <p className="text-xs text-zinc-500 mt-1 max-w-sm">
               {tables.length === 0
                 ? "No tables configured for this outlet yet. Click 'Add Table' above to generate your first table."
@@ -356,7 +356,7 @@ export function AdminTablesPage() {
               <Button
                 size="sm"
                 onClick={handleOpenAddModal}
-                className="mt-4 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                className="mt-4 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Add Your First Table
@@ -366,7 +366,7 @@ export function AdminTablesPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setFilterStatus("all")}
-                className="mt-4 text-xs border-zinc-700 text-zinc-300"
+                className="mt-4 text-xs border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300"
               >
                 Show All Tables
               </Button>
@@ -377,27 +377,27 @@ export function AdminTablesPage() {
 
       {/* Add Table Dialog */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="max-w-md bg-zinc-900 border border-zinc-800 text-white p-6">
+        <DialogContent className="max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-              <Plus className="h-4 w-4 text-emerald-400" />
+            <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+              <Plus className="h-4 w-4 text-emerald-500" />
               Add Floor Table
             </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400">
+            <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
               Create a new physical or virtual table. A unique diner QR code will be generated automatically.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleConfirmAdd} className="space-y-4 pt-2">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 Table Identifier
               </label>
               <Input
                 value={newTableNum}
                 onChange={(e) => setNewTableNum(e.target.value.toUpperCase())}
                 placeholder="e.g. T13, OD05, VIP1"
-                className="bg-zinc-950 border-zinc-700 text-white font-mono text-sm font-bold uppercase tracking-wider"
+                className="bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white font-mono text-sm font-bold uppercase tracking-wider"
                 autoFocus
                 required
               />
@@ -407,8 +407,8 @@ export function AdminTablesPage() {
             </div>
 
             {addError && (
-              <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
                 <span>{addError}</span>
               </div>
             )}
@@ -419,7 +419,7 @@ export function AdminTablesPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setAddModalOpen(false)}
-                className="border-zinc-700 text-zinc-300"
+                className="border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300"
               >
                 Cancel
               </Button>
@@ -427,7 +427,7 @@ export function AdminTablesPage() {
                 type="submit"
                 size="sm"
                 disabled={isAdding || !newTableNum.trim()}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
               >
                 {isAdding ? (
                   <>
@@ -456,7 +456,7 @@ export function AdminTablesPage() {
 
       {/* Master Batch Table QR Print Kit Modal */}
       <Dialog open={batchPrintOpen} onOpenChange={setBatchPrintOpen}>
-        <DialogContent className="max-w-3xl bg-zinc-950 border border-zinc-800 text-white p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+        <DialogContent className="max-w-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               body * {
@@ -488,18 +488,18 @@ export function AdminTablesPage() {
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-                  <Printer className="h-5 w-5 text-emerald-400" />
+                <DialogTitle className="text-lg font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                  <Printer className="h-5 w-5 text-emerald-500" />
                   <span>Batch Table QR Tent Print Kit ({tables.length} Tables)</span>
                 </DialogTitle>
-                <DialogDescription className="text-xs text-zinc-400 mt-1">
+                <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                   Ready-to-print 4x6 acrylic stand templates for all dining tables of {outletName}.
                 </DialogDescription>
               </div>
 
               <Button
                 onClick={() => window.print()}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 shadow-md shadow-emerald-950"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-1.5 shadow-xs"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print All Sheets</span>
@@ -514,7 +514,7 @@ export function AdminTablesPage() {
               return (
                 <div
                   key={t.id}
-                  className="batch-card bg-white text-zinc-950 rounded-2xl p-4 border border-zinc-300 shadow-md flex flex-col items-center text-center space-y-2"
+                  className="batch-card bg-white text-zinc-950 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-300 shadow-xs flex flex-col items-center text-center space-y-2"
                 >
                   <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
                     🍃 PANGAT • {outletName}
@@ -536,14 +536,14 @@ export function AdminTablesPage() {
             })}
           </div>
 
-          <DialogFooter className="border-t border-zinc-800 pt-3 flex items-center justify-between">
+          <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3 flex items-center justify-between">
             <span className="text-xs text-zinc-500">
               Formatted for standard 4" x 6" acrylic table stands.
             </span>
             <Button
               variant="outline"
               onClick={() => setBatchPrintOpen(false)}
-              className="border-zinc-800 text-zinc-400 hover:text-white text-xs"
+              className="border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs"
             >
               Close
             </Button>
