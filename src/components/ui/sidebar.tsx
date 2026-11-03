@@ -69,7 +69,7 @@ const SidebarGroupLabel = ({ className, ...props }: React.HTMLAttributes<HTMLPar
   return (
     <p
       className={cn(
-        "px-2 py-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 transition-opacity",
+        "px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 transition-opacity",
         collapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100",
         className
       )}
@@ -98,11 +98,12 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonP
       <button
         ref={ref}
         title={collapsed ? tooltip : undefined}
+        data-active={isActive ? "true" : undefined}
         className={cn(
-          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer",
-          "hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100",
+          "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+          "hover:bg-zinc-100 dark:hover:bg-zinc-800/70 hover:text-zinc-900 dark:hover:text-zinc-100",
           isActive
-            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-semibold hover:bg-emerald-500/20"
+            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold hover:bg-emerald-500/15"
             : "text-zinc-600 dark:text-zinc-400",
           collapsed ? "justify-center px-2" : "",
           className
