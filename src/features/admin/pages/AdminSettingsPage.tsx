@@ -10,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { Building2, FileText, Volume2, Save, CheckCircle2, AlertCircle, Loader2, Lock } from "lucide-react"
@@ -81,9 +80,9 @@ export function AdminSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-auto bg-zinc-950">
+    <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Page header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -92,17 +91,17 @@ export function AdminSettingsPage() {
               <BreadcrumbItem><BreadcrumbPage>Settings</BreadcrumbPage></BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-100 mt-1">Outlet Settings</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">Outlet Settings</h1>
         </div>
         <div className="flex items-center gap-3">
           {saveStatus === "success" && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg animate-in fade-in">
               <CheckCircle2 className="h-4 w-4" />
               Settings saved!
             </span>
           )}
           {saveStatus === "error" && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg animate-in fade-in">
               <AlertCircle className="h-4 w-4" />
               Failed to save
             </span>
@@ -110,7 +109,7 @@ export function AdminSettingsPage() {
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30"
+            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs"
           >
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isSaving ? "Saving..." : "Save Changes"}
@@ -118,10 +117,10 @@ export function AdminSettingsPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 max-w-2xl space-y-6">
+      <div className="flex-1 p-6 max-w-3xl space-y-6">
         {/* Outlet Info */}
         <SettingsSection
-          icon={<Building2 className="h-4 w-4 text-emerald-400" />}
+          icon={<Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
           title="Outlet Information"
           description="Outlet identity, direct UPI settlement VPA, and contact details"
         >
@@ -130,6 +129,7 @@ export function AdminSettingsPage() {
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700"
               />
             </SettingsField>
             <SettingsField label="UPI VPA (QR Payment)">
@@ -138,10 +138,10 @@ export function AdminSettingsPage() {
                   value={form.upiVpa}
                   disabled={!isSuperOwner}
                   onChange={(e) => setForm({ ...form, upiVpa: e.target.value })}
-                  className={!isSuperOwner ? "font-mono bg-zinc-900/50 text-zinc-400 cursor-not-allowed pr-24" : "font-mono"}
+                  className={!isSuperOwner ? "font-mono bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 cursor-not-allowed pr-28 border-zinc-200 dark:border-zinc-800" : "font-mono bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700"}
                 />
                 {!isSuperOwner && (
-                  <span className="absolute right-2 top-2 text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
+                  <span className="absolute right-2 top-2 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
                     <Lock className="w-2.5 h-2.5" /> Super Owner Only
                   </span>
                 )}
@@ -153,6 +153,7 @@ export function AdminSettingsPage() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700"
                 />
               </SettingsField>
               <SettingsField label="Email">
@@ -160,17 +161,16 @@ export function AdminSettingsPage() {
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700"
                 />
               </SettingsField>
             </div>
           </div>
         </SettingsSection>
 
-        <Separator />
-
         {/* GST Details */}
         <SettingsSection
-          icon={<FileText className="h-4 w-4 text-blue-400" />}
+          icon={<FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
           title="GST Configuration"
           description={
             isSuperOwner
@@ -185,7 +185,7 @@ export function AdminSettingsPage() {
                   value={form.gstin}
                   disabled={!isSuperOwner}
                   onChange={(e) => setForm({ ...form, gstin: e.target.value })}
-                  className={!isSuperOwner ? "font-mono bg-zinc-900/50 text-zinc-400 cursor-not-allowed" : "font-mono"}
+                  className={!isSuperOwner ? "font-mono bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 cursor-not-allowed border-zinc-200 dark:border-zinc-800" : "font-mono bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700"}
                 />
               </SettingsField>
               <SettingsField label="GST Rate (%)">
@@ -194,7 +194,7 @@ export function AdminSettingsPage() {
                   value={String(form.gstPercentage)}
                   disabled={!isSuperOwner}
                   onChange={(e) => setForm({ ...form, gstPercentage: parseFloat(e.target.value) || 0 })}
-                  className={!isSuperOwner ? "bg-zinc-900/50 text-zinc-400 cursor-not-allowed" : ""}
+                  className={!isSuperOwner ? "bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 cursor-not-allowed border-zinc-200 dark:border-zinc-800" : "bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700"}
                   min={0}
                   max={28}
                 />
@@ -205,21 +205,19 @@ export function AdminSettingsPage() {
                 value={form.hsnSac}
                 disabled={!isSuperOwner}
                 onChange={(e) => setForm({ ...form, hsnSac: e.target.value })}
-                className={!isSuperOwner ? "font-mono bg-zinc-900/50 text-zinc-400 cursor-not-allowed" : "font-mono"}
+                className={!isSuperOwner ? "font-mono bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 cursor-not-allowed border-zinc-200 dark:border-zinc-800" : "font-mono bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700"}
               />
             </SettingsField>
           </div>
         </SettingsSection>
 
-        <Separator />
-
         {/* Sound Preferences */}
         <SettingsSection
-          icon={<Volume2 className="h-4 w-4 text-amber-400" />}
+          icon={<Volume2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />}
           title="Sound & Alerts"
           description="Configure audio notifications for kitchen and diner alerts"
         >
-          <div className="space-y-3">
+          <div className="space-y-1">
             <SettingsToggle
               label="KDS New Order Alert"
               description="Play sound chime when a new order arrives on KDS board"
@@ -258,12 +256,14 @@ interface SettingsSectionProps {
 
 function SettingsSection({ icon, title, description, children }: SettingsSectionProps) {
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        {icon}
-        <h2 className="text-sm font-bold text-zinc-100">{title}</h2>
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-xs space-y-4">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          {icon}
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
+        </div>
+        <p className="text-xs text-zinc-500">{description}</p>
       </div>
-      <p className="text-xs text-zinc-500 mb-4">{description}</p>
       {children}
     </div>
   )
@@ -277,7 +277,7 @@ interface SettingsFieldProps {
 function SettingsField({ label, children }: SettingsFieldProps) {
   return (
     <div>
-      <label className="text-xs font-medium text-zinc-400 block mb-1.5">{label}</label>
+      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 block mb-1.5">{label}</label>
       {children}
     </div>
   )
@@ -292,9 +292,9 @@ interface SettingsToggleProps {
 
 function SettingsToggle({ label, description, checked, onChange }: SettingsToggleProps) {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-2.5 border-b border-zinc-100 dark:border-zinc-800/80 last:border-0">
       <div>
-        <p className="text-sm font-medium text-zinc-200">{label}</p>
+        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{label}</p>
         <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />

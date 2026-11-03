@@ -142,9 +142,9 @@ export function AdminSubscriptionPage() {
     : "14-Day Window"
 
   return (
-    <div className="flex flex-col h-full overflow-auto bg-zinc-950 text-zinc-100">
+    <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* ── Sticky Page Header (Matching Admin Orders & Inventory) ──────────── */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 gap-4">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-4">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -153,20 +153,20 @@ export function AdminSubscriptionPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-zinc-100 font-medium">
+                <BreadcrumbPage className="text-zinc-900 dark:text-zinc-100 font-medium">
                   Subscription & Billing
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-100 mt-1">
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
             SaaS Subscription & Billing
           </h1>
         </div>
 
         {/* Header Actions */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold shadow-xs">
             <span className="text-zinc-500">Plan:</span>
             <span className="text-emerald-600 dark:text-emerald-400 font-bold">
               {activePlan?.name || "Free Trial"}
@@ -178,7 +178,7 @@ export function AdminSubscriptionPage() {
             size="sm"
             onClick={loadSubscriptionData}
             disabled={loading}
-            className="border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 text-xs font-semibold h-8 rounded-lg"
+            className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold h-8 rounded-lg shadow-xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -189,20 +189,20 @@ export function AdminSubscriptionPage() {
       <div className="flex-1 p-6 space-y-6">
         {/* ── Metric KPI Cards ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
             <div className="flex items-start justify-between">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-emerald-500" />
+                <CreditCard className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
               </div>
               <Badge variant="outline" className={cn("text-[11px] font-bold", cfg.badge)}>
                 {cfg.label}
               </Badge>
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-zinc-100 truncate">
+              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
                 {activePlan?.name || "Free Trial"}
               </p>
-              <p className="text-xs font-semibold text-zinc-300 mt-0.5">
+              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
                 Current Subscription Tier
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
@@ -211,20 +211,20 @@ export function AdminSubscriptionPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
             <div className="flex items-start justify-between">
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-amber-500" />
+                <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-500" />
               </div>
-              <span className="text-[11px] font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-bold">
+              <span className="text-[11px] font-mono text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-bold">
                 Excl. GST
               </span>
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+              <p className="text-2xl font-bold tracking-tight text-amber-700 dark:text-amber-400">
                 ₹{activePlan?.pricing?.totalPayable ?? (activePlan?.basePrice ? activePlan.basePrice * 1.18 : 0)}
               </p>
-              <p className="text-xs font-semibold text-zinc-300 mt-0.5">
+              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
                 Monthly SaaS Charge
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5">
@@ -233,40 +233,40 @@ export function AdminSubscriptionPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
             <div className="flex items-start justify-between">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Receipt className="h-5 w-5 text-emerald-500" />
+                <Receipt className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
               </div>
               <span className="text-[11px] font-mono text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
                 Audited
               </span>
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-zinc-100">
+              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
                 {invoices.length}
               </p>
-              <p className="text-xs font-semibold text-zinc-300 mt-0.5">
+              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
                 Tax Invoices Issued
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5">Downloadable GST tax receipts</p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
             <div className="flex items-start justify-between">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
               </div>
-              <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">
+              <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">
                 Protected
               </span>
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+              <p className="text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-400">
                 100%
               </p>
-              <p className="text-xs font-semibold text-zinc-300 mt-0.5">
+              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
                 Permanent Retention
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5">Zero data loss on expiry</p>
@@ -275,15 +275,15 @@ export function AdminSubscriptionPage() {
         </div>
 
         {/* ── Sub-Tab Switcher (Signature Pangat Pill Tabs) ───────────────────── */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-xl w-fit">
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-fit">
           <button
             type="button"
             onClick={() => setActiveTab("OVERVIEW")}
             className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-2",
+              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2",
               activeTab === "OVERVIEW"
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-950"
-                : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
             <CreditCard className="w-3.5 h-3.5" />
@@ -294,10 +294,10 @@ export function AdminSubscriptionPage() {
             type="button"
             onClick={() => setActiveTab("TIERS")}
             className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-2",
+              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2",
               activeTab === "TIERS"
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-950"
-                : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -308,10 +308,10 @@ export function AdminSubscriptionPage() {
             type="button"
             onClick={() => setActiveTab("INVOICES")}
             className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-2",
+              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2",
               activeTab === "INVOICES"
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-950"
-                : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
             <Receipt className="w-3.5 h-3.5" />
@@ -323,7 +323,7 @@ export function AdminSubscriptionPage() {
         {activeTab === "OVERVIEW" && (
           <div className="space-y-6">
             {/* Active Plan Detail Card */}
-            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 shadow-xl space-y-5">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -331,7 +331,7 @@ export function AdminSubscriptionPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2.5">
-                      <h2 className="text-xl font-bold text-zinc-100">
+                      <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
                         {activePlan?.name || "Growth Plan"}
                       </h2>
                       <Badge variant="outline" className={cn("text-xs font-bold", cfg.badge)}>
@@ -339,7 +339,7 @@ export function AdminSubscriptionPage() {
                       </Badge>
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">
-                      Organization: <strong className="text-zinc-300">{user?.organizationName || "Merchant Organization"}</strong>
+                      Organization: <strong className="text-zinc-700 dark:text-zinc-300">{user?.organizationName || "Merchant Organization"}</strong>
                       {currentOutlet && ` • Current Branch: ${currentOutlet.name}`}
                     </p>
                   </div>
@@ -348,17 +348,17 @@ export function AdminSubscriptionPage() {
                 <div className="text-left sm:text-right font-mono">
                   {activePlan?.pricing ? (
                     <div>
-                      <span className="text-3xl font-black text-zinc-100">
+                      <span className="text-3xl font-black text-zinc-900 dark:text-zinc-100">
                         ₹{activePlan.pricing.totalPayable}
                       </span>
                       <span className="text-xs text-zinc-500"> / month</span>
-                      <p className="text-[11px] text-zinc-400 font-sans mt-0.5">
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-sans mt-0.5">
                         (₹{activePlan.pricing.basePrice} base + 18% GST ₹{activePlan.pricing.taxAmount})
                       </p>
                     </div>
                   ) : (
                     <div>
-                      <span className="text-xl font-bold text-zinc-100">
+                      <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
                         Active Free Trial
                       </span>
                       <p className="text-xs text-zinc-500 mt-0.5">No billing charges incurred</p>
@@ -367,9 +367,9 @@ export function AdminSubscriptionPage() {
                 </div>
               </div>
 
-              {/* Status Alert Callout — Dark mode safe (No white box bleed!) */}
+              {/* Status Alert Callout */}
               {cfg.alertText && (
-                <div className="p-4 bg-zinc-100/80 dark:bg-zinc-950 rounded-xl border border-zinc-800 text-xs text-zinc-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span>{cfg.alertText}</span>
@@ -382,13 +382,13 @@ export function AdminSubscriptionPage() {
 
               {/* Checkout Notification */}
               {checkoutNotice && (
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-3">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-3">
                   <span>{checkoutNotice}</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setCheckoutNotice(null)}
-                    className="h-7 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                    className="h-7 text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
                   >
                     Dismiss
                   </Button>
@@ -396,35 +396,35 @@ export function AdminSubscriptionPage() {
               )}
 
               {/* Plan Feature Inclusions */}
-              <div className="pt-2 border-t border-zinc-800">
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
                 <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
                   Included In Your Tier
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-zinc-100/60 dark:bg-zinc-950/60 border border-zinc-800 rounded-xl flex items-center gap-3">
-                    <Building2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center gap-3">
+                    <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-zinc-100">Branch Outlets</p>
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Branch Outlets</p>
                       <p className="text-[11px] text-zinc-500">
                         {activePlan?.maxOutlets === -1 ? "Unlimited Branches" : `${activePlan?.maxOutlets || 1} Branch Location`}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-zinc-100/60 dark:bg-zinc-950/60 border border-zinc-800 rounded-xl flex items-center gap-3">
-                    <LayoutGrid className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center gap-3">
+                    <LayoutGrid className="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-zinc-100">Tables per Branch</p>
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Tables per Branch</p>
                       <p className="text-[11px] text-zinc-500">
                         {activePlan?.maxTablesPerOutlet === -1 ? "Unlimited Dining Tables" : `Up to ${activePlan?.maxTablesPerOutlet || 20} Tables`}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-zinc-100/60 dark:bg-zinc-950/60 border border-zinc-800 rounded-xl flex items-center gap-3">
-                    <Zap className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center gap-3">
+                    <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-zinc-100">KDS & QR Ordering</p>
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">KDS & QR Ordering</p>
                       <p className="text-[11px] text-zinc-500">Multi-Order & Inventory Active</p>
                     </div>
                   </div>
@@ -433,16 +433,16 @@ export function AdminSubscriptionPage() {
             </div>
 
             {/* Permanent Data Retention Guarantee Card */}
-            <div className="p-5 bg-zinc-900 rounded-2xl border border-zinc-800 text-xs text-zinc-400 flex items-start gap-4 shadow-xl">
+            <div className="p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-4 shadow-xs">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
               </div>
               <div className="space-y-1">
-                <p className="font-bold text-zinc-100 text-sm">
+                <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
                   Permanent Data Retention & Owner Export Guarantee
                 </p>
                 <p className="leading-relaxed">
-                  In accordance with Pangat core business principles, your restaurant data, menus, historical dine-in orders, table turnover metrics, and tax invoices are <strong className="text-zinc-800 dark:text-zinc-200">never deleted</strong> upon plan expiration. Owner credentials, invoice downloads, and data export remain permanently accessible, and active service can be resumed at any time without losing historical setup.
+                  In accordance with Pangat core business principles, your restaurant data, menus, historical dine-in orders, table turnover metrics, and tax invoices are <strong className="text-zinc-900 dark:text-zinc-200">never deleted</strong> upon plan expiration. Owner credentials, invoice downloads, and data export remain permanently accessible, and active service can be resumed at any time without losing historical setup.
                 </p>
               </div>
             </div>
@@ -454,7 +454,7 @@ export function AdminSubscriptionPage() {
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500" />
                   Transparent Subscription Tiers (Exclusive of 18% GST)
                 </h3>
@@ -475,17 +475,17 @@ export function AdminSubscriptionPage() {
                   <div
                     key={p.id}
                     className={cn(
-                      "p-6 rounded-2xl border transition-all flex flex-col justify-between shadow-xl",
+                      "p-6 rounded-2xl border transition-all flex flex-col justify-between shadow-xs bg-white dark:bg-zinc-900",
                       isCurrent
-                        ? "bg-zinc-900 border-emerald-500 ring-2 ring-emerald-500/20"
-                        : "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
+                        ? "border-emerald-500 ring-2 ring-emerald-500/20"
+                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
                     )}
                   >
                     <div>
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-zinc-100 text-base">{p.name}</h4>
+                        <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-base">{p.name}</h4>
                         {isCurrent && (
-                          <Badge variant="outline" className="text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                          <Badge variant="outline" className="text-[11px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
                             Current Tier
                           </Badge>
                         )}
@@ -495,11 +495,11 @@ export function AdminSubscriptionPage() {
 
                       <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-black text-zinc-100">₹{base}</span>
+                          <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">₹{base}</span>
                           <span className="text-xs text-zinc-500">/ mo</span>
                         </div>
                         <p className="text-xs text-zinc-500 mt-1 font-mono">
-                          + 18% GST (₹{tax}) = <strong className="text-zinc-100">₹{total}</strong> payable
+                          + 18% GST (₹{tax}) = <strong className="text-zinc-900 dark:text-zinc-100">₹{total}</strong> payable
                         </p>
                       </div>
 
@@ -513,7 +513,7 @@ export function AdminSubscriptionPage() {
                           <span>Tables / Outlet: <strong>{p.maxTablesPerOutlet === -1 ? "Unlimited" : p.maxTablesPerOutlet}</strong></span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
                           <span>Features: {Array.isArray(p.features) ? p.features.join(", ") : p.features}</span>
                         </div>
                       </div>
@@ -526,10 +526,10 @@ export function AdminSubscriptionPage() {
                         disabled={isCurrent}
                         onClick={() => handleUpgrade(p)}
                         className={cn(
-                          "w-full text-xs font-bold h-9 rounded-xl transition-all",
+                          "w-full text-xs font-semibold h-9 rounded-xl transition-all shadow-xs",
                           isCurrent
-                            ? "border-zinc-800 text-zinc-400"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950"
+                            ? "border-zinc-200 dark:border-zinc-800 text-zinc-400"
+                            : "bg-emerald-600 hover:bg-emerald-500 text-white"
                         )}
                       >
                         {isCurrent ? "Active Plan" : `Switch to ${p.name}`}
@@ -547,30 +547,30 @@ export function AdminSubscriptionPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
-                  <Receipt className="w-4 h-4 text-emerald-500" />
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
                   Audited Tax Invoices & Payment Receipts
                 </h3>
                 <p className="text-xs text-zinc-500 mt-0.5">
                   Official GST-compliant tax invoices generated for recurring subscription billing.
                 </p>
               </div>
-              <span className="text-xs font-mono text-zinc-500 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
+              <span className="text-xs font-mono text-zinc-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 shadow-xs">
                 18% SaaS GST
               </span>
             </div>
 
             {/* Invoices Table */}
-            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-xl">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xs">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-zinc-800/80 hover:bg-transparent">
-                    <TableHead className="text-zinc-400">Invoice #</TableHead>
-                    <TableHead className="text-zinc-400">Billing Period</TableHead>
-                    <TableHead className="text-right text-zinc-400">Base Amount</TableHead>
-                    <TableHead className="text-right text-zinc-400">GST (18%)</TableHead>
-                    <TableHead className="text-right text-zinc-400">Total Paid</TableHead>
-                    <TableHead className="text-zinc-400">Status</TableHead>
+                  <TableRow className="border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                    <TableHead className="text-zinc-500 dark:text-zinc-400">Invoice #</TableHead>
+                    <TableHead className="text-zinc-500 dark:text-zinc-400">Billing Period</TableHead>
+                    <TableHead className="text-right text-zinc-500 dark:text-zinc-400">Base Amount</TableHead>
+                    <TableHead className="text-right text-zinc-500 dark:text-zinc-400">GST (18%)</TableHead>
+                    <TableHead className="text-right text-zinc-500 dark:text-zinc-400">Total Paid</TableHead>
+                    <TableHead className="text-zinc-500 dark:text-zinc-400">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -579,7 +579,7 @@ export function AdminSubscriptionPage() {
                       <TableCell colSpan={6} className="py-16 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Receipt className="w-8 h-8 text-zinc-400 dark:text-zinc-600" />
-                          <p className="text-sm font-semibold text-zinc-300">
+                          <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                             No billing invoices generated yet
                           </p>
                           <p className="text-xs text-zinc-500">
@@ -594,26 +594,26 @@ export function AdminSubscriptionPage() {
                         key={inv.id}
                         className="border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                       >
-                        <TableCell className="font-mono font-bold text-xs text-zinc-100">
+                        <TableCell className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
                           {inv.invoiceNumber}
                         </TableCell>
                         <TableCell className="text-xs text-zinc-500">
                           {new Date(inv.billingPeriodStart).toLocaleDateString("en-IN", { dateStyle: "short" })} –{" "}
                           {new Date(inv.billingPeriodEnd).toLocaleDateString("en-IN", { dateStyle: "short" })}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-xs text-zinc-300">
+                        <TableCell className="text-right font-mono text-xs text-zinc-700 dark:text-zinc-300">
                           ₹{Number(inv.baseAmount).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs text-zinc-500">
                           ₹{Number(inv.taxAmount).toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        <TableCell className="text-right font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400">
                           ₹{Number(inv.totalAmount).toFixed(2)}
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold"
+                            className="text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-semibold"
                           >
                             {inv.status}
                           </Badge>
