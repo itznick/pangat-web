@@ -65,28 +65,28 @@ function MetricCard({
   iconBgClass,
 }: MetricCardProps) {
   return (
-    <div className={cn("rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 flex flex-col gap-3 shadow-xs", bgClass)}>
-      <div className="flex items-start justify-between">
-        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", iconBgClass)}>
-          <Icon className={cn("h-5 w-5", accentClass)} />
+    <div className={cn("rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 p-4 sm:p-5 flex flex-col justify-between shadow-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700/80", bgClass)}>
+      <div className="flex items-start justify-between gap-2">
+        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0", iconBgClass)}>
+          <Icon className={cn("h-4.5 w-4.5", accentClass)} />
         </div>
         {trend !== undefined && (
           <div
             className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
+              "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border",
               trend >= 0
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
             )}
           >
             <ArrowUpRight className={cn("h-3 w-3", trend < 0 && "rotate-90")} />
-            {Math.abs(trend)}%
+            <span>{Math.abs(trend)}%</span>
           </div>
         )}
       </div>
-      <div>
-        <p className={cn("text-2xl font-black tracking-tight", accentClass)}>{value}</p>
-        <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">{title}</p>
+      <div className="mt-2.5">
+        <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{value}</p>
+        <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-1">{title}</p>
         <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</p>
       </div>
     </div>
@@ -103,6 +103,7 @@ interface WalkInDialogProps {
 function WalkInDialog({ open, onClose }: WalkInDialogProps) {
   const tables = useAdminStore((s) => s.tables)
   const menuItems = useAdminStore((s) => s.menuItems)
+  const currentOutlet = useAuthStore((s) => s.currentOutlet)
   const [selectedTable, setSelectedTable] = useState<string>("")
   const [cart, setCart] = useState<Record<string, number>>({})
 
@@ -142,7 +143,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
     try {
       const created = await api.orders.create(
         {
-          restaurantSlug: 'pangat',
+          restaurantSlug: currentOutlet?.slug || 'pangat',
           orderType: 'DINE_IN',
           tableNumber: targetTable.tableNumber,
           paymentMethod: 'PAY_AT_COUNTER' as any,
@@ -593,9 +594,9 @@ export function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-6 gap-2.5 flex-1 content-start">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 flex-1 content-start">
                 {tables.length === 0 ? (
-                  <div className="col-span-6 py-8 text-center text-xs text-zinc-500">
+                  <div className="col-span-full py-8 text-center text-xs text-zinc-500">
                     No tables configured for this branch yet. Use Floor & Tables to generate or manage table batches.
                   </div>
                 ) : (
@@ -614,34 +615,35 @@ export function AdminDashboardPage() {
                         key={table.id}
                         onClick={() => isActive && setSelectedTable({ ...table, status: currentStatus })}
                         className={cn(
-                          "rounded-xl border p-2.5 flex flex-col items-center gap-1 transition-all duration-200",
+                          "rounded-xl border p-2.5 flex flex-col items-center justify-center gap-1 transition-all duration-150 min-h-[72px]",
                           statusColors[currentStatus],
                           isActive
-                            ? "hover:scale-105 hover:shadow-lg cursor-pointer ring-0 hover:ring-1 hover:ring-white/10"
+                            ? "hover:scale-[1.03] hover:shadow-md cursor-pointer ring-0 hover:ring-1 hover:ring-white/10"
                             : "cursor-default opacity-60"
                         )}
                         title={isActive ? `Table ${table.tableNumber} (${currentStatus}) — click to view order` : undefined}
                       >
-                        <span className="text-sm font-black leading-none">
+                        <span className="text-sm font-bold leading-none">
                           {table.tableNumber}
                         </span>
-                        <span className="text-[9px] font-bold uppercase tracking-wide opacity-80">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider opacity-85">
                           {currentStatus}
                         </span>
-                      {elapsed && (
-                        <div className="flex items-center gap-0.5 mt-0.5">
-                          <Clock className="h-2.5 w-2.5 opacity-70" />
-                          <span className="text-[9px] font-semibold">{elapsed}</span>
-                        </div>
-                      )}
-                      {unbilled != null && (
-                        <span className="text-[9px] font-bold opacity-90 mt-0.5">
-                          ₹{Math.round(unbilled)}
-                        </span>
-                      )}
-                    </button>
-                  )
-                }))}
+                        {elapsed && (
+                          <div className="flex items-center gap-0.5 mt-0.5">
+                            <Clock className="h-2.5 w-2.5 opacity-70" />
+                            <span className="text-[10px] font-medium">{elapsed}</span>
+                          </div>
+                        )}
+                        {unbilled != null && (
+                          <span className="text-[10px] font-semibold opacity-90 mt-0.5 tabular-nums">
+                            ₹{Math.round(unbilled)}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })
+                )}
               </div>
             </div>
           </div>
