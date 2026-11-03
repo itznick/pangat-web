@@ -157,7 +157,7 @@ export function StockMovementsLedger({ restaurantId }: Props) {
                   return (
                     <tr
                       key={mov.id}
-                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                      className="hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                     >
                       <td className="py-3 px-4 text-xs font-mono text-zinc-500 whitespace-nowrap">
                         {new Date(mov.createdAt).toLocaleString("en-IN", {

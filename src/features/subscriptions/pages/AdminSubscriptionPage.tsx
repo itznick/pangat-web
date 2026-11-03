@@ -592,7 +592,7 @@ export function AdminSubscriptionPage() {
                     invoices.map((inv) => (
                       <TableRow
                         key={inv.id}
-                        className="border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                        className="border-zinc-200/70 dark:border-zinc-800/50 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                       >
                         <TableCell className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
                           {inv.invoiceNumber}

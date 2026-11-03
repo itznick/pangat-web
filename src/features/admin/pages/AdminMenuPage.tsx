@@ -394,7 +394,7 @@ export function AdminMenuPage() {
                 const modifierCount = item.modifiers?.length || 0
 
                 return (
-                  <TableRow key={item.id} className="border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/70 dark:hover:bg-zinc-850/40 transition-colors">
+                  <TableRow key={item.id} className="border-b border-zinc-200/70 dark:border-zinc-800/60 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors">
                     {/* Emoji */}
                     <TableCell>
                       <span className="text-xl">{item.imageUrl}</span>
@@ -487,7 +487,7 @@ export function AdminMenuPage() {
                       <button
                         onClick={() => setEditingDish({ ...item, modifiers: item.modifiers || [] })}
                         title="Edit dish details & modifiers"
-                        className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg hover:bg-zinc-200/80 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>

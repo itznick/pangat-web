@@ -14,12 +14,18 @@ import {
   XCircle,
   Bike,
   MapPin,
+  QrCode,
+  Copy,
+  ExternalLink,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useOrderTrackingStore } from "@/stores/useCartStore"
 import { api } from "@/lib/api"
 import { getSocket, joinOrderRoom } from "@/lib/socket"
 import type { OrderStatus } from "@/types/domain"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { QrCodeImage } from "@/components/ui/QrCodeImage"
 
 interface OrderTrackingViewProps {
   restaurantSlug: string
@@ -165,14 +171,34 @@ export function OrderTrackingView({
     }
   }, [order?.id, order?.trackingToken, orderId, trackingToken])
 
-  const handlePayOnlineUpi = async () => {
-    const vpa = "pangat@icici"
-    const upiUri = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(restaurantSlug || "Pangat Restaurant")}&am=${Number(order?.totalAmount || 0).toFixed(2)}&cu=INR&tr=${order?.id || ""}`
+  const [showUpiModal, setShowUpiModal] = useState(false)
+  const [copiedVpa, setCopiedVpa] = useState(false)
+
+  const vpa = "pangat@icici"
+  const upiUri = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(restaurantSlug || "Pangat Restaurant")}&am=${Number(order?.totalAmount || 0).toFixed(2)}&cu=INR&tr=${order?.id || ""}`
+
+  const handlePayOnlineUpi = () => {
+    setShowUpiModal(true)
     if (typeof window !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      window.location.href = upiUri
+      try {
+        const link = document.createElement("a")
+        link.href = upiUri
+        link.rel = "noopener noreferrer"
+        link.click()
+      } catch (err) {
+        console.warn("Could not launch deep link:", err)
+      }
     }
+  }
 
-
+  const handleCopyVpa = async () => {
+    try {
+      await navigator.clipboard.writeText(vpa)
+      setCopiedVpa(true)
+      setTimeout(() => setCopiedVpa(false), 2000)
+    } catch (e) {
+      console.warn("Clipboard access denied:", e)
+    }
   }
 
   const currentStatus: OrderStatus = order?.orderStatus ?? "RECEIVED"
@@ -649,34 +675,55 @@ export function OrderTrackingView({
 
         {/* Pay at Counter Outstanding Action Card */}
         {isPayAtCounterPending && (
-          <div className="bg-amber-950/20 border border-amber-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div className="bg-amber-950/20 border border-amber-500/40 rounded-2xl p-4 space-y-3.5 shadow-lg">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <Store className="h-4 w-4 text-amber-400" />
                 <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                  Payment due at counter
+                  Pay at Billing Counter
                 </span>
               </div>
-              <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+              <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
                 ₹{Number(order.totalAmount || 0).toFixed(2)}
               </span>
             </div>
-            <p className="text-xs text-zinc-400">
-              Your order is being prepared. You can pay via Cash, Card, or Counter QR before leaving, or clear it instantly from your seat:
+
+            <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between text-zinc-300">
+                <span className="text-zinc-400">Order Token:</span>
+                <span className="font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
+                  #{order.id.slice(-6).toUpperCase()}
+                </span>
+              </div>
+              {order.tableNumber && (
+                <div className="flex items-center justify-between text-zinc-300">
+                  <span className="text-zinc-400">Serving Table:</span>
+                  <span className="font-semibold text-zinc-200">Table {order.tableNumber}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-zinc-300">
+                <span className="text-zinc-400">Payment Mode:</span>
+                <span className="text-amber-300 font-medium">Cash / Card / Counter POS</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Your order is sent to the kitchen. Please present your token to the cashier when settling your bill before leaving, or clear it right now from your table:
             </p>
+
             <button
               onClick={handlePayOnlineUpi}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
             >
-              <Zap className="h-3.5 w-3.5" />
-              Pay Online Now via UPI (₹{Number(order.totalAmount || 0).toFixed(2)})
+              <QrCode className="h-4 w-4" />
+              Pay Online via UPI QR (₹{Number(order.totalAmount || 0).toFixed(2)})
             </button>
           </div>
         )}
 
         {/* Cash on Delivery Outstanding Action Card */}
         {isCodPending && (
-          <div className="bg-purple-950/20 border border-purple-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div className="bg-purple-950/20 border border-purple-500/40 rounded-2xl p-4 space-y-3.5 shadow-lg">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <Bike className="h-4 w-4 text-purple-400" />
@@ -684,26 +731,26 @@ export function OrderTrackingView({
                   Cash on Delivery (Pending)
                 </span>
               </div>
-              <span className="text-xs font-bold text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded border border-purple-400/20">
+              <span className="text-xs font-bold text-purple-400 bg-purple-400/10 px-2.5 py-0.5 rounded-full border border-purple-400/20">
                 ₹{Number(order.totalAmount || 0).toFixed(2)}
               </span>
             </div>
-            <p className="text-xs text-zinc-400">
-              Your delivery order is being prepared. Please keep cash ready or scan the delivery partner's UPI QR upon arrival at your doorstep. You can also pay online now:
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Your delivery order is being prepared. Please keep cash ready or scan the delivery partner's UPI QR upon arrival. You can also pay online now:
             </p>
             <button
               onClick={handlePayOnlineUpi}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
             >
-              <Zap className="h-3.5 w-3.5" />
-              Pay Online Now via UPI (₹{Number(order.totalAmount || 0).toFixed(2)})
+              <QrCode className="h-4 w-4" />
+              Pay Online via UPI QR (₹{Number(order.totalAmount || 0).toFixed(2)})
             </button>
           </div>
         )}
 
         {/* UPI Instant Outstanding Action Card */}
         {isUpiPending && (
-          <div className="bg-emerald-950/20 border border-emerald-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div className="bg-emerald-950/20 border border-emerald-500/40 rounded-2xl p-4 space-y-3.5 shadow-lg">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-emerald-400" />
@@ -711,19 +758,19 @@ export function OrderTrackingView({
                   UPI Payment Pending
                 </span>
               </div>
-              <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20">
+              <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-0.5 rounded-full border border-emerald-400/20">
                 ₹{Number(order.totalAmount || 0).toFixed(2)}
               </span>
             </div>
-            <p className="text-xs text-zinc-400">
-              Your order is sent to the kitchen. Tap below to launch your UPI payment app or confirm settlement with the steward:
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Your order is sent to the kitchen. Tap below to scan the UPI QR code or open your UPI payment app:
             </p>
             <button
               onClick={handlePayOnlineUpi}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
             >
-              <Zap className="h-3.5 w-3.5" />
-              Pay via UPI App (₹{Number(order.totalAmount || 0).toFixed(2)})
+              <QrCode className="h-4 w-4" />
+              Show UPI QR / Open App (₹{Number(order.totalAmount || 0).toFixed(2)})
             </button>
           </div>
         )}
@@ -787,6 +834,85 @@ export function OrderTrackingView({
           <Plus className="h-4 w-4 text-emerald-400" />
           Add More Items to Table {tableId}
         </button>
+
+        {/* Dynamic Scannable UPI Payment Modal */}
+        <Dialog open={showUpiModal} onOpenChange={setShowUpiModal}>
+          <DialogContent className="max-w-sm p-5 space-y-4 text-center">
+            <DialogHeader className="mb-1 text-left flex flex-row items-center justify-between">
+              <div>
+                <DialogTitle className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-emerald-400" />
+                  Scan to Pay via UPI
+                </DialogTitle>
+                <p className="text-xs text-zinc-400 mt-0.5">Instant settlement to restaurant</p>
+              </div>
+              <button
+                onClick={() => setShowUpiModal(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </DialogHeader>
+
+            {/* Amount Badge */}
+            <div className="py-2.5 px-3.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
+              <span className="text-xs text-zinc-400">Total Payable:</span>
+              <span className="text-lg font-black text-emerald-400">
+                ₹{Number(order?.totalAmount || 0).toFixed(2)}
+              </span>
+            </div>
+
+            {/* Dynamic Scannable QR Code */}
+            <div className="flex justify-center p-3 bg-white rounded-2xl shadow-inner mx-auto w-fit">
+              <QrCodeImage value={upiUri} size={180} />
+            </div>
+
+            <p className="text-[11px] text-zinc-400 leading-snug">
+              Scan using any UPI app (Google Pay, PhonePe, Paytm, CRED or BHIM)
+            </p>
+
+            {/* Copyable UPI VPA ID */}
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs">
+              <div className="text-left">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">UPI ID / VPA</p>
+                <p className="font-mono font-bold text-zinc-200">{vpa}</p>
+              </div>
+              <button
+                onClick={handleCopyVpa}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 font-medium transition-colors"
+              >
+                {copiedVpa ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Mobile Launch App Button */}
+            <button
+              onClick={() => {
+                try {
+                  const a = document.createElement("a")
+                  a.href = upiUri
+                  a.click()
+                } catch (e) {
+                  console.warn("Could not launch app directly:", e)
+                }
+              }}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 transition-all active:scale-[0.98]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open in UPI App (GPay / PhonePe)
+            </button>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

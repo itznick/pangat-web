@@ -393,7 +393,7 @@ export function AdminInventoryPage() {
                       return (
                         <TableRow
                           key={ing.id}
-                          className="border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/70 dark:hover:bg-zinc-850/40 transition-colors"
+                          className="border-b border-zinc-200/70 dark:border-zinc-800/60 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                         >
                           <TableCell>
                             <div>
@@ -511,7 +511,7 @@ export function AdminInventoryPage() {
                     return (
                       <TableRow
                         key={item.id}
-                        className="border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                        className="border-zinc-200/70 dark:border-zinc-800/50 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                       >
                         <TableCell>
                           <span className="font-semibold text-zinc-100 text-xs">

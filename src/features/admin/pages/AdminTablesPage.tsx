@@ -28,7 +28,7 @@ import { QrCodeImage } from "@/components/ui/QrCodeImage"
 const STATUS_CONFIG: Record<TableStatus, { label: string; bg: string; border: string; text: string; badge: string }> = {
   VACANT: {
     label: "Vacant",
-    bg: "bg-white dark:bg-zinc-900/70 hover:bg-zinc-50 dark:hover:bg-zinc-850/50 shadow-xs",
+    bg: "bg-white dark:bg-zinc-900/70 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 shadow-xs",
     border: "border-zinc-200 dark:border-zinc-800",
     text: "text-zinc-700 dark:text-zinc-300 font-bold",
     badge: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
@@ -328,7 +328,7 @@ export function AdminTablesPage() {
                     Update Status
                   </label>
                   <select
-                    className="text-xs bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 border border-zinc-200 dark:border-zinc-800 focus:border-emerald-500 rounded-xl px-2.5 py-1.5 text-zinc-900 dark:text-zinc-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full font-medium transition-colors shadow-xs"
+                    className="text-xs bg-white dark:bg-zinc-900 hover:bg-zinc-100/70 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 focus:border-emerald-500 rounded-xl px-2.5 py-1.5 text-zinc-900 dark:text-zinc-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full font-medium transition-colors shadow-xs"
                     value={table.status}
                     onChange={(e) => handleStatusChange(table.id, displayName, e.target.value as TableStatus)}
                   >
