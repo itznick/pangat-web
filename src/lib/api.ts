@@ -189,7 +189,7 @@ export const api = {
         email: string
         password?: string
         pinCode?: string
-        role: 'SUPER_OWNER' | 'STORE_MANAGER' | 'CHEF' | 'STEWARD'
+        role: 'SUPER_OWNER' | 'STORE_MANAGER' | 'CHEF' | 'STEWARD' | 'CASHIER'
       }
     ): Promise<StaffUser> =>
       apiClient.post(`/restaurants/${restaurantId}/staff`, data),

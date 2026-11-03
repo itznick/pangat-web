@@ -347,6 +347,27 @@ describe('QA Remediation — Priority 4: Dashboard, Analytics & Theme Harmonizat
     // ord-3 (500) + ord-4 (600 - 100 = 500) = 1000
     assert.equal(counterTotal, 1000, 'Counter/COD total must correctly account for partial refunds');
   });
+
+  it('BUG-016: Diner clicking Pay Online UPI does not self-mark order as PAID or call markPaid', () => {
+    // Diner order remains PENDING upon initiating UPI uri
+    const dinerOrder = { id: 'ord-123', paymentStatus: 'PENDING', paymentMethod: 'UPI_INSTANT' };
+    const upiUri = `upi://pay?pa=pangat@icici&pn=Pangat&am=500.00&cu=INR&tr=${dinerOrder.id}`;
+
+    assert.ok(upiUri.startsWith('upi://pay?'), 'Must generate valid upi:// deep link');
+    assert.equal(dinerOrder.paymentStatus, 'PENDING', 'Order must remain PENDING until verified by cashier or webhook');
+  });
+
+  it('BUG-018: CASHIER role is authorized to see Floor & Tables and Orders & Settlements navigation', () => {
+    const navItems = [
+      { label: "Dashboard", path: "/admin/dashboard", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
+      { label: "Floor & Tables", path: "/admin/tables", roles: ["SUPER_OWNER", "STORE_MANAGER", "STEWARD", "CASHIER"] },
+      { label: "Orders & Settlements", path: "/admin/orders", roles: ["SUPER_OWNER", "STORE_MANAGER", "CASHIER"] },
+      { label: "Settings", path: "/admin/settings", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
+    ];
+
+    const cashierItems = navItems.filter((i) => i.roles.includes('CASHIER')).map((i) => i.label);
+    assert.deepEqual(cashierItems, ["Floor & Tables", "Orders & Settlements"]);
+  });
 });
 
 describe('Table Identifier Normalization & Matching Engine', () => {

@@ -43,9 +43,9 @@ import type { Restaurant } from "@/types/domain"
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin/dashboard", icon: BarChart3, emoji: "📊", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
-  { label: "Floor & Tables", path: "/admin/tables", icon: LayoutGrid, emoji: "🪑", roles: ["SUPER_OWNER", "STORE_MANAGER", "STEWARD"] },
+  { label: "Floor & Tables", path: "/admin/tables", icon: LayoutGrid, emoji: "🪑", roles: ["SUPER_OWNER", "STORE_MANAGER", "STEWARD", "CASHIER"] },
   { label: "Menu & Modifiers", path: "/admin/menu", icon: UtensilsCrossed, emoji: "🍽️", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
-  { label: "Orders & Settlements", path: "/admin/orders", icon: Receipt, emoji: "🧾", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
+  { label: "Orders & Settlements", path: "/admin/orders", icon: Receipt, emoji: "🧾", roles: ["SUPER_OWNER", "STORE_MANAGER", "CASHIER"] },
   { label: "Inventory & Recipes", path: "/admin/inventory", icon: Boxes, emoji: "📦", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Subscription & Billing", path: "/admin/subscription", icon: CreditCard, emoji: "💳", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Feedback & Ratings", path: "/admin/feedback", icon: Star, emoji: "⭐", roles: ["SUPER_OWNER", "STORE_MANAGER"] },
@@ -167,7 +167,9 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarMenu>
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.filter(
+              (item) => !user?.role || (item.roles as readonly string[]).includes(user.role)
+            ).map((item) => {
               const isActive = location.pathname === item.path
               return (
                 <SidebarMenuItem key={item.path}>

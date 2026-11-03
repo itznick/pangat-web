@@ -43,7 +43,6 @@ export function OrderTrackingView({
   trackingToken,
 }: OrderTrackingViewProps) {
   const order = useOrderTrackingStore((s) => s.order)
-  const payOnlineUpi = useOrderTrackingStore((s) => s.payOnlineUpi)
   const submitFeedback = useOrderTrackingStore((s) => s.submitFeedback)
   const navigate = useNavigate()
 
@@ -172,14 +171,8 @@ export function OrderTrackingView({
     if (typeof window !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
       window.location.href = upiUri
     }
-    payOnlineUpi()
-    if (order?.id) {
-      try {
-        await api.orders.markPaid(order.id)
-      } catch (err) {
-        console.error("Failed to mark paid via API:", err)
-      }
-    }
+
+
   }
 
   const currentStatus: OrderStatus = order?.orderStatus ?? "RECEIVED"
