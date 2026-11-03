@@ -124,7 +124,7 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-lg bg-zinc-950 border-zinc-800 text-white p-6">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg bg-zinc-950 border-zinc-800 text-white p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
@@ -192,7 +192,7 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Settlement UPI VPA <span className="text-emerald-400">*</span>
@@ -224,7 +224,7 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
             </div>
           </div>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter className="mt-6 flex-col-reverse sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"

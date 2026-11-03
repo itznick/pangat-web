@@ -32,7 +32,7 @@ const Drawer = ({ open, onClose, children, className }: DrawerProps) => {
       {/* Drawer panel */}
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-zinc-900 border-t border-zinc-800 shadow-2xl transition-transform duration-300 ease-out",
+          "fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-zinc-900 border-t border-zinc-800 shadow-2xl transition-transform duration-300 ease-out max-w-lg mx-auto pb-[env(safe-area-inset-bottom,0px)]",
           open ? "translate-y-0" : "translate-y-full",
           className
         )}
