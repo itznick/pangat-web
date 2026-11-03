@@ -151,7 +151,7 @@ export function RecipeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[620px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[620px] w-full max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between pr-4">
             <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
@@ -215,26 +215,27 @@ export function RecipeModal({
               <div className="space-y-2">
                 {rows.map((row, idx) => {
                   return (
-                    <div
-                      key={idx}
-                      className="p-3 bg-zinc-100/70 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-2"
-                    >
-                      <div className="flex-1 min-w-[200px]">
-                        <select
-                          value={row.ingredientId}
-                          onChange={(e) => handleRowChange(idx, "ingredientId", e.target.value)}
-                          className="w-full h-9 px-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md text-sm text-zinc-900 dark:text-zinc-100"
-                          required
-                        >
-                          {ingredients.map((ing) => (
-                            <option key={ing.id} value={ing.id}>
-                              {ing.name} (Available: {ing.currentStock} {ing.unit})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                  <div
+                    key={idx}
+                    className="p-3 bg-zinc-100/70 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center gap-2"
+                  >
+                    <div className="w-full sm:flex-1 sm:min-w-[200px]">
+                      <select
+                        value={row.ingredientId}
+                        onChange={(e) => handleRowChange(idx, "ingredientId", e.target.value)}
+                        className="w-full h-9 px-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md text-sm text-zinc-900 dark:text-zinc-100"
+                        required
+                      >
+                        {ingredients.map((ing) => (
+                          <option key={ing.id} value={ing.id}>
+                            {ing.name} (Available: {ing.currentStock} {ing.unit})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                      <div className="w-24">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="flex-1 sm:w-28">
                         <Input
                           type="number"
                           step="any"
@@ -246,7 +247,7 @@ export function RecipeModal({
                         />
                       </div>
 
-                      <div className="w-24">
+                      <div className="w-28 sm:w-24">
                         <select
                           value={row.unit}
                           onChange={(e) => handleRowChange(idx, "unit", e.target.value as UnitOfMeasure)}
@@ -267,11 +268,12 @@ export function RecipeModal({
                         size="icon"
                         onClick={() => handleRemoveRow(idx)}
                         disabled={rows.length === 1}
-                        className="text-zinc-400 hover:text-rose-600 h-9 w-9"
+                        className="text-zinc-400 hover:text-rose-600 h-9 w-9 shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                  </div>
                   )
                 })}
               </div>

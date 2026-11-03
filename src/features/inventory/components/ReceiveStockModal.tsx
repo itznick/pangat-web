@@ -113,7 +113,7 @@ export function ReceiveStockModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[700px] w-full max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
             <PackagePlus className="w-5 h-5 text-emerald-600" />
@@ -175,9 +175,9 @@ export function ReceiveStockModal({
                 return (
                   <div
                     key={idx}
-                    className="p-3 bg-zinc-100/70 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-2"
+                    className="p-3 bg-zinc-100/70 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center gap-2"
                   >
-                    <div className="flex-1 min-w-[160px]">
+                    <div className="w-full sm:flex-1 sm:min-w-[160px]">
                       <select
                         value={row.ingredientId}
                         onChange={(e) => handleRowChange(idx, "ingredientId", e.target.value)}
@@ -192,47 +192,49 @@ export function ReceiveStockModal({
                       </select>
                     </div>
 
-                    <div className="w-24">
-                      <Input
-                        type="number"
-                        step="any"
-                        min="0.001"
-                        placeholder="Qty"
-                        value={row.quantity}
-                        onChange={(e) => handleRowChange(idx, "quantity", e.target.value)}
-                        required
-                      />
-                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="w-24">
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0.001"
+                          placeholder="Qty"
+                          value={row.quantity}
+                          onChange={(e) => handleRowChange(idx, "quantity", e.target.value)}
+                          required
+                        />
+                      </div>
 
-                    <div className="w-28">
-                      <Input
-                        type="number"
-                        step="any"
-                        min="0"
-                        placeholder="₹ / Unit"
-                        value={row.costPerUnit}
-                        onChange={(e) => handleRowChange(idx, "costPerUnit", e.target.value)}
-                      />
-                    </div>
+                      <div className="w-28">
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0"
+                          placeholder="₹ / Unit"
+                          value={row.costPerUnit}
+                          onChange={(e) => handleRowChange(idx, "costPerUnit", e.target.value)}
+                        />
+                      </div>
 
-                    <div className="flex-1 min-w-[120px]">
-                      <Input
-                        placeholder="Note / Batch"
-                        value={row.notes}
-                        onChange={(e) => handleRowChange(idx, "notes", e.target.value)}
-                      />
-                    </div>
+                      <div className="flex-1 sm:w-36">
+                        <Input
+                          placeholder="Note / Batch"
+                          value={row.notes}
+                          onChange={(e) => handleRowChange(idx, "notes", e.target.value)}
+                        />
+                      </div>
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveRow(idx)}
-                      disabled={rows.length === 1}
-                      className="text-zinc-400 hover:text-rose-600 h-9 w-9"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveRow(idx)}
+                        disabled={rows.length === 1}
+                        className="text-zinc-400 hover:text-rose-600 h-9 w-9 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 )
               })}

@@ -83,7 +83,7 @@ export function AddIngredientModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[480px] w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
             <Plus className="w-5 h-5 text-emerald-600" />

@@ -132,50 +132,120 @@ export function StockMovementsLedger({ restaurantId }: Props) {
             No stock movements found matching current filters.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-100/60 dark:bg-zinc-900 text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 font-semibold">
-                <tr>
-                  <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-4">Ingredient</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4 text-right">Quantity Delta</th>
-                  <th className="py-3 px-4 text-right">Balance After</th>
-                  <th className="py-3 px-4">Audit Reason & Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {filteredMovements.map((mov) => {
-                  const cfg = MOVEMENT_CONFIG[mov.type] || {
-                    label: mov.type,
-                    badge: "bg-zinc-100 text-zinc-800",
-                    isPositive: mov.quantity > 0,
-                  }
-                  const qty = Number(mov.quantity)
-                  const isPositive = qty > 0
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm hidden md:table">
+                <thead className="bg-zinc-100/60 dark:bg-zinc-900 text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 font-semibold">
+                  <tr>
+                    <th className="py-3 px-4">Timestamp</th>
+                    <th className="py-3 px-4">Ingredient</th>
+                    <th className="py-3 px-4">Type</th>
+                    <th className="py-3 px-4 text-right">Quantity Delta</th>
+                    <th className="py-3 px-4 text-right">Balance After</th>
+                    <th className="py-3 px-4">Audit Reason & Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {filteredMovements.map((mov) => {
+                    const cfg = MOVEMENT_CONFIG[mov.type] || {
+                      label: mov.type,
+                      badge: "bg-zinc-100 text-zinc-800",
+                      isPositive: mov.quantity > 0,
+                    }
+                    const qty = Number(mov.quantity)
+                    const isPositive = qty > 0
 
-                  return (
-                    <tr
-                      key={mov.id}
-                      className="hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
-                    >
-                      <td className="py-3 px-4 text-xs font-mono text-zinc-500 whitespace-nowrap">
-                        {new Date(mov.createdAt).toLocaleString("en-IN", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
-                      </td>
-                      <td className="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-100">
-                        {mov.ingredient?.name || "Ingredient"}
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <Badge variant="outline" className={`text-xs ${cfg.badge}`}>
-                          {cfg.label}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold whitespace-nowrap">
+                    return (
+                      <tr
+                        key={mov.id}
+                        className="hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-xs font-mono text-zinc-500 whitespace-nowrap">
+                          {new Date(mov.createdAt).toLocaleString("en-IN", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </td>
+                        <td className="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-100">
+                          {mov.ingredient?.name || "Ingredient"}
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <Badge variant="outline" className={`text-xs ${cfg.badge}`}>
+                            {cfg.label}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-0.5 ${
+                              isPositive
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            {isPositive ? (
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            ) : (
+                              <ArrowDownRight className="w-3.5 h-3.5" />
+                            )}
+                            {isPositive ? `+${qty}` : qty} {mov.ingredient?.unit}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                          {Number(mov.balanceAfter)} {mov.ingredient?.unit}
+                        </td>
+                        <td className="py-3 px-4 max-w-md">
+                          <p className="text-xs text-zinc-800 dark:text-zinc-200 font-medium truncate">
+                            {mov.reason}
+                          </p>
+                          {mov.referenceOrderId && (
+                            <p className="text-[11px] font-mono text-zinc-400">
+                              Order Ref: {mov.referenceOrderId}
+                            </p>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards for Movements */}
+            <div className="block md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
+              {filteredMovements.map((mov) => {
+                const cfg = MOVEMENT_CONFIG[mov.type] || {
+                  label: mov.type,
+                  badge: "bg-zinc-100 text-zinc-800",
+                  isPositive: mov.quantity > 0,
+                }
+                const qty = Number(mov.quantity)
+                const isPositive = qty > 0
+
+                return (
+                  <div key={mov.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                          {mov.ingredient?.name || "Ingredient"}
+                        </h4>
+                        <p className="text-[11px] font-mono text-zinc-500">
+                          {new Date(mov.createdAt).toLocaleString("en-IN", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      </div>
+
+                      <Badge variant="outline" className={`text-[10px] ${cfg.badge}`}>
+                        {cfg.label}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 block">Quantity Delta</span>
                         <span
-                          className={`inline-flex items-center gap-0.5 ${
+                          className={`inline-flex items-center gap-0.5 font-mono font-bold ${
                             isPositive
                               ? "text-emerald-600 dark:text-emerald-400"
                               : "text-rose-600 dark:text-rose-400"
@@ -188,25 +258,28 @@ export function StockMovementsLedger({ restaurantId }: Props) {
                           )}
                           {isPositive ? `+${qty}` : qty} {mov.ingredient?.unit}
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
-                        {Number(mov.balanceAfter)} {mov.ingredient?.unit}
-                      </td>
-                      <td className="py-3 px-4 max-w-md">
-                        <p className="text-xs text-zinc-800 dark:text-zinc-200 font-medium truncate">
-                          {mov.reason}
-                        </p>
-                        {mov.referenceOrderId && (
-                          <p className="text-[11px] font-mono text-zinc-400">
-                            Order Ref: {mov.referenceOrderId}
-                          </p>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-[10px] text-zinc-500 block">Balance After</span>
+                        <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                          {Number(mov.balanceAfter)} {mov.ingredient?.unit}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-zinc-700 dark:text-zinc-300">
+                      {mov.reason}
+                    </p>
+                    {mov.referenceOrderId && (
+                      <p className="text-[10px] font-mono text-zinc-500">
+                        Order Ref: #{mov.referenceOrderId.slice(-6)}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
       </div>
