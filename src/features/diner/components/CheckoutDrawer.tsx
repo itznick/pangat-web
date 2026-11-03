@@ -147,7 +147,10 @@ export function CheckoutDrawer({
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => setOrderType("DINE_IN")}
+              onClick={() => {
+                setOrderType("DINE_IN");
+                if (paymentMethod === "COD") setPaymentMethod("PAY_AT_COUNTER");
+              }}
               className={cn(
                 "p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all",
                 orderType === "DINE_IN"
@@ -160,7 +163,10 @@ export function CheckoutDrawer({
             </button>
             <button
               type="button"
-              onClick={() => setOrderType("TAKEAWAY")}
+              onClick={() => {
+                setOrderType("TAKEAWAY");
+                if (paymentMethod === "COD") setPaymentMethod("PAY_AT_COUNTER");
+              }}
               className={cn(
                 "p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all",
                 orderType === "TAKEAWAY"
@@ -173,7 +179,10 @@ export function CheckoutDrawer({
             </button>
             <button
               type="button"
-              onClick={() => setOrderType("DELIVERY")}
+              onClick={() => {
+                setOrderType("DELIVERY");
+                if (paymentMethod === "PAY_AT_COUNTER") setPaymentMethod("COD");
+              }}
               className={cn(
                 "p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all",
                 orderType === "DELIVERY"
@@ -432,49 +441,94 @@ export function CheckoutDrawer({
               </div>
             </div>
 
-            {/* Option 2: Pay at Counter */}
-            <div
-              onClick={() => setPaymentMethod("PAY_AT_COUNTER")}
-              className={cn(
-                "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
-                paymentMethod === "PAY_AT_COUNTER"
-                  ? "bg-gradient-to-r from-amber-950/30 to-zinc-900 border-amber-500 ring-1 ring-amber-500/50 shadow-lg shadow-amber-950/40"
-                  : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
-              )}
-            >
-              <div className="flex items-start gap-3.5">
-                <div
-                  className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 flex-shrink-0",
-                    paymentMethod === "PAY_AT_COUNTER"
-                      ? "border-amber-400 bg-amber-500"
-                      : "border-zinc-600 bg-transparent"
-                  )}
-                >
-                  {paymentMethod === "PAY_AT_COUNTER" && (
-                    <div className="w-2 h-2 rounded-full bg-black" />
-                  )}
-                </div>
-
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                  <Store className="h-5 w-5 text-amber-400" />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
-                      Pay at Counter
-                    </p>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0">
-                      Cash / Card
-                    </span>
+            {/* Option 2: Pay at Counter OR Cash on Delivery (COD) depending on fulfillment */}
+            {orderType === "DELIVERY" ? (
+              <div
+                onClick={() => setPaymentMethod("COD")}
+                className={cn(
+                  "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
+                  paymentMethod === "COD"
+                    ? "bg-gradient-to-r from-purple-950/40 to-zinc-900 border-purple-500 ring-1 ring-purple-500/50 shadow-lg shadow-purple-950/40"
+                    : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
+                )}
+              >
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 flex-shrink-0",
+                      paymentMethod === "COD"
+                        ? "border-purple-400 bg-purple-500"
+                        : "border-zinc-600 bg-transparent"
+                    )}
+                  >
+                    {paymentMethod === "COD" && (
+                      <div className="w-2 h-2 rounded-full bg-black" />
+                    )}
                   </div>
-                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                    Order fires to kitchen immediately; settle bill at counter via Cash, Card, or QR.
-                  </p>
+
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+                    <Bike className="h-5 w-5 text-purple-400" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
+                        Cash on Delivery (COD)
+                      </p>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 flex-shrink-0">
+                        Doorstep Pay
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                      Pay via cash or UPI QR directly to the delivery partner upon arrival at your doorstep.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div
+                onClick={() => setPaymentMethod("PAY_AT_COUNTER")}
+                className={cn(
+                  "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
+                  paymentMethod === "PAY_AT_COUNTER"
+                    ? "bg-gradient-to-r from-amber-950/30 to-zinc-900 border-amber-500 ring-1 ring-amber-500/50 shadow-lg shadow-amber-950/40"
+                    : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
+                )}
+              >
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 flex-shrink-0",
+                      paymentMethod === "PAY_AT_COUNTER"
+                        ? "border-amber-400 bg-amber-500"
+                        : "border-zinc-600 bg-transparent"
+                    )}
+                  >
+                    {paymentMethod === "PAY_AT_COUNTER" && (
+                      <div className="w-2 h-2 rounded-full bg-black" />
+                    )}
+                  </div>
+
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <Store className="h-5 w-5 text-amber-400" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-zinc-100 flex items-center gap-1.5">
+                        Pay at Counter
+                      </p>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0">
+                        Cash / Card
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                      Order fires to kitchen immediately; settle bill at counter via Cash, Card, or QR.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -591,6 +645,8 @@ export function CheckoutDrawer({
             "w-full h-13 text-sm font-bold rounded-xl",
             paymentMethod === "UPI_INSTANT"
               ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-xl shadow-emerald-600/30 border border-emerald-500/50"
+              : paymentMethod === "COD"
+              ? "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-xl shadow-purple-600/30 border border-purple-500/50"
               : "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-zinc-950 shadow-xl shadow-amber-600/30 border border-amber-500/50",
             "transition-all duration-200 active:scale-[0.98]"
           )}
@@ -606,6 +662,11 @@ export function CheckoutDrawer({
             <>
               <Zap className="h-4 w-4 mr-1.5" />
               Proceed to UPI Pay • ₹{finalTotal.toFixed(2)}
+            </>
+          ) : paymentMethod === "COD" ? (
+            <>
+              <Bike className="h-4 w-4 mr-1.5" />
+              Confirm Delivery Order (COD) • ₹{finalTotal.toFixed(2)}
             </>
           ) : (
             <>

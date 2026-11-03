@@ -467,7 +467,7 @@ export function AdminOrdersPage() {
                             : "bg-blue-500/10 text-blue-300 border-blue-500/30"
                         )}
                       >
-                        {paymentMethod === "UPI_INSTANT" ? "⚡ UPI Instant" : "🏢 Pay at Counter"}
+                        {paymentMethod === "UPI_INSTANT" ? "⚡ UPI Instant" : paymentMethod === "COD" ? "🛵 Cash on Delivery (COD)" : "🏢 Pay at Counter"}
                       </span>
                     </TableCell>
 

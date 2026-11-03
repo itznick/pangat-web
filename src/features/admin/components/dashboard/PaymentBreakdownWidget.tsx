@@ -23,7 +23,7 @@ export function PaymentBreakdownWidget() {
     (o) => o.paymentStatus === "PAID" && o.paymentMethod === "UPI_INSTANT"
   )
   const counterOrders = orders.filter(
-    (o) => o.paymentStatus === "PAID" && o.paymentMethod === "PAY_AT_COUNTER"
+    (o) => o.paymentStatus === "PAID" && (o.paymentMethod === "PAY_AT_COUNTER" || o.paymentMethod === "COD")
   )
   const pendingOrders = orders.filter((o) => o.paymentStatus === "PENDING")
   const failedOrders = orders.filter((o) => o.paymentStatus === "FAILED")

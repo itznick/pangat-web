@@ -296,6 +296,8 @@ export function OrderTrackingView({
   const tokenId = order ? order.id.slice(-3).toUpperCase() : "04"
   const isPayAtCounterPending =
     order?.paymentMethod === "PAY_AT_COUNTER" && order?.paymentStatus === "PENDING"
+  const isCodPending =
+    order?.paymentMethod === "COD" && order?.paymentStatus === "PENDING"
   const isUpiPending =
     order?.paymentMethod === "UPI_INSTANT" && order?.paymentStatus === "PENDING"
 
@@ -679,6 +681,33 @@ export function OrderTrackingView({
           </div>
         )}
 
+        {/* Cash on Delivery Outstanding Action Card */}
+        {isCodPending && (
+          <div className="bg-purple-950/20 border border-purple-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <Bike className="h-4 w-4 text-purple-400" />
+                <span className="text-xs font-bold text-purple-300 uppercase tracking-wider">
+                  Cash on Delivery (Pending)
+                </span>
+              </div>
+              <span className="text-xs font-bold text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded border border-purple-400/20">
+                ₹{Number(order.totalAmount || 0).toFixed(2)}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Your delivery order is being prepared. Please keep cash ready or scan the delivery partner's UPI QR upon arrival at your doorstep. You can also pay online now:
+            </p>
+            <button
+              onClick={handlePayOnlineUpi}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Pay Online Now via UPI (₹{Number(order.totalAmount || 0).toFixed(2)})
+            </button>
+          </div>
+        )}
+
         {/* UPI Instant Outstanding Action Card */}
         {isUpiPending && (
           <div className="bg-emerald-950/20 border border-emerald-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
@@ -716,7 +745,7 @@ export function OrderTrackingView({
               <div className="flex items-center gap-1.5">
                 {order.paymentStatus === "PAID" ? (
                   <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Paid via {order.paymentMethod === "PAY_AT_COUNTER" ? "Counter" : "UPI"}
+                    Paid via {order.paymentMethod === "PAY_AT_COUNTER" ? "Counter" : order.paymentMethod === "COD" ? "COD" : "UPI"}
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">

@@ -116,7 +116,7 @@ export type OrderType = 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY'
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_PENDING' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
 
-export type PaymentMethod = 'UPI_INSTANT' | 'PAY_AT_COUNTER'
+export type PaymentMethod = 'UPI_INSTANT' | 'PAY_AT_COUNTER' | 'COD'
 
 export type OrderStatus = 'RECEIVED' | 'PREPARING' | 'READY' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED'
 
