@@ -181,7 +181,7 @@ export function AdminTablesPage() {
   return (
     <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Page header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
+      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -193,7 +193,7 @@ export function AdminTablesPage() {
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">Floor & Table Management</h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-end">
           {notification && (
             <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg animate-in fade-in">
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -205,19 +205,19 @@ export function AdminTablesPage() {
             size="sm"
             onClick={() => setBatchPrintOpen(true)}
             variant="outline"
-            className="gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer shadow-xs"
+            className="flex-1 sm:flex-none gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer shadow-xs min-h-[36px] sm:min-h-0"
           >
             <Printer className="h-3.5 w-3.5" />
-            <span>Download All QRs (Print Kit)</span>
+            <span>Print All QRs</span>
           </Button>
 
           <Button
             size="sm"
             onClick={handleOpenAddModal}
-            className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs"
+            className="flex-1 sm:flex-none gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs min-h-[36px] sm:min-h-0"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Table
+            <span>Add Table</span>
           </Button>
 
           <Button
@@ -225,15 +225,15 @@ export function AdminTablesPage() {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs shadow-xs"
+            className="gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs shadow-xs min-h-[36px] sm:min-h-0"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-            Refresh Floor
+            <span>Refresh</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-5">
+      <div className="flex-1 p-4 sm:p-6 space-y-5">
         {/* Status filter pills */}
         <div className="flex items-center gap-2 flex-wrap">
           {(["all", "VACANT", "OCCUPIED", "PREPPING", "SERVED"] as const).map((status) => (
@@ -241,7 +241,7 @@ export function AdminTablesPage() {
               key={status}
               onClick={() => setFilterStatus(status)}
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 capitalize cursor-pointer",
+                "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 capitalize cursor-pointer min-h-[32px] sm:min-h-0",
                 filterStatus === status
                   ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-xs"
                   : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200 shadow-xs"
@@ -256,7 +256,7 @@ export function AdminTablesPage() {
         </div>
 
         {/* Table grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
           {filtered.map((table) => {
             const config = STATUS_CONFIG[table.status]
             const displayName =
@@ -377,7 +377,7 @@ export function AdminTablesPage() {
 
       {/* Add Table Dialog */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-xl">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
               <Plus className="h-4 w-4 text-emerald-500" />
@@ -456,7 +456,7 @@ export function AdminTablesPage() {
 
       {/* Master Batch Table QR Print Kit Modal */}
       <Dialog open={batchPrintOpen} onOpenChange={setBatchPrintOpen}>
-        <DialogContent className="max-w-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-3xl w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-4 sm:p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               body * {

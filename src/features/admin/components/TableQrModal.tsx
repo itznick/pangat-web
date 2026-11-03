@@ -72,7 +72,7 @@ export function TableQrModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white p-0 overflow-hidden shadow-2xl">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white p-0 overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             body * {
