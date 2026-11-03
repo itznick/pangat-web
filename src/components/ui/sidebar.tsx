@@ -5,11 +5,19 @@ import { cn } from "@/lib/utils"
 interface SidebarContextType {
   collapsed: boolean
   setCollapsed: (v: boolean) => void
+  mobileOpen: boolean
+  setMobileOpen: (v: boolean) => void
+  toggleMobile: () => void
+  closeMobile: () => void
 }
 
 const SidebarContext = React.createContext<SidebarContextType>({
   collapsed: false,
   setCollapsed: () => {},
+  mobileOpen: false,
+  setMobileOpen: () => {},
+  toggleMobile: () => {},
+  closeMobile: () => {},
 })
 
 export function useSidebar() {
@@ -23,8 +31,33 @@ interface SidebarProviderProps {
 
 const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProviderProps) => {
   const [collapsed, setCollapsed] = React.useState(defaultCollapsed)
+  const [mobileOpen, setMobileOpen] = React.useState(false)
+
+  const toggleMobile = () => setMobileOpen((prev) => !prev)
+  const closeMobile = () => setMobileOpen(false)
+
+  // Close mobile sidebar on resize to desktop
+  React.useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 768) {
+        setMobileOpen(false)
+      }
+    }
+    window.addEventListener("resize", onResize)
+    return () => window.removeEventListener("resize", onResize)
+  }, [])
+
   return (
-    <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+    <SidebarContext.Provider
+      value={{
+        collapsed,
+        setCollapsed,
+        mobileOpen,
+        setMobileOpen,
+        toggleMobile,
+        closeMobile,
+      }}
+    >
       <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
         {children}
       </div>
@@ -33,18 +66,40 @@ const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProvider
 }
 
 const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
-  const { collapsed } = useSidebar()
+  const { collapsed, mobileOpen, closeMobile } = useSidebar()
   return (
-    <aside
-      className={cn(
-        "flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 shrink-0",
-        collapsed ? "w-16" : "w-64",
-        className
+    <>
+      {/* Mobile Drawer Backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden animate-in fade-in-0 duration-200"
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
       )}
-      {...props}
-    >
-      {children}
-    </aside>
+
+      {/* Mobile Slide-in Drawer */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 shadow-2xl transition-transform duration-200 ease-in-out md:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {children}
+      </aside>
+
+      {/* Desktop Persistent Sidebar */}
+      <aside
+        className={cn(
+          "hidden md:flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 shrink-0",
+          collapsed ? "w-16" : "w-64",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </aside>
+    </>
   )
 }
 
@@ -100,7 +155,7 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonP
         title={collapsed ? tooltip : undefined}
         data-active={isActive ? "true" : undefined}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+          "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 min-h-[44px] text-xs font-medium transition-all duration-150 cursor-pointer select-none",
           "hover:bg-zinc-100 dark:hover:bg-zinc-800/70 hover:text-zinc-900 dark:hover:text-zinc-100",
           isActive
             ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold hover:bg-emerald-500/15"
@@ -118,20 +173,27 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonP
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
 const SidebarTrigger = ({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => {
-  const { collapsed, setCollapsed } = useSidebar()
+  const { collapsed, setCollapsed, toggleMobile } = useSidebar()
   return (
     <button
-      onClick={() => setCollapsed(!collapsed)}
+      onClick={() => {
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+          toggleMobile()
+        } else {
+          setCollapsed(!collapsed)
+        }
+      }}
       className={cn(
-        "h-8 w-8 rounded-md flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors",
+        "h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer",
         className
       )}
+      aria-label="Toggle navigation menu"
       {...props}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -139,26 +201,16 @@ const SidebarTrigger = ({ className, ...props }: React.ButtonHTMLAttributes<HTML
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {collapsed ? (
-          <>
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </>
-        ) : (
-          <>
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="15" y2="6" />
-            <line x1="3" y1="18" x2="15" y2="18" />
-          </>
-        )}
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
     </button>
   )
 }
 
 const SidebarInset = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex-1 flex flex-col min-w-0 overflow-hidden", className)} {...props} />
+  <div className={cn("flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden", className)} {...props} />
 )
 
 export {

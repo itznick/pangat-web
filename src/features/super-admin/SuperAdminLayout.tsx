@@ -36,6 +36,7 @@ export function SuperAdminLayout() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
+  const [mobileDrawerOpen, setMobileDrawerOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
 
   const activeTab: OpsTabId =
@@ -55,6 +56,7 @@ export function SuperAdminLayout() {
 
   const handleTabSelect = (tabId: OpsTabId) => {
     setSearchParams({ tab: tabId })
+    setMobileDrawerOpen(false)
   }
 
   const handleLogout = () => {
@@ -63,12 +65,21 @@ export function SuperAdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex font-sans selection:bg-amber-500 selection:text-zinc-950 antialiased overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex font-sans selection:bg-amber-500 selection:text-zinc-950 antialiased overflow-x-hidden relative">
+      {/* ── Mobile Drawer Backdrop ────────────────────────────────────────── */}
+      {mobileDrawerOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden animate-in fade-in-0 duration-200"
+          onClick={() => setMobileDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* ── High-Density Enterprise Operations Sidebar ─────────────────────── */}
       <aside
-        className={`relative z-30 shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col justify-between transition-all duration-200 select-none ${
-          sidebarCollapsed ? 'w-16' : 'w-64'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] md:static md:z-30 shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col justify-between transition-transform duration-200 ease-in-out md:transition-all select-none shadow-2xl md:shadow-none ${
+          mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } ${sidebarCollapsed ? 'md:w-16' : 'md:w-64'}`}
       >
         {/* Sidebar Header */}
         <div className="p-3.5 border-b border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between">
@@ -195,17 +206,30 @@ export function SuperAdminLayout() {
       {/* ── Main Operations Canvas ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 bg-zinc-50 dark:bg-black">
         {/* Top Operational Header */}
-        <header className="h-14 border-b border-zinc-200 dark:border-zinc-800 px-4 sm:px-8 flex items-center justify-between bg-white/95 dark:bg-zinc-950/80 backdrop-blur-sm shrink-0">
+        <header className="h-14 border-b border-zinc-200 dark:border-zinc-800 px-3.5 sm:px-8 flex items-center justify-between bg-white/95 dark:bg-zinc-950/80 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-zinc-500 font-mono">Platform Ops</span>
-            <span className="text-zinc-400 dark:text-zinc-600 font-mono">/</span>
-            <span className="font-semibold text-zinc-900 dark:text-white capitalize font-mono">
+            {/* Mobile Hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileDrawerOpen(true)}
+              className="md:hidden p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-850 cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center -ml-1 mr-1"
+              aria-label="Open operations menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <span className="text-zinc-500 font-mono hidden sm:inline">Platform Ops</span>
+            <span className="text-zinc-400 dark:text-zinc-600 font-mono hidden sm:inline">/</span>
+            <span className="font-semibold text-zinc-900 dark:text-white capitalize font-mono text-xs">
               {OPS_TABS.find((t) => t.id === activeTab)?.label || 'Overview'}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-700 dark:text-emerald-300 font-mono">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden xs:inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-700 dark:text-emerald-300 font-mono">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Neon DB Online</span>
             </div>
@@ -216,10 +240,11 @@ export function SuperAdminLayout() {
                 const trigger = document.getElementById('super-admin-provision-trigger')
                 if (trigger) trigger.click()
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs shadow-xs transition-colors cursor-pointer min-h-[36px]"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Provision Restaurant</span>
+              <span className="hidden sm:inline">Provision Restaurant</span>
+              <span className="sm:hidden">Provision</span>
             </button>
           </div>
         </header>

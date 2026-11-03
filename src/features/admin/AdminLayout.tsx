@@ -58,7 +58,7 @@ const MANAGEMENT_NAV = [
 function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { collapsed } = useSidebar()
+  const { collapsed, closeMobile } = useSidebar()
 
   const outlets = useAuthStore((s) => s.outlets)
   const currentOutlet = useAuthStore((s) => s.currentOutlet)
@@ -81,6 +81,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const handleSelectOutlet = (outlet: Restaurant) => {
     setCurrentOutlet(outlet)
     setShowOutletMenu(false)
+    closeMobile()
     fetchDashboardData(outlet.slug)
   }
 
@@ -196,7 +197,10 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   <SidebarMenuButton
                     isActive={isActive}
                     tooltip={item.label}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      navigate(item.path)
+                      closeMobile()
+                    }}
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
@@ -220,7 +224,10 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   <SidebarMenuButton
                     isActive={isActive}
                     tooltip={item.label}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      navigate(item.path)
+                      closeMobile()
+                    }}
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
@@ -465,6 +472,22 @@ export function AdminLayout() {
         <AdminSidebarContent onOpenAddOutlet={() => setAddOutletOpen(true)} />
       </Sidebar>
       <SidebarInset>
+        {/* Mobile Header (< 768px) with menu trigger, brand, and theme toggle */}
+        <header className="sticky top-0 z-30 flex md:hidden items-center justify-between h-14 px-3.5 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shrink-0 select-none">
+          <div className="flex items-center gap-2 min-w-0">
+            <SidebarTrigger className="text-zinc-700 dark:text-zinc-200" />
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-sm select-none">🍃</span>
+              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                {currentOutlet?.name || "Pangat"}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <ThemeToggle variant="ghost" className="h-9 w-9 p-2 rounded-xl text-zinc-600 dark:text-zinc-400" />
+          </div>
+        </header>
+
         {/* Impersonation Error Alert */}
         {isPlatformSuperAdmin && impersonationError && (
           <div className="bg-rose-500/15 border-b border-rose-500/30 text-rose-300 px-4 py-2.5 text-xs font-semibold flex items-center justify-between">
