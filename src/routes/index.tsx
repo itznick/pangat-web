@@ -1,34 +1,54 @@
+import { lazy, Suspense } from "react"
 import { createBrowserRouter, Navigate } from "react-router"
-import { LandingPage } from "@/features/landing"
-import { LoginPage } from "@/features/auth/LoginPage"
-import { KdsPinLoginPage } from "@/features/auth/KdsPinLoginPage"
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary"
-import { SuperAdminLayout, SuperAdminDashboardPage } from "@/features/super-admin"
 
-// Diner
-import { DinerMenuPage, DinerOrderTrackingPage } from "@/features/diner"
+const PageLoadingFallback = () => (
+  <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+      <span className="text-xs text-zinc-500 font-mono">Loading Pangat...</span>
+    </div>
+  </div>
+)
 
-// KDS
-import { KDSPage } from "@/features/kds"
+const Lazy = (Component: React.ComponentType) => (
+  <Suspense fallback={<PageLoadingFallback />}>
+    <Component />
+  </Suspense>
+)
 
-// Admin
-import {
-  AdminLayout,
-  AdminDashboardPage,
-  AdminTablesPage,
-  AdminMenuPage,
-  AdminOrdersPage,
-  AdminFeedbackPage,
-  AdminSettingsPage,
-} from "@/features/admin"
-import { AdminInventoryPage } from "@/features/inventory"
-import { AdminSubscriptionPage } from "@/features/subscriptions"
+// Landing & Auth
+const LandingPage = lazy(() => import("@/features/landing").then((m) => ({ default: m.LandingPage })))
+const LoginPage = lazy(() => import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage })))
+const KdsPinLoginPage = lazy(() => import("@/features/auth/KdsPinLoginPage").then((m) => ({ default: m.KdsPinLoginPage })))
+
+// Super Admin
+const SuperAdminLayout = lazy(() => import("@/features/super-admin").then((m) => ({ default: m.SuperAdminLayout })))
+const SuperAdminDashboardPage = lazy(() => import("@/features/super-admin").then((m) => ({ default: m.SuperAdminDashboardPage })))
+
+// Diner Flow
+const DinerMenuPage = lazy(() => import("@/features/diner").then((m) => ({ default: m.DinerMenuPage })))
+const DinerOrderTrackingPage = lazy(() => import("@/features/diner").then((m) => ({ default: m.DinerOrderTrackingPage })))
+
+// KDS Station
+const KDSPage = lazy(() => import("@/features/kds").then((m) => ({ default: m.KDSPage })))
+
+// Merchant Admin Portal
+const AdminLayout = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminLayout })))
+const AdminDashboardPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminDashboardPage })))
+const AdminTablesPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminTablesPage })))
+const AdminMenuPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminMenuPage })))
+const AdminOrdersPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminOrdersPage })))
+const AdminFeedbackPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminFeedbackPage })))
+const AdminSettingsPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminSettingsPage })))
+const AdminInventoryPage = lazy(() => import("@/features/inventory").then((m) => ({ default: m.AdminInventoryPage })))
+const AdminSubscriptionPage = lazy(() => import("@/features/subscriptions").then((m) => ({ default: m.AdminSubscriptionPage })))
 
 export const router = createBrowserRouter([
   // ─── Public / Landing ────────────────────────────────────────────────────
   {
     path: "/",
-    element: <LandingPage />,
+    element: Lazy(LandingPage),
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -38,12 +58,12 @@ export const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: <LoginPage />,
+    element: Lazy(LoginPage),
     errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/kds-login",
-    element: <KdsPinLoginPage />,
+    element: Lazy(KdsPinLoginPage),
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -55,12 +75,12 @@ export const router = createBrowserRouter([
   // ─── Super-Admin / Platform Operations Portal ────────────────────────────
   {
     path: "/super-admin",
-    element: <SuperAdminLayout />,
+    element: Lazy(SuperAdminLayout),
     errorElement: <RouteErrorBoundary />,
     children: [
       {
         index: true,
-        element: <SuperAdminDashboardPage />,
+        element: Lazy(SuperAdminDashboardPage),
         errorElement: <RouteErrorBoundary />,
       },
     ],
@@ -69,31 +89,31 @@ export const router = createBrowserRouter([
   // ─── Diner Flow ──────────────────────────────────────────────────────────
   {
     path: "/r/:restaurantSlug",
-    element: <DinerMenuPage />,
+    element: Lazy(DinerMenuPage),
     errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/r/:restaurantSlug/t/:tableId",
-    element: <DinerMenuPage />,
+    element: Lazy(DinerMenuPage),
     errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/r/:restaurantSlug/order/:orderId",
-    element: <DinerOrderTrackingPage />,
+    element: Lazy(DinerOrderTrackingPage),
     errorElement: <RouteErrorBoundary />,
   },
 
   // ─── KDS (Kitchen Display System) ────────────────────────────────────────
   {
     path: "/kds/:restaurantSlug",
-    element: <KDSPage />,
+    element: Lazy(KDSPage),
     errorElement: <RouteErrorBoundary />,
   },
 
   // ─── Admin Portal (wrapped in AdminLayout with sidebar) ──────────────────
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: Lazy(AdminLayout),
     errorElement: <RouteErrorBoundary />,
     children: [
       {
@@ -102,42 +122,42 @@ export const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: <AdminDashboardPage />,
+        element: Lazy(AdminDashboardPage),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "tables",
-        element: <AdminTablesPage />,
+        element: Lazy(AdminTablesPage),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "menu",
-        element: <AdminMenuPage />,
+        element: Lazy(AdminMenuPage),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "orders",
-        element: <AdminOrdersPage />,
+        element: Lazy(AdminOrdersPage),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "inventory",
-        element: <AdminInventoryPage />,
+        element: Lazy(AdminInventoryPage),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "subscription",
-        element: <AdminSubscriptionPage />,
+        element: Lazy(AdminSubscriptionPage),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "feedback",
-        element: <AdminFeedbackPage />,
+        element: Lazy(AdminFeedbackPage),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "settings",
-        element: <AdminSettingsPage />,
+        element: Lazy(AdminSettingsPage),
         errorElement: <RouteErrorBoundary />,
       },
     ],
