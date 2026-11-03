@@ -253,10 +253,10 @@ export function SuperAdminDashboardPage() {
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
                 Operations Overview & System Radar
               </h1>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                 Platform-wide multi-tenant throughput, Gross GMV, and real-time connectivity
               </p>
             </div>
@@ -266,7 +266,7 @@ export function SuperAdminDashboardPage() {
               size="sm"
               onClick={fetchData}
               disabled={loading}
-              className="border-zinc-800 text-zinc-300 hover:text-white bg-zinc-900"
+              className="border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white bg-white dark:bg-zinc-900 shadow-xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Sync Metrics</span>
@@ -275,63 +275,63 @@ export function SuperAdminDashboardPage() {
 
           {/* High-Density KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-            <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
-              <div className="flex items-center justify-between text-zinc-400 text-xs mb-1">
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <div className="flex items-center justify-between text-zinc-500 text-xs mb-1">
                 <span>Total Organizations</span>
-                <Building2 className="w-4 h-4 text-amber-400" />
+                <Building2 className="w-4 h-4 text-amber-500" />
               </div>
-              <div className="text-2xl font-mono font-bold text-white">
+              <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white">
                 {metrics?.totalOrganizations ?? organizations.length}
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1">Hospitality brands</div>
+              <div className="text-[11px] text-zinc-500 mt-1">Hospitality brands</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
-              <div className="flex items-center justify-between text-zinc-400 text-xs mb-1">
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <div className="flex items-center justify-between text-zinc-500 text-xs mb-1">
                 <span>Active Outlets</span>
-                <Store className="w-4 h-4 text-emerald-400" />
+                <Store className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div className="text-2xl font-mono font-bold text-emerald-400">
+              <div className="text-2xl font-mono font-bold text-emerald-600 dark:text-emerald-400">
                 {metrics?.activeOutlets ?? outlets.filter((o) => o.isActive).length}
-                <span className="text-xs text-zinc-400 font-normal ml-1">
+                <span className="text-xs text-zinc-500 font-normal ml-1">
                   / {metrics?.totalOutlets ?? outlets.length}
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1">Live floor branches</div>
+              <div className="text-[11px] text-zinc-500 mt-1">Live floor branches</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
-              <div className="flex items-center justify-between text-zinc-400 text-xs mb-1">
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <div className="flex items-center justify-between text-zinc-500 text-xs mb-1">
                 <span>Processed Orders</span>
-                <Receipt className="w-4 h-4 text-blue-400" />
+                <Receipt className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="text-2xl font-mono font-bold text-white">
+              <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white">
                 {metrics?.totalOrders ?? 0}
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1">Diner table tickets</div>
+              <div className="text-[11px] text-zinc-500 mt-1">Diner table tickets</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
-              <div className="flex items-center justify-between text-zinc-400 text-xs mb-1">
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <div className="flex items-center justify-between text-zinc-500 text-xs mb-1">
                 <span>Platform Gross GMV</span>
-                <IndianRupee className="w-4 h-4 text-amber-400" />
+                <IndianRupee className="w-4 h-4 text-amber-500" />
               </div>
-              <div className="text-2xl font-mono font-bold text-amber-300">
+              <div className="text-2xl font-mono font-bold text-amber-600 dark:text-amber-300">
                 ₹{(metrics?.systemGmv ?? 0).toLocaleString('en-IN')}
               </div>
-              <div className="text-[11px] text-zinc-400 mt-1">Direct UPI settlement</div>
+              <div className="text-[11px] text-zinc-500 mt-1">Direct UPI settlement</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
-              <div className="flex items-center justify-between text-zinc-400 text-xs mb-1">
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <div className="flex items-center justify-between text-zinc-500 text-xs mb-1">
                 <span>Live Sockets</span>
-                <Wifi className="w-4 h-4 text-emerald-400" />
+                <Wifi className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div className="text-2xl font-mono font-bold text-white flex items-center gap-2">
+              <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                 <span>{systemHealth?.websocket.connectedClients ?? 0}</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-              <div className="text-[11px] text-emerald-400/90 mt-1">
+              <div className="text-[11px] text-emerald-600 dark:text-emerald-400/90 mt-1">
                 {systemHealth?.websocket.activeOutletRooms.length ?? 0} outlets online
               </div>
             </div>
