@@ -82,7 +82,7 @@ export function AdminSettingsPage() {
   return (
     <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Page header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
+      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -93,7 +93,7 @@ export function AdminSettingsPage() {
           </Breadcrumb>
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">Outlet Settings</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto justify-end">
           {saveStatus === "success" && (
             <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg animate-in fade-in">
               <CheckCircle2 className="h-4 w-4" />
@@ -109,7 +109,7 @@ export function AdminSettingsPage() {
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs"
+            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs min-h-[36px] sm:min-h-0"
           >
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isSaving ? "Saving..." : "Save Changes"}
@@ -117,7 +117,7 @@ export function AdminSettingsPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 max-w-3xl space-y-6">
+      <div className="flex-1 p-4 sm:p-6 max-w-3xl space-y-6">
         {/* Outlet Info */}
         <SettingsSection
           icon={<Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
@@ -147,7 +147,7 @@ export function AdminSettingsPage() {
                 )}
               </div>
             </SettingsField>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <SettingsField label="Phone">
                 <Input
                   type="tel"
@@ -179,7 +179,7 @@ export function AdminSettingsPage() {
           }
         >
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <SettingsField label="GSTIN">
                 <Input
                   value={form.gstin}

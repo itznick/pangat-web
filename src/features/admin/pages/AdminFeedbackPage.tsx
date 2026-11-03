@@ -96,7 +96,7 @@ export function AdminFeedbackPage() {
   return (
     <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* ── Page Header ───────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
+      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -122,14 +122,14 @@ export function AdminFeedbackPage() {
         <button
           onClick={handleRefresh}
           disabled={loading || isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer shadow-xs"
+          className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer shadow-xs min-h-[36px] sm:min-h-0 w-full sm:w-auto"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin text-amber-500")} />
           <span>Refresh</span>
         </button>
       </div>
 
-      <div className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
         {/* ── Top Summary Grid ─────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* 1. Average Rating Card */}

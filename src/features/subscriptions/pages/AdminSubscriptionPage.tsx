@@ -144,7 +144,7 @@ export function AdminSubscriptionPage() {
   return (
     <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* ── Sticky Page Header (Matching Admin Orders & Inventory) ──────────── */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-4">
+      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -165,8 +165,8 @@ export function AdminSubscriptionPage() {
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold shadow-xs">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold shadow-xs">
             <span className="text-zinc-500">Plan:</span>
             <span className="text-emerald-600 dark:text-emerald-400 font-bold">
               {activePlan?.name || "Free Trial"}
@@ -178,7 +178,7 @@ export function AdminSubscriptionPage() {
             size="sm"
             onClick={loadSubscriptionData}
             disabled={loading}
-            className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold h-8 rounded-lg shadow-xs"
+            className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold h-8 rounded-lg shadow-xs min-h-[36px] sm:min-h-0"
           >
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -186,7 +186,7 @@ export function AdminSubscriptionPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-6">
+      <div className="flex-1 p-4 sm:p-6 space-y-6">
         {/* ── Metric KPI Cards ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
@@ -275,12 +275,12 @@ export function AdminSubscriptionPage() {
         </div>
 
         {/* ── Sub-Tab Switcher (Signature Pangat Pill Tabs) ───────────────────── */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-fit">
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-full sm:w-fit overflow-x-auto max-w-full">
           <button
             type="button"
             onClick={() => setActiveTab("OVERVIEW")}
             className={cn(
-              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2",
+              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
               activeTab === "OVERVIEW"
                 ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -294,7 +294,7 @@ export function AdminSubscriptionPage() {
             type="button"
             onClick={() => setActiveTab("TIERS")}
             className={cn(
-              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2",
+              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
               activeTab === "TIERS"
                 ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -308,7 +308,7 @@ export function AdminSubscriptionPage() {
             type="button"
             onClick={() => setActiveTab("INVOICES")}
             className={cn(
-              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2",
+              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
               activeTab === "INVOICES"
                 ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -562,7 +562,7 @@ export function AdminSubscriptionPage() {
 
             {/* Invoices Table */}
             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xs">
-              <Table>
+              <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow className="border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
                     <TableHead className="text-zinc-500 dark:text-zinc-400">Invoice #</TableHead>
@@ -623,6 +623,54 @@ export function AdminSubscriptionPage() {
                   )}
                 </TableBody>
               </Table>
+
+              {/* Mobile Cards for Invoices */}
+              <div className="block md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
+                {invoices.map((inv) => (
+                  <div key={inv.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                          {inv.invoiceNumber}
+                        </span>
+                        <p className="text-[11px] text-zinc-500 mt-0.5">
+                          {new Date(inv.billingPeriodStart).toLocaleDateString("en-IN", { dateStyle: "short" })} –{" "}
+                          {new Date(inv.billingPeriodEnd).toLocaleDateString("en-IN", { dateStyle: "short" })}
+                        </p>
+                      </div>
+
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-semibold"
+                      >
+                        {inv.status}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 block">Base + 18% GST</span>
+                        <span className="font-mono text-zinc-600 dark:text-zinc-400">
+                          ₹{Number(inv.baseAmount).toFixed(0)} + ₹{Number(inv.taxAmount).toFixed(0)}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-zinc-500 block">Total Settled</span>
+                        <span className="font-mono font-bold text-sm text-emerald-700 dark:text-emerald-400">
+                          ₹{Number(inv.totalAmount).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {invoices.length === 0 && (
+                  <div className="py-12 px-4 text-center text-zinc-500 space-y-2">
+                    <Receipt className="w-8 h-8 mx-auto text-zinc-400 dark:text-zinc-600" />
+                    <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No invoices generated yet</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
