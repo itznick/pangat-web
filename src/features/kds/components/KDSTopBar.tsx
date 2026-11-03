@@ -59,14 +59,14 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 bg-zinc-900 border-b border-zinc-800 shrink-0">
+    <div className="flex items-center justify-between px-6 py-2.5 bg-zinc-900/90 backdrop-blur border-b border-zinc-800 shrink-0">
       {/* Left: Exit/Back button + Title */}
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
           size="sm"
           onClick={handleReturnToDashboard}
-          className="gap-1.5 bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200 text-xs font-semibold cursor-pointer transition-colors"
+          className="gap-1.5 bg-zinc-800 hover:bg-zinc-750 border-zinc-700/80 text-zinc-200 text-xs font-medium cursor-pointer transition-colors shadow-xs"
           title={isChefOnly ? "Exit Kitchen Station" : "Return to Admin Dashboard"}
         >
           {isChefOnly ? <LogOut className="h-3.5 w-3.5" /> : <ArrowLeft className="h-3.5 w-3.5" />}
@@ -74,14 +74,14 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
         </Button>
 
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
             <MonitorSpeaker className="h-4 w-4 text-amber-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-zinc-100">Kitchen Prep Station</h1>
+              <h1 className="text-sm font-semibold text-zinc-100">Kitchen Prep Station</h1>
               {user?.role === "CHEF" && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 border border-amber-500/30 text-amber-300">
                   Chef Mode
                 </span>
               )}
@@ -92,7 +92,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
       </div>
 
       {/* Center: live clock */}
-      <div className="flex items-center gap-2.5 bg-zinc-950 px-3.5 py-1.5 rounded-xl border border-zinc-800">
+      <div className="flex items-center gap-2.5 bg-zinc-950/80 px-3.5 py-1.5 rounded-xl border border-zinc-800 shadow-inner">
         <Clock className="h-4 w-4 text-amber-400 shrink-0" />
         <div className="flex flex-col text-left">
           <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold font-sans leading-none">

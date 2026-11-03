@@ -232,21 +232,21 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
       {/* Items */}
       <div className="px-4 py-3 flex-1 space-y-2.5">
         {ticket.items.map((item, idx) => (
-          <div key={idx}>
+          <div key={idx} className="space-y-1">
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-bold text-zinc-100">{item.quantity}×</span>
-              <span className="text-sm font-semibold text-zinc-200">{item.name}</span>
+              <span className="text-sm font-bold text-zinc-100 font-mono">{item.quantity}×</span>
+              <span className="text-sm font-medium text-zinc-200">{item.name}</span>
             </div>
             {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1 ml-6">
+              <div className="flex flex-wrap gap-1 ml-6">
                 {item.selectedModifiers.map((mod, mIdx) => (
                   <span
                     key={mIdx}
                     className={cn(
-                      "px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wide",
+                      "px-1.5 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wide",
                       mod.name.startsWith("NO") || mod.name.startsWith("no")
                         ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                        : "bg-zinc-800 text-zinc-300 border border-zinc-700"
+                        : "bg-zinc-800/80 text-zinc-300 border border-zinc-700/80"
                     )}
                   >
                     {mod.name}
@@ -255,9 +255,9 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
               </div>
             )}
             {item.notes && (
-              <div className="mt-2 ml-6 flex items-start gap-1.5 px-2.5 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <div className="mt-1.5 ml-6 flex items-start gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
                 <AlertCircle className="h-3.5 w-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-300 italic">"{item.notes}"</p>
+                <p className="text-xs text-amber-300/90 italic">"{item.notes}"</p>
               </div>
             )}
           </div>
