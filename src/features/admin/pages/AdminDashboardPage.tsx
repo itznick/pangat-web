@@ -322,7 +322,7 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
       />
       <div
         className={cn(
-          "absolute top-full right-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-200",
+          "absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-[340px] bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-200",
           open
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 -translate-y-2 pointer-events-none"
@@ -459,31 +459,31 @@ export function AdminDashboardPage() {
   return (
     <div className="flex flex-col h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* ── Page Header ───────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-4">
+      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink className="text-zinc-500 dark:text-zinc-400">Admin</BreadcrumbLink>
+                <BreadcrumbLink className="text-zinc-500 dark:text-zinc-400 text-xs">Admin</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-zinc-900 dark:text-zinc-100 font-medium">Dashboard</BreadcrumbPage>
+                <BreadcrumbPage className="text-zinc-900 dark:text-zinc-100 font-medium text-xs">Dashboard</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">Live Cockpit</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">Live Cockpit</h1>
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto">
           {/* Live badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Live</span>
+            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Live</span>
           </div>
 
           {/* Stock Status Quick Toggle */}
@@ -491,14 +491,14 @@ export function AdminDashboardPage() {
             <button
               onClick={() => setShowStockToggle((p) => !p)}
               className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer",
+                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer min-h-[38px]",
                 showStockToggle
                   ? "bg-rose-600/20 border-rose-500/60 text-rose-600 dark:text-rose-300"
                   : "bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100"
               )}
             >
               <Package className="h-3.5 w-3.5" />
-              Stock Status
+              <span>Stock Status</span>
             </button>
             <StockTogglePanel
               open={showStockToggle}
@@ -509,15 +509,15 @@ export function AdminDashboardPage() {
           {/* Quick Walk-in Order */}
           <button
             onClick={() => setShowWalkIn(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white border border-emerald-500/50 shadow-lg shadow-emerald-950/20 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white border border-emerald-500/50 shadow-md shadow-emerald-950/20 transition-all cursor-pointer min-h-[38px] ml-auto sm:ml-0"
           >
             <Plus className="h-3.5 w-3.5" />
-            Quick Walk-in Order
+            <span>Walk-in Order</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-6">
+      <div className="flex-1 p-3.5 sm:p-6 space-y-5 sm:space-y-6">
         {!restaurant && (!outlets || outlets.length === 0) ? (
           <div className="py-6">
             <ZeroStateCard onAddOutlet={() => setAddOutletOpen(true)} />
@@ -529,7 +529,7 @@ export function AdminDashboardPage() {
         ) : (
           <>
             {/* ── Metric Cards ──────────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <MetricCard
             title="Today's Gross Revenue"
             value={`₹${todaySales.totalRevenue.toLocaleString("en-IN")}`}
@@ -594,7 +594,7 @@ export function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 flex-1 content-start">
+              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 flex-1 content-start">
                 {tables.length === 0 ? (
                   <div className="col-span-full py-8 text-center text-xs text-zinc-500">
                     No tables configured for this branch yet. Use Floor & Tables to generate or manage table batches.

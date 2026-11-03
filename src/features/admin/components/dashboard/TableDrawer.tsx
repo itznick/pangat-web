@@ -68,7 +68,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
       {/* Right-side panel */}
       <div
         className={cn(
-          "fixed top-0 right-0 bottom-0 z-50 w-[420px] max-w-full flex flex-col bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transition-transform duration-300 ease-out text-zinc-900 dark:text-zinc-100",
+          "fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[420px] max-w-full flex flex-col bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transition-transform duration-300 ease-out text-zinc-900 dark:text-zinc-100",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
