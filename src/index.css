@@ -6,6 +6,15 @@
 @custom-variant dark (&:is(.dark, .dark *));
 
 /* ── Light Mode vs Dark Mode Theme Variables ─────────────────────────────── */
+/*
+ * Zinc colour remap: components use zinc-* classes throughout.
+ * In light mode the scale is INVERTED so dark-zinc classes render as light
+ * surface colours, and light-zinc classes render as dark text.
+ * In dark mode the native Tailwind oklch values are used verbatim.
+ *
+ * IMPORTANT: Do NOT remove this block. It is load-bearing for every page
+ * that uses bg-zinc-950 / text-zinc-100 etc. to work correctly in both modes.
+ */
 html:not(.dark) {
   --color-zinc-950: #f8fafc;
   --color-zinc-900: #ffffff;
@@ -86,8 +95,12 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 @theme inline {
-    --font-heading: 'Plus Jakarta Sans', 'Inter Variable', sans-serif;
-    --font-sans: 'Plus Jakarta Sans', 'Inter Variable', sans-serif;
+    /* ── Typography
+     * Only Inter Variable is installed (@fontsource-variable/inter).
+     * Plus Jakarta Sans is NOT installed — removed from font stack.
+     */
+    --font-heading: 'Inter Variable', 'Inter', system-ui, sans-serif;
+    --font-sans:    'Inter Variable', 'Inter', system-ui, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -202,11 +215,324 @@ html.dark ::-webkit-scrollbar-thumb:hover {
     @apply border-border outline-ring/50;
     }
   body {
+    /*
+     * Use bg-zinc-950 intentionally — the zinc remap in html:not(.dark)
+     * maps this to #f8fafc (near-white) in light mode and the native dark
+     * value in dark mode. This is the correct adaptive surface for the app shell.
+     */
     @apply bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-150;
+    /* Refined letter-spacing and line-height for Inter at all sizes */
+    letter-spacing: -0.011em;
+    line-height: 1.5;
     }
   html {
     @apply font-sans scroll-smooth;
     }
+  /* Smooth font rendering across platforms */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+    font-feature-settings: "cv01", "cv02", "cv03", "cv04", "cv11";
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PANGAT DESIGN SYSTEM — v1.0
+   Enterprise-grade token layer for consistent visual language across all screens.
+
+   Usage:
+     Page backgrounds  → .pangat-page-bg
+     Sticky headers    → .pangat-page-header
+     Content panels    → .pangat-panel
+     Status badges     → .pangat-badge-success / warning / danger / info / neutral
+     Metric cards      → .pangat-stat-card
+     Section titles    → .pangat-section-title
+     Caption text      → .pangat-caption
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Semantic Colour Tokens ─────────────────────────────────────────────────
+ * These are pure CSS custom properties — no Tailwind class conflicts.
+ * They sit on top of the zinc remap and are always correct in light + dark.
+ */
+:root {
+  /* Brand green */
+  --pangat-brand:            oklch(0.527 0.154 150.069);
+  --pangat-brand-subtle:     oklch(0.527 0.154 150.069 / 0.12);
+  --pangat-brand-border:     oklch(0.527 0.154 150.069 / 0.30);
+  --pangat-brand-text-light: oklch(0.380 0.120 150.069);   /* light mode */
+  --pangat-brand-text-dark:  oklch(0.720 0.180 150.069);   /* dark mode  */
+
+  /* Success (green) */
+  --pangat-success:          oklch(0.527 0.154 150.069);
+  --pangat-success-subtle:   oklch(0.527 0.154 150.069 / 0.10);
+  --pangat-success-border:   oklch(0.527 0.154 150.069 / 0.28);
+  --pangat-success-fg:       oklch(0.360 0.120 150.069);
+
+  /* Warning (amber) */
+  --pangat-warning:          oklch(0.769 0.188 70.08);
+  --pangat-warning-subtle:   oklch(0.769 0.188 70.08 / 0.10);
+  --pangat-warning-border:   oklch(0.769 0.188 70.08 / 0.28);
+  --pangat-warning-fg:       oklch(0.540 0.140 70.08);
+
+  /* Danger (rose) */
+  --pangat-danger:           oklch(0.641 0.228 16.439);
+  --pangat-danger-subtle:    oklch(0.641 0.228 16.439 / 0.10);
+  --pangat-danger-border:    oklch(0.641 0.228 16.439 / 0.28);
+  --pangat-danger-fg:        oklch(0.470 0.190 16.439);
+
+  /* Info (blue) */
+  --pangat-info:             oklch(0.623 0.214 259.8);
+  --pangat-info-subtle:      oklch(0.623 0.214 259.8 / 0.10);
+  --pangat-info-border:      oklch(0.623 0.214 259.8 / 0.28);
+  --pangat-info-fg:          oklch(0.440 0.170 259.8);
+
+  /* Purple / violet accent */
+  --pangat-violet:           oklch(0.627 0.233 303.9);
+  --pangat-violet-subtle:    oklch(0.627 0.233 303.9 / 0.10);
+  --pangat-violet-border:    oklch(0.627 0.233 303.9 / 0.28);
+  --pangat-violet-fg:        oklch(0.460 0.185 303.9);
+
+  /* Surface tokens — LIGHT mode defaults */
+  --pangat-page-bg:          #f8fafc;
+  --pangat-page-header-bg:   rgba(255, 255, 255, 0.96);
+  --pangat-panel-bg:         #ffffff;
+  --pangat-panel-border:     #e2e8f0;
+  --pangat-panel-shadow:     0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+
+  /* Text tokens — LIGHT mode */
+  --pangat-text-primary:     #0f172a;
+  --pangat-text-secondary:   #334155;
+  --pangat-text-muted:       #64748b;
+  --pangat-text-faint:       #94a3b8;
+}
+
+html.dark {
+  /* Brand */
+  --pangat-brand-text-light: oklch(0.720 0.180 150.069);
+  --pangat-brand-text-dark:  oklch(0.720 0.180 150.069);
+
+  /* Surface tokens — DARK mode */
+  --pangat-page-bg:          oklch(14.1% .005 285.823);       /* zinc-950 */
+  --pangat-page-header-bg:   oklch(14.1% .005 285.823 / 0.96);
+  --pangat-panel-bg:         oklch(21% .006 285.885);         /* zinc-900 */
+  --pangat-panel-border:     oklch(27.4% .006 286.033 / 0.80); /* zinc-800 */
+  --pangat-panel-shadow:     0 1px 3px 0 rgb(0 0 0 / 0.25), 0 1px 2px -1px rgb(0 0 0 / 0.20);
+
+  /* Text tokens — DARK mode */
+  --pangat-text-primary:     oklch(96.7% .001 286.375);       /* zinc-100 */
+  --pangat-text-secondary:   oklch(87.1% .006 286.286);       /* zinc-300 */
+  --pangat-text-muted:       oklch(55.2% .016 285.938);       /* zinc-500 */
+  --pangat-text-faint:       oklch(44.2% .017 285.786);       /* zinc-600 */
+
+  /* Semantic — boost saturation slightly for dark backgrounds */
+  --pangat-success-fg:       oklch(0.720 0.190 150.069);
+  --pangat-warning-fg:       oklch(0.820 0.180 70.08);
+  --pangat-danger-fg:        oklch(0.700 0.220 16.439);
+  --pangat-info-fg:          oklch(0.720 0.190 259.8);
+  --pangat-violet-fg:        oklch(0.740 0.200 303.9);
+}
+
+/* ── Typography Scale ────────────────────────────────────────────────────────
+ * Replaces ad-hoc text-[9px] / text-[10px] / text-[11px] usage.
+ * Use these utility classes in components instead of arbitrary sizes.
+ */
+.text-page-title {
+  font-size: 1.25rem;       /* 20px */
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+  color: var(--pangat-text-primary);
+}
+
+.text-section-title {
+  font-size: 0.875rem;      /* 14px */
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.4;
+  color: var(--pangat-text-primary);
+}
+
+.text-label {
+  font-size: 0.75rem;       /* 12px */
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+  color: var(--pangat-text-secondary);
+}
+
+.text-caption {
+  font-size: 0.6875rem;     /* 11px — minimum legible size, replaces text-[10px] */
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.45;
+  color: var(--pangat-text-muted);
+}
+
+.text-micro {
+  font-size: 0.625rem;      /* 10px — only for strictly constrained UI like KDS timers */
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  color: var(--pangat-text-faint);
+}
+
+/* ── Adaptive Surface Utilities ──────────────────────────────────────────────
+ * These replace hardcoded bg-zinc-950 / bg-white on page roots.
+ * They are theme-aware — use on any admin page root div.
+ */
+.pangat-page-bg {
+  background-color: var(--pangat-page-bg);
+  color: var(--pangat-text-primary);
+}
+
+.pangat-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--pangat-page-header-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--pangat-panel-border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Content panel (card/table container) */
+.pangat-panel {
+  background-color: var(--pangat-panel-bg);
+  border: 1px solid var(--pangat-panel-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--pangat-panel-shadow);
+}
+
+/* Stat/metric card */
+.pangat-stat-card {
+  background-color: var(--pangat-panel-bg);
+  border: 1px solid var(--pangat-panel-border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: var(--pangat-panel-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Badge Utilities ─────────────────────────────────────────────────────────
+ * Consistent badge shapes and colours for status indicators.
+ * Shape: rounded-full for state badges, rounded for type labels.
+ */
+.pangat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;     /* 11px */
+  font-weight: 600;
+  border-width: 1px;
+  border-style: solid;
+  line-height: 1.4;
+}
+
+.pangat-badge-success {
+  background-color: var(--pangat-success-subtle);
+  border-color: var(--pangat-success-border);
+  color: var(--pangat-success-fg);
+}
+
+.pangat-badge-warning {
+  background-color: var(--pangat-warning-subtle);
+  border-color: var(--pangat-warning-border);
+  color: var(--pangat-warning-fg);
+}
+
+.pangat-badge-danger {
+  background-color: var(--pangat-danger-subtle);
+  border-color: var(--pangat-danger-border);
+  color: var(--pangat-danger-fg);
+}
+
+.pangat-badge-info {
+  background-color: var(--pangat-info-subtle);
+  border-color: var(--pangat-info-border);
+  color: var(--pangat-info-fg);
+}
+
+.pangat-badge-violet {
+  background-color: var(--pangat-violet-subtle);
+  border-color: var(--pangat-violet-border);
+  color: var(--pangat-violet-fg);
+}
+
+.pangat-badge-neutral {
+  background-color: color-mix(in oklch, var(--pangat-panel-border) 40%, transparent);
+  border-color: var(--pangat-panel-border);
+  color: var(--pangat-text-muted);
+}
+
+/* Type label badge — slightly rounded rect, not pill */
+.pangat-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-width: 1px;
+  border-style: solid;
+  line-height: 1.4;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────────*/
+.pangat-divider {
+  height: 1px;
+  background-color: var(--pangat-panel-border);
+  margin: 0;
+}
+
+/* ── Focus Ring ──────────────────────────────────────────────────────────────
+ * Uniform interactive focus ring — matches brand green.
+ */
+.pangat-focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.pangat-focus:focus-visible {
+  outline-color: var(--pangat-brand);
+}
+
+/* ── Transition Defaults ─────────────────────────────────────────────────────
+ * Applied to interactive elements that currently have ad-hoc transition classes.
+ */
+.pangat-transition {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Active Nav Accent (Linear-style) ───────────────────────────────────────
+ * Left-border highlight for active sidebar items.
+ * Applied by AdminLayout via the SidebarMenuButton's data-active attribute.
+ */
+[data-active="true"] {
+  position: relative;
+}
+
+[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.5px;
+  height: 60%;
+  background-color: var(--pangat-brand);
+  border-radius: 0 2px 2px 0;
 }
 
 /* Awwwards Creative Utilities */
