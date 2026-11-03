@@ -401,7 +401,9 @@ export function AdminDashboardPage() {
   const getTableEffectiveStatus = useCallback(
     (table: Table): TableStatus => {
       const ordersForTable = activeOrders.filter((o) => isSameTableNumber(o.tableNumber, table.tableNumber))
-      const openOrders = ordersForTable.filter((o) => o.orderStatus !== "COMPLETED")
+      const openOrders = ordersForTable.filter(
+        (o) => o.orderStatus !== "COMPLETED" && o.orderStatus !== "CANCELLED"
+      )
 
       if (openOrders.length > 0) {
         // If kitchen is actively preparing/received, it is PREPPING
@@ -436,7 +438,7 @@ export function AdminDashboardPage() {
   const getTableOrder = useCallback(
     (tableNumber: string): Order | undefined =>
       activeOrders.find(
-        (o) => isSameTableNumber(o.tableNumber, tableNumber) && o.orderStatus !== "COMPLETED"
+        (o) => isSameTableNumber(o.tableNumber, tableNumber) && o.orderStatus !== "COMPLETED" && o.orderStatus !== "CANCELLED"
       ),
     [activeOrders]
   )

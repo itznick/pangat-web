@@ -18,18 +18,24 @@ interface PaymentSegment {
 export function PaymentBreakdownWidget() {
   const orders = useAdminStore((s) => s.activeOrders)
 
+  // Helper: compute net collected amount accounting for any partial refunds
+  const getOrderNetSettled = (o: { totalAmount?: number | string; refundAmount?: number | string }) =>
+    Math.max(0, Number(o.totalAmount || 0) - Number(o.refundAmount || 0))
+
+  const isCollected = (status?: string) => status === "PAID" || status === "PARTIALLY_REFUNDED"
+
   // Compute breakdown from live order feed
   const upiOrders = orders.filter(
-    (o) => o.paymentStatus === "PAID" && o.paymentMethod === "UPI_INSTANT"
+    (o) => isCollected(o.paymentStatus) && o.paymentMethod === "UPI_INSTANT"
   )
   const counterOrders = orders.filter(
-    (o) => o.paymentStatus === "PAID" && (o.paymentMethod === "PAY_AT_COUNTER" || o.paymentMethod === "COD")
+    (o) => isCollected(o.paymentStatus) && (o.paymentMethod === "PAY_AT_COUNTER" || o.paymentMethod === "COD")
   )
   const pendingOrders = orders.filter((o) => o.paymentStatus === "PENDING")
   const failedOrders = orders.filter((o) => o.paymentStatus === "FAILED")
 
-  const upiTotal = upiOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0)
-  const counterTotal = counterOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0)
+  const upiTotal = upiOrders.reduce((s, o) => s + getOrderNetSettled(o), 0)
+  const counterTotal = counterOrders.reduce((s, o) => s + getOrderNetSettled(o), 0)
   const pendingTotal = pendingOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0)
   const grandTotal = upiTotal + counterTotal + pendingTotal
 

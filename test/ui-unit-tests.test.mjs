@@ -290,7 +290,65 @@ describe('Multi-Order Table Lifecycle & Settlement Store Engine', () => {
   });
 });
 
-// ── 9. TABLE IDENTIFIER NORMALIZATION & MATCHING ────────────────────────────
+// ── 10. QA REMEDIATION VERIFICATION SUITES ──────────────────────────────
+describe('QA Remediation — Priority 4: Dashboard, Analytics & Theme Harmonization', () => {
+  it('BUG-010: CANCELLED order is excluded from openOrders and table returns to VACANT', () => {
+    const table = { id: 't1', tableNumber: 'T01', status: 'VACANT' };
+    const orders = [
+      { id: 'ord-cancelled', tableNumber: 'T01', orderStatus: 'CANCELLED', paymentStatus: 'FAILED' }
+    ];
+
+    // Mirroring AdminDashboardPage logic
+    const ordersForTable = orders.filter((o) => o.tableNumber === table.tableNumber);
+    const openOrders = ordersForTable.filter(
+      (o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED'
+    );
+
+    let effectiveStatus = 'VACANT';
+    if (openOrders.length > 0) {
+      const isCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING');
+      if (isCooking) effectiveStatus = 'PREPPING';
+      else if (openOrders.some((o) => o.paymentStatus === 'PENDING')) effectiveStatus = 'OCCUPIED';
+      else effectiveStatus = 'SERVED';
+    } else if (table.status === 'OCCUPIED') {
+      effectiveStatus = 'OCCUPIED';
+    }
+
+    assert.equal(effectiveStatus, 'VACANT', 'Table must return to VACANT when order is cancelled');
+
+    // Also verify getTableOrder returns undefined for cancelled orders
+    const activeOrder = orders.find(
+      (o) => o.tableNumber === 'T01' && o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED'
+    );
+    assert.equal(activeOrder, undefined, 'Active order must not return cancelled order');
+  });
+
+  it('BUG-011: Payment breakdown includes PARTIALLY_REFUNDED orders and deducts refundAmount', () => {
+    const orders = [
+      { id: 'ord-1', paymentStatus: 'PAID', paymentMethod: 'UPI_INSTANT', totalAmount: 1000, refundAmount: 0 },
+      { id: 'ord-2', paymentStatus: 'PARTIALLY_REFUNDED', paymentMethod: 'UPI_INSTANT', totalAmount: 800, refundAmount: 300 },
+      { id: 'ord-3', paymentStatus: 'PAID', paymentMethod: 'PAY_AT_COUNTER', totalAmount: 500, refundAmount: 0 },
+      { id: 'ord-4', paymentStatus: 'PARTIALLY_REFUNDED', paymentMethod: 'COD', totalAmount: 600, refundAmount: 100 },
+      { id: 'ord-5', paymentStatus: 'PENDING', paymentMethod: 'PAY_AT_COUNTER', totalAmount: 400, refundAmount: 0 },
+      { id: 'ord-6', paymentStatus: 'REFUNDED', paymentMethod: 'UPI_INSTANT', totalAmount: 200, refundAmount: 200 },
+    ];
+
+    const getOrderNetSettled = (o) => Math.max(0, Number(o.totalAmount || 0) - Number(o.refundAmount || 0));
+    const isCollected = (status) => status === 'PAID' || status === 'PARTIALLY_REFUNDED';
+
+    const upiOrders = orders.filter((o) => isCollected(o.paymentStatus) && o.paymentMethod === 'UPI_INSTANT');
+    const counterOrders = orders.filter((o) => isCollected(o.paymentStatus) && (o.paymentMethod === 'PAY_AT_COUNTER' || o.paymentMethod === 'COD'));
+
+    const upiTotal = upiOrders.reduce((s, o) => s + getOrderNetSettled(o), 0);
+    const counterTotal = counterOrders.reduce((s, o) => s + getOrderNetSettled(o), 0);
+
+    // ord-1 (1000) + ord-2 (800 - 300 = 500) = 1500
+    assert.equal(upiTotal, 1500, 'UPI total must correctly account for partial refunds');
+    // ord-3 (500) + ord-4 (600 - 100 = 500) = 1000
+    assert.equal(counterTotal, 1000, 'Counter/COD total must correctly account for partial refunds');
+  });
+});
+
 describe('Table Identifier Normalization & Matching Engine', () => {
   function isSameTableNumber(a, b) {
     if (!a || !b) return false;

@@ -6,7 +6,7 @@
 
 // ── Restaurant ────────────────────────────────────────────────────────────────
 
-export type UserRole = 'PLATFORM_SUPER_ADMIN' | 'SUPER_OWNER' | 'STORE_MANAGER' | 'CHEF' | 'STEWARD'
+export type UserRole = 'PLATFORM_SUPER_ADMIN' | 'SUPER_OWNER' | 'STORE_MANAGER' | 'CHEF' | 'STEWARD' | 'CASHIER'
 
 export interface Organization {
   id: string
