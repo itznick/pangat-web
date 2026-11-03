@@ -837,7 +837,7 @@ export function OrderTrackingView({
 
         {/* Dynamic Scannable UPI Payment Modal */}
         <Dialog open={showUpiModal} onOpenChange={setShowUpiModal}>
-          <DialogContent className="max-w-sm p-5 space-y-4 text-center">
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm p-4 sm:p-5 space-y-4 text-center max-h-[90vh] overflow-y-auto">
             <DialogHeader className="mb-1 text-left flex flex-row items-center justify-between">
               <div>
                 <DialogTitle className="text-base font-bold text-zinc-100 flex items-center gap-2">

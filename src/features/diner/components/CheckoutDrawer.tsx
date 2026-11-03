@@ -138,7 +138,7 @@ export function CheckoutDrawer({
         </div>
       </DrawerHeader>
 
-      <DrawerContent className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-6">
+      <DrawerContent className="overflow-y-auto max-h-[72vh] px-3.5 sm:px-4 py-4 space-y-5 sm:space-y-6">
         {/* Order Type Selection */}
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
@@ -298,7 +298,7 @@ export function CheckoutDrawer({
               return (
                 <div
                   key={entry._localId}
-                  className="flex items-start gap-3 p-2.5 rounded-xl bg-zinc-900/40 border border-zinc-800/60"
+                  className="flex items-start gap-2.5 sm:gap-3 p-2.5 rounded-xl bg-zinc-900/40 border border-zinc-800/60"
                 >
                   {/* Dietary indicator */}
                   <div className="mt-0.5 flex-shrink-0">
@@ -326,25 +326,25 @@ export function CheckoutDrawer({
                   </div>
 
                   {/* Quantity controls */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                     <button
                       onClick={() => decrementItem(entry._localId)}
-                      className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors"
+                      className="w-7 h-7 min-w-[28px] min-h-[28px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
                     >
                       <Minus className="h-3 w-3 text-zinc-300" />
                     </button>
-                    <span className="text-sm font-bold text-zinc-100 w-4 text-center">
+                    <span className="text-xs sm:text-sm font-bold text-zinc-100 w-4 sm:w-5 text-center">
                       {entry.quantity}
                     </span>
                     <button
                       onClick={() => incrementItem(entry._localId)}
-                      className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors"
+                      className="w-7 h-7 min-w-[28px] min-h-[28px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
                     >
                       <Plus className="h-3 w-3 text-zinc-300" />
                     </button>
                   </div>
 
-                  <span className="text-sm font-bold text-zinc-100 ml-1 min-w-[54px] text-right">
+                  <span className="text-xs sm:text-sm font-bold text-zinc-100 ml-1 min-w-[48px] sm:min-w-[54px] text-right">
                     ₹{((Number(itemPrice) || 0) * entry.quantity).toFixed(0)}
                   </span>
                 </div>
@@ -639,10 +639,10 @@ export function CheckoutDrawer({
         )}
       </DrawerContent>
 
-      <DrawerFooter className="border-t border-zinc-800/80 pt-3">
+      <DrawerFooter className="border-t border-zinc-800/80 pt-3 pb-6 sm:pb-4">
         <Button
           className={cn(
-            "w-full h-13 text-sm font-bold rounded-xl",
+            "w-full h-12 sm:h-13 text-xs sm:text-sm font-bold rounded-xl min-h-[44px] touch-manipulation",
             paymentMethod === "UPI_INSTANT"
               ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-xl shadow-emerald-600/30 border border-emerald-500/50"
               : paymentMethod === "COD"

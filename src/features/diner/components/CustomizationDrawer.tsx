@@ -145,21 +145,21 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
         </div>
       </DrawerContent>
 
-      <DrawerFooter>
+      <DrawerFooter className="border-t border-zinc-800/80 pt-3 pb-6 sm:pb-4">
         {/* Quantity selector */}
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-medium text-zinc-300">Quantity</span>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 hover:bg-zinc-700 transition-colors border border-zinc-700"
+              className="w-9 h-9 min-w-[36px] min-h-[36px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 hover:bg-zinc-700 transition-colors border border-zinc-700 touch-manipulation"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
             <span className="text-base font-bold text-zinc-100 w-6 text-center">{quantity}</span>
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors"
+              className="w-9 h-9 min-w-[36px] min-h-[36px] sm:w-8 sm:h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors touch-manipulation"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -167,7 +167,7 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
         </div>
 
         <Button
-          className="w-full h-12 text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30"
+          className="w-full h-12 text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 min-h-[44px] touch-manipulation"
           onClick={handleConfirm}
         >
           Add to Order • ₹{totalPrice}
@@ -230,7 +230,7 @@ function ModifierGroupSection({
                   : onMultiToggle(group.id, option.name)
               }
               className={cn(
-                "w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-all duration-150",
+                "w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-all duration-150 min-h-[44px] touch-manipulation",
                 isSelected
                   ? "border-emerald-500 bg-emerald-500/10 text-zinc-100"
                   : "border-zinc-800 bg-zinc-800/50 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
