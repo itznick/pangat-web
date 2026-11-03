@@ -315,12 +315,12 @@ export function AdminOrdersPage() {
         </div>
 
         {/* ── Search & Status Filters ──────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 flex-wrap justify-between">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
+          <div className="relative flex-1 w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Search order ID, table number, item..."
-              className="pl-9 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs h-9 rounded-xl shadow-xs"
+              className="pl-9 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs h-9 rounded-xl shadow-xs w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -333,7 +333,7 @@ export function AdminOrdersPage() {
                 key={t}
                 onClick={() => setTypeFilter(t)}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5",
+                  "px-3 py-1.5 sm:py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 min-h-[36px] sm:min-h-0",
                   typeFilter === t
                     ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
                     : "bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -351,7 +351,7 @@ export function AdminOrdersPage() {
               </button>
             ))}
 
-            <div className="w-[1px] h-5 bg-zinc-200 dark:bg-zinc-800 mx-1" />
+            <div className="hidden sm:block w-[1px] h-5 bg-zinc-200 dark:bg-zinc-800 mx-1" />
 
             {/* Payment Filter */}
             {(["all", "PAID", "PENDING", "FAILED"] as const).map((s) => (
@@ -359,7 +359,7 @@ export function AdminOrdersPage() {
                 key={s}
                 onClick={() => setStatusFilter(s)}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer",
+                  "px-3 py-1.5 sm:py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[36px] sm:min-h-0",
                   statusFilter === s
                     ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
                     : "bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -371,9 +371,9 @@ export function AdminOrdersPage() {
           </div>
         </div>
 
-        {/* ── Orders Table ────────────────────────────────────────────────────── */}
+        {/* ── Orders Table / Mobile Cards ─────────────────────────────────────── */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden shadow-xs">
-          <Table>
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow className="border-b border-zinc-200/80 dark:border-zinc-800/80 hover:bg-transparent">
                 <TableHead className="text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Order ID</TableHead>
@@ -665,6 +665,224 @@ export function AdminOrdersPage() {
               )}
             </TableBody>
           </Table>
+
+          {/* Mobile Orders Cards */}
+          <div className="block md:hidden divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
+            {currentDisplayList.map((order) => {
+              const payment = PAYMENT_CONFIG[order.paymentStatus] || PAYMENT_CONFIG.PENDING
+              const PayIcon = payment.icon
+              const paymentMethod = order.paymentMethod || "UPI_INSTANT"
+
+              return (
+                <div key={order.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/60 px-2 py-0.5 rounded font-bold">
+                          #{order.id.slice(-6)}
+                        </span>
+                        {order.orderType === "TAKEAWAY" ? (
+                          <span className="font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/25 text-[11px] inline-flex items-center gap-1">
+                            <ShoppingBag className="h-3 w-3" />
+                            <span>{order.customerName || "Takeaway"}</span>
+                          </span>
+                        ) : order.orderType === "DELIVERY" ? (
+                          <span className="font-semibold text-purple-700 dark:text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/25 text-[11px] inline-flex items-center gap-1">
+                            <Bike className="h-3 w-3" />
+                            <span>{order.customerName || "Delivery"}</span>
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[11px] inline-flex items-center gap-1">
+                            <Utensils className="h-3 w-3 text-zinc-400" />
+                            <span>Table {order.tableNumber || "—"}</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-zinc-500">
+                        {formatDateTime(order.createdAt)} • {formatElapsed(order.createdAt)}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="font-bold text-zinc-900 dark:text-white text-base tabular-nums">
+                        ₹{Number(order.totalAmount || 0).toLocaleString("en-IN")}
+                      </div>
+                      <div
+                        className={cn(
+                          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold mt-0.5",
+                          payment.bg,
+                          payment.color
+                        )}
+                      >
+                        <PayIcon className="h-2.5 w-2.5" />
+                        <span>{payment.label}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delivery address if available */}
+                  {order.orderType === "DELIVERY" && order.deliveryAddress && (
+                    <p className="text-[11px] text-zinc-500 bg-zinc-50 dark:bg-zinc-950 p-2 rounded-lg border border-zinc-200/60 dark:border-zinc-800/60">
+                      📍 {order.deliveryAddress}
+                    </p>
+                  )}
+
+                  {/* Items summary */}
+                  <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/60 text-xs space-y-1">
+                    {order.items.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between text-zinc-700 dark:text-zinc-300">
+                        <div className="truncate mr-2">
+                          <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{item.quantity}×</strong>{" "}
+                          <span>{item.name}</span>
+                        </div>
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums text-[11px]">
+                          ₹{((Number(item.price || 0)) * item.quantity).toFixed(0)}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="pt-1.5 mt-1 border-t border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between text-[11px] text-zinc-500">
+                      <span>Method:</span>
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                        {paymentMethod === "UPI_INSTANT" ? "⚡ UPI Instant" : paymentMethod === "COD" ? "🛵 COD" : "🏢 Counter"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions Bar */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    {order.paymentStatus !== "PAID" && activeTab === "active" && (
+                      <button
+                        type="button"
+                        onClick={() => settleOrder(order.id, "PAID")}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold min-h-[36px]"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Mark Paid</span>
+                      </button>
+                    )}
+
+                    {activeTab === "active" && order.orderType === "DELIVERY" && order.orderStatus === "READY" && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await api.orders.updateStatus(order.id, "DISPATCHED")
+                            fetchArchivedOrders()
+                          } catch (e: any) {
+                            alert(e?.response?.data?.message || "Failed to dispatch order")
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-semibold min-h-[36px]"
+                      >
+                        <Bike className="h-3.5 w-3.5" />
+                        <span>Dispatch</span>
+                      </button>
+                    )}
+
+                    {activeTab === "active" && order.orderType === "DELIVERY" && order.orderStatus === "DISPATCHED" && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await api.orders.updateStatus(order.id, "COMPLETED")
+                            fetchArchivedOrders()
+                          } catch (e: any) {
+                            alert(e?.response?.data?.message || "Failed to mark delivered")
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold min-h-[36px]"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Delivered</span>
+                      </button>
+                    )}
+
+                    {activeTab === "active" && order.orderStatus !== "COMPLETED" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCancellingOrder(order)
+                          setCancelReason("")
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 text-xs font-semibold min-h-[36px]"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        <span>Cancel</span>
+                      </button>
+                    )}
+
+                    {(order.paymentStatus === "REFUND_PENDING" || order.paymentStatus === "PARTIALLY_REFUNDED") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRefundOrder(order)
+                          const remaining = Math.max(0, Number(order.totalAmount || 0) - Number(order.refundAmount || 0))
+                          setRefundAmount(remaining > 0 ? remaining.toString() : "")
+                          setRefundReason("")
+                          setRefundMethod("COUNTER_CASH")
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-600/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-xs font-semibold min-h-[36px]"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>Refund</span>
+                      </button>
+                    )}
+
+                    {activeTab === "active" && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await archiveOrder(order.id)
+                          fetchArchivedOrders()
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold min-h-[36px]"
+                      >
+                        <Archive className="h-3.5 w-3.5 text-zinc-400" />
+                        <span>Archive</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFeedbackOrder(order)}
+                      className={cn(
+                        "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold min-h-[36px]",
+                        order.feedback
+                          ? "bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-300"
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700"
+                      )}
+                    >
+                      <Star className={cn("h-3.5 w-3.5", order.feedback ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
+                      <span>{order.feedback ? `${order.feedback.rating}★` : "Feedback"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedReceiptOrder(order)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold min-h-[36px]"
+                    >
+                      <Receipt className="h-3.5 w-3.5 text-zinc-400" />
+                      <span>Receipt</span>
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+
+            {currentDisplayList.length === 0 && (
+              <div className="py-12 px-4 text-center text-zinc-500 space-y-2">
+                <Clock className="h-8 w-8 mx-auto text-zinc-400 dark:text-zinc-600" />
+                <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                  {loadingArchived ? "Loading archived orders..." : "No orders found in this view"}
+                </p>
+                <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+                  {activeTab === "active"
+                    ? "No active orders match current search filters."
+                    : "No past or archived orders found for selected date filters."}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -673,7 +891,7 @@ export function AdminOrdersPage() {
         open={Boolean(selectedReceiptOrder)}
         onOpenChange={(open) => !open && setSelectedReceiptOrder(null)}
       >
-        <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
           {selectedReceiptOrder && (
             <div className="flex flex-col max-h-[85vh]">
               {/* Receipt Header */}
@@ -825,7 +1043,7 @@ export function AdminOrdersPage() {
         open={Boolean(selectedFeedbackOrder)}
         onOpenChange={(open) => !open && setSelectedFeedbackOrder(null)}
       >
-        <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
           {selectedFeedbackOrder && (
             <div className="flex flex-col">
               {/* Header */}
@@ -944,7 +1162,7 @@ export function AdminOrdersPage() {
 
       {/* ── Cancel Order Dialog ────────────────────────────────────────────── */}
       <Dialog open={Boolean(cancellingOrder)} onOpenChange={(open) => !open && setCancellingOrder(null)}>
-        <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
           <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-base">
             <XCircle className="w-5 h-5" />
             <span>Cancel Order #{cancellingOrder?.id.slice(-6).toUpperCase()}</span>
@@ -988,7 +1206,7 @@ export function AdminOrdersPage() {
 
       {/* ── Process Refund Dialog ──────────────────────────────────────────── */}
       <Dialog open={Boolean(refundOrder)} onOpenChange={(open) => !open && setRefundOrder(null)}>
-        <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
           <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-base">
             <RotateCcw className="w-5 h-5" />
             <span>Process Refund for Order #{refundOrder?.id.slice(-6).toUpperCase()}</span>
