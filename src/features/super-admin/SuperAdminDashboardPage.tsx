@@ -488,8 +488,8 @@ export function SuperAdminDashboardPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs hidden md:table">
               <thead>
                 <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60">
                   <th className="py-3 px-4">Restaurant & Locality</th>
@@ -597,6 +597,93 @@ export function SuperAdminDashboardPage() {
                 )}
               </tbody>
             </table>
+
+            {/* Mobile Cards for Leads */}
+            <div className="block md:hidden divide-y divide-zinc-800/80">
+              {filteredLeads.map((lead) => {
+                const cleanPhone = lead.phone.replace(/[^0-9]/g, '')
+                const waNumber = cleanPhone.startsWith('91')
+                  ? cleanPhone
+                  : cleanPhone.length === 10
+                  ? `91${cleanPhone}`
+                  : cleanPhone
+                const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(
+                  `Namaskar ${lead.name}! 🙏 This is the Pangat platform ops team following up on your demo request for ${lead.restaurantName}. When can we connect for your assisted table setup?`
+                )}`
+
+                return (
+                  <div key={lead.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-bold text-white text-sm">{lead.restaurantName}</h3>
+                        <p className="text-[11px] text-zinc-400">📍 {lead.city}</p>
+                      </div>
+                      <div>
+                        {getStatusBadge(lead.status)}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs space-y-1">
+                      <div className="flex items-center justify-between text-zinc-300">
+                        <span className="text-zinc-500">Contact:</span>
+                        <span className="font-medium">{lead.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-zinc-300">
+                        <span className="text-zinc-500">Phone:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-zinc-300">{lead.phone}</span>
+                          <a
+                            href={waLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/30 text-emerald-300"
+                          >
+                            <MessageSquare className="w-2.5 h-2.5" />
+                            <span>WA</span>
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-zinc-300">
+                        <span className="text-zinc-500">Table Scope:</span>
+                        <span className="font-semibold text-amber-300">{lead.tableCount || '12 tables'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <select
+                        value={lead.status}
+                        onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
+                        className="text-xs bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-zinc-300 min-h-[36px]"
+                      >
+                        <option value="NEW">New</option>
+                        <option value="CONTACTED">Contacted</option>
+                        <option value="SCHEDULED">Scheduled</option>
+                        <option value="ONBOARDED">Onboarded</option>
+                      </select>
+
+                      {lead.status === 'ONBOARDED' ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-400 text-xs font-semibold">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Provisioned</span>
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleOnboardLead(lead)}
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-9 px-3 rounded-xl shadow-sm"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 mr-1" />
+                          <span>Onboard Lead</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+              {filteredLeads.length === 0 && (
+                <p className="py-8 text-center text-zinc-400 text-xs">No matching leads found.</p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -635,8 +722,8 @@ export function SuperAdminDashboardPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs hidden md:table">
               <thead>
                 <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60">
                   <th className="py-3 px-4">Brand Name</th>
@@ -748,6 +835,77 @@ export function SuperAdminDashboardPage() {
                 )}
               </tbody>
             </table>
+
+            {/* Mobile Cards for Organizations */}
+            <div className="block md:hidden divide-y divide-zinc-800/80">
+              {filteredOrgs.map((org) => (
+                <div key={org.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                        <span>{org.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                          {org.outletsCount} {org.outletsCount === 1 ? 'outlet' : 'outlets'}
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Owner: {org.owner.name} · <span className="font-mono">{org.owner.email}</span>
+                      </p>
+                    </div>
+                    {org.status === 'ACTIVE' ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-400 text-[10px] font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500 text-[10px]">INACTIVE</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs">
+                    <span className="text-zinc-400">Platform GMV:</span>
+                    <span className="font-mono font-bold text-amber-300 text-sm">
+                      ₹{org.totalGmv.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {org.outlets[0] && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleImpersonate(org.outlets[0])}
+                        className="h-8 text-xs border-zinc-800 bg-zinc-900 text-amber-300 hover:text-white flex-1 min-h-[36px]"
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1" />
+                        <span>Inspect</span>
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={resettingId === org.id}
+                      onClick={() => handleResetPassword(org)}
+                      className="h-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white flex-1 min-h-[36px]"
+                    >
+                      <KeyRound className="w-3.5 h-3.5 mr-1" />
+                      <span>Reset Pwd</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenQrKit(org)}
+                      className="h-8 text-xs border-zinc-800 bg-zinc-900 text-emerald-300 hover:text-white min-h-[36px]"
+                    >
+                      <QrCode className="w-3.5 h-3.5 mr-1" />
+                      <span>QR Kit</span>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {filteredOrgs.length === 0 && (
+                <p className="py-8 text-center text-zinc-400 text-xs">No organizations matching your search.</p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -787,8 +945,8 @@ export function SuperAdminDashboardPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs hidden md:table">
               <thead>
                 <tr className="border-b border-zinc-800 text-zinc-400 font-semibold bg-zinc-900/60">
                   <th className="py-3 px-4">Outlet & Slug</th>
@@ -888,6 +1046,81 @@ export function SuperAdminDashboardPage() {
                 )}
               </tbody>
             </table>
+
+            {/* Mobile Cards for Outlets */}
+            <div className="block md:hidden divide-y divide-zinc-800/80">
+              {filteredOutlets.map((outlet) => (
+                <div key={outlet.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">{outlet.name}</h3>
+                      <p className="text-[11px] text-zinc-400 font-mono">/r/{outlet.slug}</p>
+                    </div>
+                    {outlet.isOnline ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        ONLINE
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px]">
+                        OFFLINE
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs space-y-1">
+                    <div className="flex items-center justify-between text-zinc-300">
+                      <span className="text-zinc-500">Brand:</span>
+                      <span className="font-medium text-zinc-200">{outlet.organizationName}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-zinc-300">
+                      <span className="text-zinc-500">Area:</span>
+                      <span className="text-zinc-300">{outlet.branchArea}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-zinc-300">
+                      <span className="text-zinc-500">Capacity & Orders:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-zinc-200">{outlet.tablesCount} tables</span>
+                        <span className="font-mono font-bold text-amber-400">({outlet.activeOrdersCount} prep)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleImpersonate(outlet)}
+                      className="h-8 text-xs border-zinc-800 bg-zinc-900 text-amber-300 hover:text-white flex-1 min-h-[36px]"
+                    >
+                      <Eye className="w-3.5 h-3.5 mr-1" />
+                      <span>Cockpit</span>
+                    </Button>
+                    <a
+                      href={`/kds/${outlet.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="h-8 px-3 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 min-h-[36px]"
+                    >
+                      <span>KDS</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                    <a
+                      href={`/r/${outlet.slug}/t/T01`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="h-8 px-3 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 min-h-[36px]"
+                    >
+                      <span>QR</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+              {filteredOutlets.length === 0 && (
+                <p className="py-8 text-center text-zinc-400 text-xs">No outlets found.</p>
+              )}
+            </div>
           </div>
         </div>
       )}
