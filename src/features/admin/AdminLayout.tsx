@@ -22,7 +22,6 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  User,
   Plus,
   MonitorSpeaker,
   ExternalLink,
@@ -31,6 +30,11 @@ import {
   Star,
   Boxes,
   CreditCard,
+  Search,
+  Keyboard,
+  Sparkles,
+  LifeBuoy,
+  MessageSquareText,
 } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -39,6 +43,10 @@ import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { AddOutletModal } from "./components/AddOutletModal"
 import { PangatLogo } from "@/components/ui/PangatLogo"
+import { UserMenu, type MenuEntry } from "@/components/console/UserMenu"
+import { ConsoleOverlays } from "@/components/console/ConsoleOverlays"
+import { useConsoleUi } from "@/components/console/useConsoleUi"
+import type { CommandItem } from "@/components/console/types"
 import type { Restaurant } from "@/types/domain"
 
 const OPERATIONS_NAV = [
@@ -55,6 +63,31 @@ const MANAGEMENT_NAV = [
   { label: "Settings", path: "/admin/settings", icon: Settings, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
 ] as const
 
+const SUPPORT_WHATSAPP = "https://wa.me/919890000000?text=Hi%20Pangat%20team%2C%20I%20need%20help%20with%20my%20portal."
+const FEEDBACK_MAILTO = "mailto:hello@pangat.app?subject=Pangat%20portal%20feedback"
+
+/** "G then X" go-to shortcuts, keyed by the second key */
+const GO_KEYS: Record<string, string> = {
+  d: "/admin/dashboard",
+  t: "/admin/tables",
+  o: "/admin/orders",
+  m: "/admin/menu",
+  i: "/admin/inventory",
+  b: "/admin/subscription",
+  f: "/admin/feedback",
+  s: "/admin/settings",
+}
+const GO_LABEL: Record<string, string> = {
+  "/admin/dashboard": "G D",
+  "/admin/tables": "G T",
+  "/admin/orders": "G O",
+  "/admin/menu": "G M",
+  "/admin/inventory": "G I",
+  "/admin/subscription": "G B",
+  "/admin/feedback": "G F",
+  "/admin/settings": "G S",
+}
+
 function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -67,6 +100,25 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const logout = useAuthStore((s) => s.logout)
   const fetchDashboardData = useAdminStore((s) => s.fetchDashboardData)
   const tables = useAdminStore((s) => s.tables)
+  const activeOrders = useAdminStore((s) => s.activeOrders)
+  const setPalette = useConsoleUi((s) => s.setPalette)
+  const setShortcuts = useConsoleUi((s) => s.setShortcuts)
+  const setChangelog = useConsoleUi((s) => s.setChangelog)
+
+  // Live counts shown beside the nav items they belong to
+  const openOrders = activeOrders.filter((o) => o.orderStatus !== "COMPLETED" && o.orderStatus !== "CANCELLED").length
+  const occupied = tables.filter((t) => t.status !== "VACANT").length
+  const badgeFor = (path: string) => (path === "/admin/orders" ? openOrders : path === "/admin/tables" ? occupied : 0)
+
+  const menuEntries: MenuEntry[] = [
+    { label: "Settings", icon: Settings, shortcut: "G S", onSelect: () => navigate("/admin/settings") },
+    { label: "Plan & billing", icon: CreditCard, shortcut: "G B", onSelect: () => navigate("/admin/subscription") },
+    { label: "Keyboard shortcuts", icon: Keyboard, shortcut: "?", onSelect: () => setShortcuts(true), divider: true },
+    { label: "What’s new", icon: Sparkles, onSelect: () => setChangelog(true) },
+    { label: "Help & support", icon: LifeBuoy, href: SUPPORT_WHATSAPP, divider: true },
+    { label: "Send feedback", icon: MessageSquareText, href: FEEDBACK_MAILTO },
+    { label: "Sign out", icon: LogOut, danger: true, divider: true, onSelect: () => { logout(); navigate("/") } },
+  ]
 
   const [showOutletMenu, setShowOutletMenu] = useState(false)
 
@@ -182,6 +234,27 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
         </div>
       </SidebarHeader>
 
+      {/* Quick search / command palette */}
+      <div className="px-3 pt-3">
+        <button
+          type="button"
+          onClick={() => setPalette(true)}
+          title="Search (Ctrl K)"
+          className={cn(
+            "group flex w-full items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-[13px] text-zinc-500 transition-colors hover:border-white/15 hover:bg-white/[0.06] hover:text-zinc-300",
+            collapsed ? "h-10 justify-center" : "h-10 px-3"
+          )}
+        >
+          <Search className="h-4 w-4 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="flex-1 truncate whitespace-nowrap text-left">Search…</span>
+              <kbd className="rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] text-zinc-500 group-hover:text-zinc-400">Ctrl K</kbd>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* Navigation */}
       <SidebarContent>
         {/* Group 1: Operations */}
@@ -202,7 +275,14 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
-                      <span className="truncate">{item.label}</span>
+                      <>
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                        {badgeFor(item.path) > 0 && (
+                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
+                            {badgeFor(item.path)}
+                          </span>
+                        )}
+                      </>
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -229,7 +309,14 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
-                      <span className="truncate">{item.label}</span>
+                      <>
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                        {badgeFor(item.path) > 0 && (
+                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
+                            {badgeFor(item.path)}
+                          </span>
+                        )}
+                      </>
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -281,38 +368,15 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer: User profile, theme toggle, and logout */}
-      <SidebarFooter>
-        <div className={cn("space-y-2", collapsed && "flex flex-col items-center")}>
-          <div className={cn("flex items-center gap-2", collapsed && "justify-center")}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center flex-shrink-0 text-white shadow-xs ring-1 ring-emerald-500/20">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-200 truncate leading-snug">
-                  {user?.name || "Team Member"}
-                </p>
-                <span className="inline-block text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded uppercase tracking-wider">
-                  {user?.role ? user.role.replace("_", " ") : "SUPER OWNER"}
-                </span>
-              </div>
-            )}
-            {!collapsed && (
-              <button
-                onClick={() => {
-                  logout()
-                  navigate("/")
-                }}
-                className="h-8 w-8 p-1.5 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
-                title="Logout"
-                aria-label="Logout"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
+      {/* Footer: account menu */}
+      <SidebarFooter className="!p-2.5">
+        <UserMenu
+          name={user?.name || "Team member"}
+          email={user?.email}
+          roleLabel={(user?.role || "SUPER_OWNER").replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}
+          entries={menuEntries}
+          collapsed={collapsed}
+        />
       </SidebarFooter>
     </>
   )
@@ -446,6 +510,60 @@ export function AdminLayout() {
     return <Navigate to={`/kds/${chefSlug}`} replace />
   }
 
+  const visibleNav = [...OPERATIONS_NAV, ...MANAGEMENT_NAV].filter((n) => !user?.role || (n.roles as readonly string[]).includes(user.role))
+  const goTo: Record<string, () => void> = {}
+  Object.entries(GO_KEYS).forEach(([k, path]) => {
+    if (visibleNav.some((n) => n.path === path)) goTo[k] = () => navigate(path)
+  })
+  const commandItems: CommandItem[] = [
+    ...visibleNav.map((n) => ({
+      id: n.path,
+      label: n.label,
+      group: "Go to",
+      icon: n.icon,
+      shortcut: GO_LABEL[n.path],
+      run: () => navigate(n.path),
+    })),
+    {
+      id: "kds",
+      label: "Open kitchen display",
+      group: "Stations",
+      icon: MonitorSpeaker,
+      keywords: "kds kitchen tickets",
+      run: () => window.open(`/kds/${currentOutlet?.slug || "main"}`, "_blank"),
+    },
+    {
+      id: "diner",
+      label: "Preview guest menu",
+      group: "Stations",
+      icon: Smartphone,
+      keywords: "diner qr customer",
+      run: () => window.open(`/r/${currentOutlet?.slug || "main"}/t/${useAdminStore.getState().tables[0]?.tableNumber || "01"}`, "_blank"),
+    },
+    ...outlets
+      .filter((o) => o.slug !== currentOutlet?.slug)
+      .map((o) => ({
+        id: `outlet-${o.slug}`,
+        label: `Switch to ${o.name}`,
+        group: "Outlets",
+        icon: LayoutGrid,
+        keywords: "outlet branch",
+        run: () => {
+          setCurrentOutlet(o)
+          useAdminStore.getState().fetchDashboardData(o.slug)
+        },
+      })),
+    { id: "add-outlet", label: "Add a new outlet", group: "Outlets", icon: Plus, keywords: "branch", run: () => setAddOutletOpen(true) },
+    { id: "shortcuts", label: "Keyboard shortcuts", group: "Help", icon: Keyboard, shortcut: "?", run: () => useConsoleUi.getState().setShortcuts(true) },
+    { id: "changelog", label: "What’s new", group: "Help", icon: Sparkles, keywords: "changelog updates", run: () => useConsoleUi.getState().setChangelog(true) },
+    { id: "support", label: "Help & support", group: "Help", icon: LifeBuoy, keywords: "whatsapp contact", run: () => window.open(SUPPORT_WHATSAPP, "_blank") },
+  ]
+  const shortcutRows = [
+    { keys: "Ctrl K", label: "Open the command palette" },
+    { keys: "?", label: "Show keyboard shortcuts" },
+    ...visibleNav.filter((n) => GO_LABEL[n.path]).map((n) => ({ keys: GO_LABEL[n.path], label: `Go to ${n.label}` })),
+  ]
+
   const handleExitImpersonation = () => {
     sessionStorage.removeItem("pangat_impersonate_outlet")
     setImpersonatingOutlet(null)
@@ -545,6 +663,8 @@ export function AdminLayout() {
         )}
         <Outlet />
       </SidebarInset>
+
+      <ConsoleOverlays items={commandItems} goTo={goTo} shortcutRows={shortcutRows} />
 
       {/* Global Add Outlet Modal */}
       <AddOutletModal

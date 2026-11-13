@@ -11,6 +11,7 @@ import type {
   SubscriptionPlan,
 } from '@/types/domain'
 import { ProvisionRestaurantModal } from './components/ProvisionRestaurantModal'
+import { useProvisionStore } from './useProvisionStore'
 import { ResetPasswordModal } from './components/ResetPasswordModal'
 import { PrintableQrKitModal } from '@/features/onboarding/components/PrintableQrKitModal'
 import { Button } from '@/components/ui/button'
@@ -57,8 +58,11 @@ export function SuperAdminDashboardPage() {
   const [selectedStatusFilter, setSelectedStatusFilter] = React.useState<string>('ALL')
 
   // Modals state
-  const [provisionModalOpen, setProvisionModalOpen] = React.useState(false)
-  const [selectedLeadForProvision, setSelectedLeadForProvision] = React.useState<Lead | null>(null)
+  const provisionModalOpen = useProvisionStore((s) => s.isOpen)
+  const selectedLeadForProvision = useProvisionStore((s) => s.lead)
+  const openProvisionForLead = useProvisionStore((s) => s.openForLead)
+  const openProvisionNew = useProvisionStore((s) => s.openNew)
+  const closeProvision = useProvisionStore((s) => s.close)
 
   const [resetPwdModalOpen, setResetPwdModalOpen] = React.useState(false)
   const [resetPwdData, setResetPwdData] = React.useState<{
@@ -162,13 +166,11 @@ export function SuperAdminDashboardPage() {
 
   // Onboard Lead (pre-fills provision modal)
   const handleOnboardLead = (lead: Lead) => {
-    setSelectedLeadForProvision(lead)
-    setProvisionModalOpen(true)
+    openProvisionForLead(lead)
   }
 
   const handleOpenNewProvision = () => {
-    setSelectedLeadForProvision(null)
-    setProvisionModalOpen(true)
+    openProvisionNew()
   }
 
   // Filtered leads
@@ -239,15 +241,6 @@ export function SuperAdminDashboardPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Hidden button trigger for top bar provision action */}
-      <button
-        id="super-admin-provision-trigger"
-        type="button"
-        className="hidden"
-        onClick={handleOpenNewProvision}
-        aria-hidden="true"
-      />
-
       {/* ── 1. PLATFORM OVERVIEW TAB ────────────────────────────────────────── */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
@@ -1366,7 +1359,7 @@ export function SuperAdminDashboardPage() {
       {/* ── Provisioning Modal ────────────────────────────────────────────── */}
       <ProvisionRestaurantModal
         isOpen={provisionModalOpen}
-        onClose={() => setProvisionModalOpen(false)}
+        onClose={closeProvision}
         initialLead={selectedLeadForProvision}
         onSuccess={fetchData}
       />

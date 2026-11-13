@@ -1,6 +1,11 @@
 import * as React from 'react'
 import { Outlet, Navigate, useNavigate, useSearchParams } from 'react-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useProvisionStore } from './useProvisionStore'
+import { UserMenu, type MenuEntry } from '@/components/console/UserMenu'
+import { ConsoleOverlays } from '@/components/console/ConsoleOverlays'
+import { useConsoleUi } from '@/components/console/useConsoleUi'
+import type { CommandItem } from '@/components/console/types'
 import { PangatLogo } from '@/components/ui/PangatLogo'
 import {
   BarChart3,
@@ -14,8 +19,11 @@ import {
   Plus,
   Layers,
   ArrowUpRight,
-  Shield,
   CreditCard,
+  Search,
+  Keyboard,
+  Sparkles,
+  MessageSquareText,
 } from 'lucide-react'
 
 export const OPS_TABS = [
@@ -29,11 +37,21 @@ export const OPS_TABS = [
 
 export type OpsTabId = (typeof OPS_TABS)[number]['id']
 
+const SUPPORT_MAIL = 'mailto:hello@pangat.app?subject=Pangat%20ops%20console%20feedback'
+
+/** G then <key> go-to shortcuts for the platform console */
+const GO_KEYS: Record<string, OpsTabId> = { o: 'overview', l: 'leads', b: 'organizations', r: 'outlets', s: 'subscriptions', h: 'health' }
+const GO_LABEL: Record<string, string> = { overview: 'G O', leads: 'G L', organizations: 'G B', outlets: 'G R', subscriptions: 'G S', health: 'G H' }
+
 export function SuperAdminLayout() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const openProvisionNew = useProvisionStore((s) => s.openNew)
+  const setPalette = useConsoleUi((s) => s.setPalette)
+  const setShortcuts = useConsoleUi((s) => s.setShortcuts)
+  const setChangelog = useConsoleUi((s) => s.setChangelog)
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
@@ -63,6 +81,32 @@ export function SuperAdminLayout() {
     navigate('/login')
   }
 
+  const goTo: Record<string, () => void> = {}
+  Object.entries(GO_KEYS).forEach(([k, tab]) => {
+    goTo[k] = () => handleTabSelect(tab)
+  })
+  const menuEntries: MenuEntry[] = [
+    { label: 'System health', icon: Activity, shortcut: 'G H', onSelect: () => handleTabSelect('health') },
+    { label: 'Merchant portal', icon: Layers, onSelect: () => navigate('/admin/dashboard') },
+    { label: 'Keyboard shortcuts', icon: Keyboard, shortcut: '?', onSelect: () => setShortcuts(true), divider: true },
+    { label: 'What\u2019s new', icon: Sparkles, onSelect: () => setChangelog(true) },
+    { label: 'Send feedback', icon: MessageSquareText, href: SUPPORT_MAIL, divider: true },
+    { label: 'Sign out', icon: LogOut, danger: true, divider: true, onSelect: handleLogout },
+  ]
+  const commandItems: CommandItem[] = [
+    { id: 'provision', label: 'Provision a restaurant', group: 'Actions', icon: Plus, keywords: 'new onboard create brand', run: openProvisionNew },
+    ...OPS_TABS.map((t) => ({ id: t.id, label: t.label, group: 'Go to', icon: t.icon, shortcut: GO_LABEL[t.id], run: () => handleTabSelect(t.id) })),
+    { id: 'merchant', label: 'Open merchant portal', group: 'Go to', icon: Layers, keywords: 'admin dashboard', run: () => navigate('/admin/dashboard') },
+    { id: 'shortcuts', label: 'Keyboard shortcuts', group: 'Help', icon: Keyboard, shortcut: '?', run: () => setShortcuts(true) },
+    { id: 'changelog', label: 'What\u2019s new', group: 'Help', icon: Sparkles, keywords: 'changelog updates', run: () => setChangelog(true) },
+    { id: 'signout', label: 'Sign out', group: 'Account', icon: LogOut, run: handleLogout },
+  ]
+  const shortcutRows = [
+    { keys: 'Ctrl K', label: 'Open the command palette' },
+    { keys: '?', label: 'Show keyboard shortcuts' },
+    ...OPS_TABS.map((t) => ({ keys: GO_LABEL[t.id], label: `Go to ${t.label}` })),
+  ]
+
   return (
     <div className="min-h-dvh bg-zinc-50 dark:bg-[#050506] text-zinc-900 dark:text-zinc-100 flex font-sans selection:bg-emerald-400 selection:text-zinc-950 antialiased overflow-x-hidden relative">
       {/* ── Mobile Drawer Backdrop ────────────────────────────────────────── */}
@@ -76,7 +120,7 @@ export function SuperAdminLayout() {
 
       {/* ── High-Density Enterprise Operations Sidebar ─────────────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] md:static md:z-30 shrink-0 border-r border-zinc-200 dark:border-white/[0.07] bg-white dark:bg-[#09090b] flex flex-col justify-between transition-transform duration-200 ease-in-out md:transition-all select-none shadow-2xl md:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] md:static md:z-auto shrink-0 border-r border-zinc-200 dark:border-white/[0.07] bg-white dark:bg-[#09090b] flex flex-col justify-between transition-transform duration-200 ease-in-out md:transition-all select-none shadow-2xl md:shadow-none ${
           mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } ${sidebarCollapsed ? 'md:w-16' : 'md:w-64'}`}
       >
@@ -107,6 +151,26 @@ export function SuperAdminLayout() {
               <ChevronRight className="w-4 h-4" />
             ) : (
               <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+
+        {/* Quick search / command palette */}
+        <div className="px-3 pt-3">
+          <button
+            type="button"
+            onClick={() => setPalette(true)}
+            title="Search (Ctrl K)"
+            className={`group flex w-full items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-[13px] text-zinc-500 transition-colors hover:border-white/15 hover:bg-white/[0.06] hover:text-zinc-300 ${
+              sidebarCollapsed ? 'h-10 justify-center' : 'h-10 px-3'
+            }`}
+          >
+            <Search className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && (
+              <>
+                <span className="flex-1 text-left">Search or jump to\u2026</span>
+                <kbd className="rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] text-zinc-500 group-hover:text-zinc-400">Ctrl K</kbd>
+              </>
             )}
           </button>
         </div>
@@ -168,36 +232,15 @@ export function SuperAdminLayout() {
           </div>
         </div>
 
-        {/* Sidebar Footer: Admin profile & logout */}
-        <div className="p-3 border-t border-zinc-200 dark:border-white/[0.07] space-y-2">
-          <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center shrink-0">
-              {user.name?.charAt(0).toUpperCase() || 'A'}
-            </div>
-            {!sidebarCollapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-zinc-900 dark:text-white truncate">{user.name}</div>
-                <div className="text-[10px] text-emerald-600 dark:text-emerald-400/90 truncate flex items-center gap-1 font-semibold">
-                  <Shield className="w-2.5 h-2.5" />
-                  <span>PLATFORM SUPER ADMIN</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer ${
-                sidebarCollapsed ? 'justify-center' : ''
-              }`}
-              title="Sign out of operations console"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              {!sidebarCollapsed && <span>Sign Out</span>}
-            </button>
-          </div>
+        {/* Sidebar Footer: account menu */}
+        <div className="border-t border-zinc-200 p-2.5 dark:border-white/[0.07]">
+          <UserMenu
+            name={user.name}
+            email={user.email}
+            roleLabel="Platform super admin"
+            entries={menuEntries}
+            collapsed={sidebarCollapsed}
+          />
         </div>
       </aside>
 
@@ -234,10 +277,7 @@ export function SuperAdminLayout() {
 
             <button
               type="button"
-              onClick={() => {
-                const trigger = document.getElementById('super-admin-provision-trigger')
-                if (trigger) trigger.click()
-              }}
+              onClick={openProvisionNew}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-sm shadow-emerald-600/20 transition-colors cursor-pointer min-h-[36px]"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -252,6 +292,7 @@ export function SuperAdminLayout() {
           <Outlet />
         </main>
       </div>
+      <ConsoleOverlays items={commandItems} goTo={goTo} shortcutRows={shortcutRows} />
     </div>
   )
 }
