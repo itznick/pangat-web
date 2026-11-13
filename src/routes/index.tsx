@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { createBrowserRouter, Navigate } from "react-router"
+import { createBrowserRouter, Navigate, useLocation } from "react-router"
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary"
 
 const PageLoadingFallback = () => (
@@ -20,7 +20,14 @@ const Lazy = (Component: React.ComponentType) => (
 // Landing & Auth
 const LandingPage = lazy(() => import("@/features/landing").then((m) => ({ default: m.LandingPage })))
 const LoginPage = lazy(() => import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage })))
-const KdsPinLoginPage = lazy(() => import("@/features/auth/KdsPinLoginPage").then((m) => ({ default: m.KdsPinLoginPage })))
+
+// Kitchen PIN sign-in now lives on /login (Kitchen PIN tab). Keep old /kds-login links working.
+function KdsLoginRedirect() {
+  const { search } = useLocation()
+  const params = new URLSearchParams(search)
+  params.set("tab", "pin")
+  return <Navigate to={`/login?${params.toString()}`} replace />
+}
 
 // Super Admin
 const SuperAdminLayout = lazy(() => import("@/features/super-admin").then((m) => ({ default: m.SuperAdminLayout })))
@@ -63,7 +70,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/kds-login",
-    element: Lazy(KdsPinLoginPage),
+    element: <KdsLoginRedirect />,
     errorElement: <RouteErrorBoundary />,
   },
   {

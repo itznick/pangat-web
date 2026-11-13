@@ -113,7 +113,7 @@ export function Footer({ onOpenPilot }: FooterProps) {
             <button type="button" onClick={onOpenPilot}>Book a free trial</button>
             <a href={WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp us</a>
             <a href="/login">Owner sign in</a>
-            <a href="/kds-login">Kitchen sign in</a>
+            <a href="/login?tab=pin">Kitchen sign in</a>
           </FooterCol>
 
           <FooterCol title="Promise">
