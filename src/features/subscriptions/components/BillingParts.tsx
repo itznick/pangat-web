@@ -22,6 +22,7 @@ export function InvoicePill({ status }: { status: SubscriptionInvoice["status"] 
 
 /** Usage bar: green → amber from 80% (and at the limit) → rose only when over it. A limit of 0 means "unknown". */
 export function UsageMeter({ label, used, limit, unit = "" }: { label: string; used: number; limit: number; unit?: string }) {
+  const unlimited = limit < 0
   const known = limit > 0
   const pct = known ? Math.min(100, Math.round((used / limit) * 100)) : 0
   const tone = known && used > limit ? "bg-rose-400" : pct >= 80 ? "bg-amber-300" : "bg-emerald-400"
@@ -31,7 +32,7 @@ export function UsageMeter({ label, used, limit, unit = "" }: { label: string; u
         <span className="text-zinc-300">{label}</span>
         <span className="tabular-nums text-zinc-400">
           <span className="text-white">{used}</span>
-          {known ? ` / ${limit}` : ""} {unit}
+          {known ? ` / ${limit}` : unlimited ? " · Unlimited" : ""} {unit}
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]" role="progressbar" aria-valuenow={used} aria-valuemax={limit || undefined} aria-label={label}>

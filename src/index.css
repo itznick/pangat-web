@@ -680,3 +680,58 @@ html.dark {
 .console-glow nav[aria-label="breadcrumb"] {
   display: none;
 }
+
+/* ── Console data tables: one quiet, readable style everywhere ─────────────── */
+.console-glow table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.console-glow table thead th {
+  font-family: var(--font-sans) !important;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none !important;
+  color: #71717c !important;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.console-glow table thead tr {
+  background: transparent;
+  border: 0;
+}
+.console-glow table thead th:first-child {
+  border-top-left-radius: 0.9rem;
+}
+.console-glow table thead th:last-child {
+  border-top-right-radius: 0.9rem;
+}
+.console-glow table tbody tr {
+  background: transparent;
+  border: 0;
+  transition: background-color 0.2s ease;
+}
+.console-glow table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.console-glow table tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+.console-glow table tbody tr:last-child td {
+  border-bottom: 0;
+}
+/* the card that wraps a table clips the header's rounded corners */
+.console-glow div:has(> table),
+.console-glow div:has(> div > table) {
+  border-radius: inherit;
+}
+
+/* The shared <Table> wrapper becomes a card so tables read as one object */
+.console-glow div.relative.w-full.overflow-auto:has(> table) {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}

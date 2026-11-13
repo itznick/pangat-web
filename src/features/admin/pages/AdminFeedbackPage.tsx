@@ -1,361 +1,341 @@
-import { useState, useEffect, useMemo } from "react"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import * as React from "react"
+import { Check, Download, MessageSquareText, RefreshCw, Search, Star, X } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { api } from "@/lib/api"
-import type { CustomerFeedbackSummary } from "@/types/domain"
-import {
-  Star,
-  RefreshCw,
-  Search,
-  MessageSquare,
-  ThumbsUp,
-  Clock,
-  Sparkles,
-} from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { CustomerFeedbackSummary, CustomerReviewItem } from "@/types/domain"
 
-function timeAgo(dateInput: string | Date | undefined): string {
-  if (!dateInput) return "Recently"
-  const time = new Date(dateInput).getTime()
-  if (isNaN(time)) return "Recently"
-  const diff = Date.now() - time
-  const mins = Math.floor(diff / (1000 * 60))
-  if (mins < 1) return "Just now"
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+type Range = "7d" | "30d" | "all"
+type Sort = "newest" | "lowest" | "highest"
+const RANGE_MS: Record<Range, number> = { "7d": 7 * 864e5, "30d": 30 * 864e5, all: Infinity }
+const HANDLED_KEY = "pangat_feedback_handled"
+
+function timeAgo(d: string | Date | undefined) {
+  const t = d ? new Date(d).getTime() : NaN
+  if (isNaN(t)) return "Recently"
+  const m = Math.floor((Date.now() - t) / 60000)
+  if (m < 1) return "Just now"
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const days = Math.floor(h / 24)
+  return days < 30 ? `${days}d ago` : new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
 }
 
+function Stars({ value, size = 14 }: { value: number; size?: number }) {
+  return (
+    <span className="inline-flex gap-0.5" aria-label={`${value} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} style={{ width: size, height: size }} className={i <= Math.round(value) ? "fill-amber-300 text-amber-300" : "text-zinc-700"} />
+      ))}
+    </span>
+  )
+}
+
+/** Tables may arrive as "04" or "T04"; show both consistently. */
+const tcode = (t: string) => `T${String(t ?? "").replace(/^t/i, "")}`
+const tnum = (t: string) => String(t ?? "").replace(/^t/i, "")
+
+const avg = (rs: CustomerReviewItem[]) => (rs.length ? rs.reduce((s, r) => s + r.rating, 0) / rs.length : 0)
+
 export function AdminFeedbackPage() {
-  const currentOutlet = useAuthStore((s) => s.currentOutlet)
-  const outletSlug = currentOutlet?.slug || "pangat"
-
-  const [data, setData] = useState<CustomerFeedbackSummary | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [starFilter, setStarFilter] = useState<number | "all">("all")
-  const [searchTerm, setSearchTerm] = useState("")
-
-  const loadFeedback = async () => {
-    if (!outletSlug) return
-    setLoading(true)
+  const outlet = useAuthStore((s) => s.currentOutlet)
+  const slug = outlet?.slug || ""
+  const [data, setData] = React.useState<CustomerFeedbackSummary | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [refreshing, setRefreshing] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [range, setRange] = React.useState<Range>("30d")
+  const [star, setStar] = React.useState<number | null>(null)
+  const [tag, setTag] = React.useState<string | null>(null)
+  const [q, setQ] = React.useState("")
+  const [sort, setSort] = React.useState<Sort>("newest")
+  const [attentionOnly, setAttentionOnly] = React.useState(false)
+  const [handled, setHandled] = React.useState<Set<string>>(() => {
     try {
-      const res = await api.restaurants.getFeedback(outletSlug)
-      setData(res)
-    } catch (err) {
-      console.warn("Failed to fetch customer feedback:", err)
+      return new Set(JSON.parse(localStorage.getItem(HANDLED_KEY) || "[]"))
+    } catch {
+      return new Set()
+    }
+  })
+
+  const load = React.useCallback(async () => {
+    if (!slug) return
+    setError(null)
+    try {
+      setData(await api.restaurants.getFeedback(slug))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load feedback")
     } finally {
       setLoading(false)
-      setIsRefreshing(false)
+      setRefreshing(false)
+    }
+  }, [slug])
+
+  React.useEffect(() => {
+    setLoading(true)
+    void load()
+  }, [load])
+
+  const toggleHandled = (id: string) => {
+    const next = new Set(handled)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setHandled(next)
+    try {
+      localStorage.setItem(HANDLED_KEY, JSON.stringify([...next].slice(-500)))
+    } catch {
+      /* ignore */
     }
   }
 
-  useEffect(() => {
-    loadFeedback()
-  }, [outletSlug])
+  const all = data?.recentReviews ?? []
+  const inRange = React.useMemo(() => all.filter((r) => Date.now() - new Date(r.createdAt).getTime() <= RANGE_MS[range]), [all, range])
 
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    loadFeedback()
+  // Period summary is computed from the reviews in range so the filters and the numbers agree
+  const total = inRange.length
+  const mean = avg(inRange)
+  const breakdown = [5, 4, 3, 2, 1].map((n) => ({ n, c: inRange.filter((r) => Math.round(r.rating) === n).length }))
+  const positive = breakdown[0].c + breakdown[1].c
+  const negative = breakdown[3].c + breakdown[4].c
+  const neutral = total - positive - negative
+  const csat = total ? Math.round((positive / total) * 100) : 0
+  const attention = inRange.filter((r) => r.rating <= 2 && !handled.has(r.id))
+
+  // Trend vs the previous period of the same length (only for bounded ranges)
+  const trend = React.useMemo(() => {
+    if (range === "all") return null
+    const span = RANGE_MS[range]
+    const prev = all.filter((r) => {
+      const age = Date.now() - new Date(r.createdAt).getTime()
+      return age > span && age <= span * 2
+    })
+    return prev.length >= 3 && total >= 3 ? mean - avg(prev) : null
+  }, [all, range, total, mean])
+
+  const tags = React.useMemo(() => {
+    const m = new Map<string, number>()
+    inRange.forEach((r) => r.tags?.forEach((t) => m.set(t, (m.get(t) || 0) + 1)))
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12)
+  }, [inRange])
+
+  const feed = React.useMemo(() => {
+    const term = q.trim().toLowerCase()
+    return inRange
+      .filter((r) => (star === null || Math.round(r.rating) === star) && (!tag || r.tags?.includes(tag)) && (!attentionOnly || (r.rating <= 2 && !handled.has(r.id))))
+      .filter((r) => !term || r.tableNumber?.toLowerCase().includes(term) || r.comment?.toLowerCase().includes(term) || r.tags?.some((t) => t.toLowerCase().includes(term)))
+      .sort((a, b) =>
+        sort === "lowest" ? a.rating - b.rating : sort === "highest" ? b.rating - a.rating : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+  }, [inRange, star, tag, q, sort, attentionOnly, handled])
+
+  const exportCsv = () => {
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
+    const rows = [["Date", "Table", "Rating", "Tags", "Comment"], ...feed.map((r) => [new Date(r.createdAt).toISOString(), r.tableNumber, String(r.rating), (r.tags || []).join("; "), r.comment || ""])]
+    const blob = new Blob([rows.map((r) => r.map(esc).join(",")).join("\n")], { type: "text/csv" })
+    const a = document.createElement("a")
+    a.href = URL.createObjectURL(blob)
+    a.download = `feedback-${slug || "outlet"}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
-  const averageRating = data?.averageRating || 0
-  const totalCount = data?.totalCount || 0
-  const ratingBreakdown = data?.ratingBreakdown || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
-  const tagCounts = data?.tagCounts || {}
-  const recentReviews = data?.recentReviews || []
-
-  // Filter reviews
-  const filteredReviews = useMemo(() => {
-    return recentReviews.filter((r) => {
-      const matchStar = starFilter === "all" || Math.round(r.rating) === starFilter
-      const term = searchTerm.toLowerCase().trim()
-      const matchSearch =
-        !term ||
-        r.tableNumber?.toLowerCase().includes(term) ||
-        r.comment?.toLowerCase().includes(term) ||
-        r.tags?.some((t) => t.toLowerCase().includes(term))
-      return matchStar && matchSearch
-    })
-  }, [recentReviews, starFilter, searchTerm])
-
-  const positiveReviews =
-    (ratingBreakdown[5] || 0) + (ratingBreakdown[4] || 0)
-  const satisfactionRate =
-    totalCount > 0 ? Math.round((positiveReviews / totalCount) * 100) : 0
+  const filtersOn = star !== null || tag !== null || q !== "" || attentionOnly
 
   return (
-    <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {/* ── Page Header ───────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
+    <div className="lp mx-auto w-full max-w-[1180px] !bg-transparent px-4 pb-16 pt-8 sm:px-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink className="text-zinc-400">Admin</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage className="text-zinc-900 dark:text-zinc-100 font-medium">
-                  Feedback & Ratings
-                </BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="flex items-center gap-2 mt-1">
-            <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Customer Feedback & Ratings</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-semibold">
-              Live Diner Sentiment
-            </span>
-          </div>
+          <h1 className="text-[1.75rem]">Feedback & ratings</h1>
+          <p className="mt-1.5 text-sm text-zinc-500">What guests say right after they pay, at {outlet?.name || "your outlet"}.</p>
         </div>
-
-        <button
-          onClick={handleRefresh}
-          disabled={loading || isRefreshing}
-          className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer shadow-xs min-h-[36px] sm:min-h-0 w-full sm:w-auto"
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin text-amber-500")} />
-          <span>Refresh</span>
-        </button>
-      </div>
-
-      <div className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
-        {/* ── Top Summary Grid ─────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 1. Average Rating Card */}
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 p-5 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Overall Average Score
-              </span>
-              <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                <Star className="w-4 h-4 fill-amber-400" />
-              </span>
-            </div>
-
-            <div className="my-3 flex items-baseline gap-3">
-              <span className="text-4xl font-bold font-mono text-zinc-900 dark:text-white tracking-tight">
-                {totalCount > 0 ? averageRating.toFixed(1) : "–"}
-              </span>
-              <div>
-                <div className="flex items-center gap-0.5 text-amber-400">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "h-4 w-4",
-                        totalCount > 0 && i < Math.round(averageRating) ? "fill-amber-400 text-amber-400" : "text-zinc-300 dark:text-zinc-700"
-                      )}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {totalCount > 0 ? `Based on ${totalCount} verified diner rating${totalCount === 1 ? "" : "s"}` : "No diner ratings yet"}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
-              <span>Customer Satisfaction</span>
-              <span className={cn("font-bold", totalCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500")}>
-                {totalCount > 0 ? `${satisfactionRate}% Positive` : "–"}
-              </span>
-            </div>
-          </div>
-
-          {/* 2. Rating Breakdown Bars */}
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 p-5 flex flex-col justify-between shadow-xs">
-            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 block">
-              Rating Distribution
-            </span>
-
-            <div className="space-y-1.5">
-              {[5, 4, 3, 2, 1].map((star) => {
-                const count = ratingBreakdown[star] || 0
-                const pct = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0
-                return (
-                  <div key={star} className="flex items-center gap-2 text-xs">
-                    <span className="w-6 font-mono text-zinc-500 flex items-center gap-0.5">
-                      <span>{star}</span>
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    </span>
-                    <div className="flex-1 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="w-8 text-right font-mono text-zinc-400 text-[10px]">
-                      {count}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* 3. Quick Tag Pill Highlights */}
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 p-5 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Top Diner Highlights
-              </span>
-              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-
-            <div className="flex flex-wrap gap-2 py-1">
-              {Object.keys(tagCounts).length > 0 ? (
-                Object.entries(tagCounts).map(([tag, count]) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200"
-                  >
-                    <ThumbsUp className="w-3 h-3 text-amber-500" />
-                    <span>{tag}</span>
-                    <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold">
-                      ×{count}
-                    </span>
-                  </span>
-                ))
-              ) : (
-                <p className="text-xs text-zinc-500 italic py-1">No feedback tags received yet.</p>
-              )}
-            </div>
-
-            <p className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-[11px] text-zinc-500">
-              Aggregated from real-time customer 1-tap feedback
-            </p>
-          </div>
-        </div>
-
-        {/* ── Search & Filter Strip ────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900/40 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 shadow-xs">
-          {/* Star Filter Buttons */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {(["all", 5, 4, 3, 2, 1] as const).map((star) => (
-              <button
-                key={String(star)}
-                onClick={() => setStarFilter(star)}
-                className={cn(
-                  "px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0",
-                  starFilter === star
-                    ? "bg-amber-500/10 dark:bg-amber-500/20 border-amber-500/40 text-amber-700 dark:text-amber-300 shadow-xs"
-                    : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700"
-                )}
-              >
-                {star === "all" ? (
-                  "All Reviews"
-                ) : (
-                  <>
-                    <span>{star}</span>
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                  </>
-                )}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-full border border-white/10 bg-white/[0.04] p-1 text-[13px]" role="group" aria-label="Time range">
+            {(["7d", "30d", "all"] as const).map((r) => (
+              <button key={r} onClick={() => setRange(r)} aria-pressed={range === r} className={cn("rounded-full px-3.5 py-1.5 transition-colors", range === r ? "bg-white text-zinc-950" : "text-zinc-400 hover:text-white")}>
+                {r === "all" ? "All time" : r === "7d" ? "7 days" : "30 days"}
               </button>
             ))}
           </div>
-
-          {/* Search box */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Filter by table or comment..."
-              className="w-full pl-9 pr-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-amber-400/60"
-            />
-          </div>
-        </div>
-
-        {/* ── Chronological Reviews Feed ───────────────────────────────────────── */}
-        <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
-            Customer Reviews & Diner Comments ({filteredReviews.length})
-          </h2>
-
-          {filteredReviews.length === 0 ? (
-            <div className="py-16 text-center rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-8 space-y-2 shadow-xs">
-              <MessageSquare className="w-8 h-8 text-zinc-400 dark:text-zinc-600 mx-auto" />
-              <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-300">No reviews found</p>
-              <p className="text-xs text-zinc-500">
-                {searchTerm || starFilter !== "all"
-                  ? "Try adjusting your filter or search query."
-                  : "When diners submit feedback from their live tracking screen, their ratings and comments will appear here."}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {filteredReviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/90 p-4 space-y-3 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700/80 transition-colors"
-                >
-                  {/* Review Top Row */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-mono font-bold text-xs text-zinc-900 dark:text-white">
-                        Table {review.tableNumber}
-                      </span>
-                      <div className="flex items-center gap-0.5 text-amber-400">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              i < review.rating ? "fill-amber-400 text-amber-400" : "text-zinc-300 dark:text-zinc-700"
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 text-[11px] text-zinc-500 shrink-0 font-sans">
-                      <Clock className="w-3 h-3" />
-                      <span>{timeAgo(review.createdAt)}</span>
-                    </div>
-                  </div>
-
-                  {/* Customer Written Comment */}
-                  {review.comment ? (
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-950/70 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-sans">
-                      &ldquo;{review.comment}&rdquo;
-                    </div>
-                  ) : (
-                    <div className="text-xs text-zinc-500 italic">
-                      No written comment left by diner.
-                    </div>
-                  )}
-
-                  {/* Selected Tags */}
-                  {review.tags && review.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {review.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-medium"
-                        >
-                          ✓ {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <button onClick={exportCsv} disabled={feed.length === 0} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-40">
+            <Download className="h-3.5 w-3.5" /> Export
+          </button>
+          <button onClick={() => { setRefreshing(true); void load() }} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06]">
+            <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} /> Refresh
+          </button>
         </div>
       </div>
+
+      {error && !data ? (
+        <div className="mx-auto mt-16 max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center">
+          <p className="text-zinc-300">We couldn’t load feedback.</p>
+          <p className="mt-2 break-words font-mono text-xs text-zinc-500">{error}</p>
+          <button onClick={() => { setLoading(true); void load() }} className="lp-btn lp-btn-ghost mt-5 !h-10 !px-5 !text-sm">Try again</button>
+        </div>
+      ) : loading && !data ? (
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-white/[0.03]" />)}
+        </div>
+      ) : (
+        <>
+          {/* Stat band */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="console-card rounded-2xl p-5">
+              <p className="text-[13px] text-zinc-500">Average rating</p>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="lp-display text-[2.6rem] tabular-nums text-white">{total ? mean.toFixed(1) : "–"}</span>
+                <span className="text-sm text-zinc-600">/ 5</span>
+              </div>
+              <div className="mt-1 flex items-center gap-2">
+                <Stars value={mean} />
+                {trend !== null && Math.abs(trend) >= 0.05 && (
+                  <span className={cn("text-xs font-medium", trend > 0 ? "text-emerald-300" : "text-rose-300")}>
+                    {trend > 0 ? "▲" : "▼"} {Math.abs(trend).toFixed(1)} vs previous
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="console-card rounded-2xl p-5">
+              <p className="text-[13px] text-zinc-500">Reviews</p>
+              <p className="lp-display mt-2 text-[2.6rem] tabular-nums text-white">{total}</p>
+              <p className="mt-1 text-xs text-zinc-600">{range === "all" ? "All time" : `Last ${range === "7d" ? "7" : "30"} days`} · {data?.totalCount ?? 0} ever</p>
+            </div>
+            <div className="console-card rounded-2xl p-5">
+              <p className="text-[13px] text-zinc-500">Guest satisfaction</p>
+              <p className="lp-display mt-2 text-[2.6rem] tabular-nums text-white">{total ? `${csat}%` : "–"}</p>
+              <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/[0.07]" aria-hidden>
+                <span className="bg-emerald-400" style={{ width: `${total ? (positive / total) * 100 : 0}%` }} />
+                <span className="bg-zinc-500" style={{ width: `${total ? (neutral / total) * 100 : 0}%` }} />
+                <span className="bg-rose-400" style={{ width: `${total ? (negative / total) * 100 : 0}%` }} />
+              </div>
+              <p className="mt-1.5 text-xs text-zinc-600">{positive} happy · {neutral} neutral · {negative} unhappy</p>
+            </div>
+            <button
+              onClick={() => setAttentionOnly((v) => !v)}
+              aria-pressed={attentionOnly}
+              className={cn("console-card rounded-2xl p-5 text-left transition-colors", attention.length > 0 && "!border-amber-300/30", attentionOnly && "ring-1 ring-amber-300/50")}
+            >
+              <p className="text-[13px] text-zinc-500">Needs follow-up</p>
+              <p className={cn("lp-display mt-2 text-[2.6rem] tabular-nums", attention.length ? "text-amber-200" : "text-white")}>{attention.length}</p>
+              <p className="mt-1 text-xs text-zinc-600">{attention.length ? "Low ratings not yet marked handled" : "No unhappy guests waiting"}</p>
+            </button>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+            {/* Insights */}
+            <aside className="space-y-6">
+              <section className="console-card rounded-2xl p-5">
+                <h2 className="font-heading text-base font-semibold text-white">Rating breakdown</h2>
+                <div className="mt-4 space-y-2">
+                  {breakdown.map(({ n, c }) => {
+                    const on = star === n
+                    return (
+                      <button key={n} onClick={() => setStar(on ? null : n)} aria-pressed={on} className={cn("group flex w-full items-center gap-3 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-white/[0.04]", on && "bg-white/[0.06]")}>
+                        <span className="flex w-7 items-center gap-1 text-[13px] text-zinc-300">{n}<Star className="h-3 w-3 fill-amber-300 text-amber-300" /></span>
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.07]">
+                          <span className={cn("block h-full rounded-full", n >= 4 ? "bg-emerald-400" : n === 3 ? "bg-zinc-400" : "bg-rose-400")} style={{ width: `${total ? (c / total) * 100 : 0}%` }} />
+                        </span>
+                        <span className="w-7 text-right text-xs tabular-nums text-zinc-500">{c}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+
+              <section className="console-card rounded-2xl p-5">
+                <h2 className="font-heading text-base font-semibold text-white">What guests mention</h2>
+                {tags.length === 0 ? (
+                  <p className="mt-3 text-sm text-zinc-500">Guests haven’t tagged anything in this period.</p>
+                ) : (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {tags.map(([t, c]) => (
+                      <button key={t} onClick={() => setTag(tag === t ? null : t)} aria-pressed={tag === t} className={cn("rounded-full border px-3 py-1 text-[13px] transition-colors", tag === t ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-white/10 text-zinc-300 hover:bg-white/[0.06]")}>
+                        {t} <span className="ml-1 text-xs text-zinc-500">{c}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </aside>
+
+            {/* Feed */}
+            <section>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative min-w-[200px] flex-1">
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search comments, tags or table…" aria-label="Search reviews" className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.04] pl-10 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-emerald-400/50" />
+                </div>
+                <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort reviews" className="h-10 rounded-xl border border-white/10 bg-[#0c0c0f] px-3 text-sm text-zinc-300 outline-none">
+                  <option value="newest">Newest first</option>
+                  <option value="lowest">Lowest rating</option>
+                  <option value="highest">Highest rating</option>
+                </select>
+              </div>
+
+              {filtersOn && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-zinc-500">Filters:</span>
+                  {star !== null && <Chip onClear={() => setStar(null)}>{star}★</Chip>}
+                  {tag && <Chip onClear={() => setTag(null)}>{tag}</Chip>}
+                  {attentionOnly && <Chip onClear={() => setAttentionOnly(false)}>Needs follow-up</Chip>}
+                  {q && <Chip onClear={() => setQ("")}>“{q}”</Chip>}
+                  <button onClick={() => { setStar(null); setTag(null); setQ(""); setAttentionOnly(false) }} className="text-zinc-500 underline-offset-4 hover:text-white hover:underline">Clear all</button>
+                </div>
+              )}
+
+              <p className="mb-3 mt-4 text-[13px] text-zinc-500">{feed.length} {feed.length === 1 ? "review" : "reviews"}</p>
+
+              {feed.length === 0 ? (
+                <div className="console-card rounded-2xl px-6 py-16 text-center">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.05] text-zinc-500"><MessageSquareText className="h-5 w-5" /></span>
+                  <p className="mt-4 text-sm font-medium text-white">{all.length === 0 ? "No feedback yet" : "No reviews match these filters"}</p>
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">{all.length === 0 ? "Guests are asked to rate their visit right after they pay. Reviews will appear here." : "Try a different range or clear the filters."}</p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {feed.map((r) => {
+                    const low = r.rating <= 2
+                    const done = handled.has(r.id)
+                    return (
+                      <li key={r.id} className={cn("console-card rounded-2xl p-5", low && !done && "!border-amber-300/25")}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-semibold text-zinc-200">{tcode(r.tableNumber)}</span>
+                            <div>
+                              <Stars value={r.rating} />
+                              <p className="mt-0.5 text-xs text-zinc-500">Table {tnum(r.tableNumber)} · {timeAgo(r.createdAt)}</p>
+                            </div>
+                          </div>
+                          {low && (
+                            <button onClick={() => toggleHandled(r.id)} className={cn("flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors", done ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-amber-300/30 text-amber-200 hover:bg-amber-300/10")}>
+                              {done ? <><Check className="h-3 w-3" strokeWidth={3} /> Handled</> : "Mark handled"}
+                            </button>
+                          )}
+                        </div>
+                        {r.comment ? <p className="mt-4 text-[15px] leading-relaxed text-zinc-200">“{r.comment}”</p> : <p className="mt-4 text-sm italic text-zinc-600">No written comment</p>}
+                        {r.tags?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {r.tags.map((t) => <span key={t} className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-zinc-400">{t}</span>)}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </section>
+          </div>
+        </>
+      )}
     </div>
+  )
+}
+
+function Chip({ children, onClear }: { children: React.ReactNode; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.05] py-0.5 pl-2.5 pr-1 text-zinc-300">
+      {children}
+      <button onClick={onClear} aria-label="Remove filter" className="rounded-full p-0.5 text-zinc-500 hover:bg-white/10 hover:text-white"><X className="h-3 w-3" /></button>
+    </span>
   )
 }

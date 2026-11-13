@@ -373,7 +373,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
                       <Field label="Business name" error={show('brandName')}>
                         <input autoFocus className={field} value={f.brandName} onChange={(e) => onBrand(e.target.value)} onBlur={blur('brandName')} placeholder="Roast & Toast Cafe" />
                       </Field>
-                      <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <Field label="Owner's full name" error={show('ownerFullName')}>
                           <input className={field} value={f.ownerFullName} onChange={(e) => set('ownerFullName', e.target.value)} onBlur={blur('ownerFullName')} placeholder="Rohan Deshmukh" autoComplete="off" />
                         </Field>
@@ -421,7 +421,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
                       <Field label="UPI ID for settlements" error={show('upiVpa')} hint="Guests pay this ID directly. Pangat takes no commission.">
                         <input className={`${field} font-mono`} value={f.upiVpa} onChange={(e) => set('upiVpa', e.target.value)} onBlur={blur('upiVpa')} placeholder="roasttoast@icici" autoCapitalize="none" />
                       </Field>
-                      <div className="grid gap-5 sm:grid-cols-[1fr_140px]">
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_140px]">
                         <Field label="GSTIN" optional error={show('gstin')}>
                           <input className={`${field} font-mono uppercase`} value={f.gstin} onChange={(e) => set('gstin', e.target.value.toUpperCase())} onBlur={blur('gstin')} placeholder="27AAAAA0000A1Z5" maxLength={15} />
                         </Field>
@@ -434,7 +434,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
 
                   {step === 2 && (
                     <>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <Counter label="Indoor tables" prefix="T" value={f.indoor} min={1} max={40} onChange={(v) => set('indoor', v)} />
                         <Counter label="Outdoor tables" prefix="OD" value={f.outdoor} min={0} max={20} onChange={(v) => set('outdoor', v)} />
                       </div>
@@ -655,7 +655,7 @@ function Success({
       </div>
       <p className="mt-2 text-xs text-zinc-600">The password is shown once. Ask the owner to change it after signing in.</p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <a href={waHref} target="_blank" rel="noreferrer" className="lp-btn lp-btn-primary !h-12">
           <Send className="h-4 w-4" /> Send on WhatsApp
         </a>
@@ -664,7 +664,7 @@ function Success({
         </button>
       </div>
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {[
           { href: `/r/${result.outlet.slug}/t/T01`, icon: QrCode, title: 'Open guest menu', sub: 'Table T01 preview' },
           { href: `/kds/${result.outlet.slug}`, icon: Utensils, title: 'Open kitchen display', sub: 'Live ticket screen' },

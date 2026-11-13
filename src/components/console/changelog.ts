@@ -9,6 +9,10 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "13 Nov 2026",
     title: "A calmer console",
     items: [
+      "Settings grew up: pause ordering, opening hours, order types, payment methods, GST and receipts",
+      "Feedback & ratings rebuilt with trends, filters, follow-up tracking and CSV export",
+      "Table QR cards: new design, tent or sticker, light or dark, print one or the whole floor",
+      "Billing now loads on every account and shows plan limits and features in plain words",
       "New top bar with global search and live notifications",
       "Plan & billing rebuilt: usage, plans, GST invoices and a quick billing view",
       "Settings and billing open as modals from your account menu",

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react"
 import { useParams, useNavigate } from "react-router"
-import { Search, X, ChefHat, ArrowRight } from "lucide-react"
+import { Search, X, ChefHat, ArrowRight, Clock } from "lucide-react"
 import { DinerTopBar } from "./components/DinerTopBar"
 import { CategoryNav } from "./components/CategoryNav"
 import { MenuItemCard } from "./components/MenuItemCard"
@@ -122,7 +122,13 @@ export function DinerMenuPage() {
     return groups
   }, [filteredItems, activeCategoryId, searchQuery, categoryNameMap])
 
+  // The outlet's live operating state: paused by the owner, or outside opening hours
+  const ordering = restaurant.ordering
+  const orderingClosed = ordering ? !ordering.accepting : false
+  const prepMinutes = restaurant.operations?.avgPrepMinutes
+
   const handleAddItem = (item: MenuItem) => {
+    if (orderingClosed) return
     if (item.modifiers.length === 0) {
       addItem({
         menuItemId: item.id,
@@ -226,6 +232,20 @@ export function DinerMenuPage() {
           tableId={tableId || (activeOrder?.tableNumber ?? "Takeaway")}
         />
 
+        {orderingClosed ? (
+          <div role="status" className="mx-4 mt-3 flex items-start gap-3 rounded-2xl border border-amber-300/25 bg-amber-300/[0.07] p-3.5">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-300/15 text-amber-200">
+              <Clock className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-amber-100">{ordering?.reason === "closed" ? "We’re closed right now" : "Ordering is paused"}</p>
+              <p className="mt-0.5 text-[13px] leading-snug text-amber-100/70">{ordering?.message}</p>
+            </div>
+          </div>
+        ) : (
+          prepMinutes ? <p className="mx-4 mt-3 flex items-center gap-1.5 text-xs text-zinc-500"><Clock className="h-3.5 w-3.5" /> Usually ready in about {prepMinutes} min</p> : null
+        )}
+
         {/* In-flight Active Order Reminder Banner (Session Persistence) */}
         {hasInFlightOrder && (
           <div className="mx-4 mt-3 p-3 rounded-xl bg-gradient-to-r from-emerald-950/80 to-zinc-900 border border-emerald-500/40 flex items-center justify-between shadow-lg">
@@ -315,6 +335,7 @@ export function DinerMenuPage() {
                       key={item.id}
                       item={item}
                       isOutOfStock={outOfStockIds.has(item.id)}
+                      orderingClosed={orderingClosed}
                       onAdd={handleAddItem}
                     />
                   ))}
@@ -328,6 +349,7 @@ export function DinerMenuPage() {
                   key={item.id}
                   item={item}
                   isOutOfStock={outOfStockIds.has(item.id)}
+                  orderingClosed={orderingClosed}
                   onAdd={handleAddItem}
                 />
               ))}
@@ -376,6 +398,8 @@ export function DinerMenuPage() {
           tableId={tableId}
           isSubmitting={isSubmittingOrder}
           errorMessage={orderError}
+          operations={restaurant.operations}
+          gstPercentage={restaurant.gstPercentage}
           onProceedToPay={handleProceedToPay}
         />
 

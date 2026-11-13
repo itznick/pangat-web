@@ -10,6 +10,20 @@ export const inr = (n: number | undefined | null, decimals = 0) =>
 export const fmtDate = (d?: string | null, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }) =>
   d ? new Date(d).toLocaleDateString("en-IN", opts) : "—"
 
+export const FEATURE_LABELS: Record<string, string> = {
+  QR_ORDERING: "QR table ordering & UPI payments",
+  KDS: "Live kitchen display",
+  INVENTORY: "Inventory & recipes",
+  ANALYTICS: "Sales analytics",
+  MULTI_OUTLET: "Multi-outlet management",
+  ADVANCED_REPORTS: "Advanced reports",
+}
+/** The API stores entitlements as codes (QR_ORDERING); show people words. */
+export const featureLabel = (code: string) =>
+  FEATURE_LABELS[code] ?? code.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase())
+/** Plan limits use -1 for "unlimited". */
+export const limitValue = (n: number) => (n < 0 ? "Unlimited" : String(n))
+
 export const SUPPORT_WHATSAPP = (msg: string) => `https://wa.me/919890000000?text=${encodeURIComponent(msg)}`
 
 type Tone = "good" | "warn" | "bad" | "muted"
@@ -57,6 +71,8 @@ function fetchBilling(force: boolean): Promise<BillingSnapshot> {
 export interface Billing {
   loading: boolean
   failed: boolean
+  /** Why loading failed, in plain words (shown with the retry button) */
+  error: string | null
   refresh: () => void
   details: SubscriptionDetailsResponse | null
   plan?: SubscriptionPlan
@@ -76,18 +92,21 @@ export function useBilling(): Billing {
   const [plans, setPlans] = React.useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = React.useState(true)
   const [failed, setFailed] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
   const tables = useAdminStore((s) => s.tables)
   const outlets = useAuthStore((s) => s.outlets)
 
   const load = React.useCallback(async (force = false) => {
     setLoading(true)
     setFailed(false)
+    setError(null)
     try {
       const { mine, all } = await fetchBilling(force)
       setDetails(mine)
       setPlans(all)
-    } catch {
+    } catch (e) {
       setFailed(true)
+      setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
       setLoading(false)
     }
@@ -105,6 +124,7 @@ export function useBilling(): Billing {
   return {
     loading,
     failed,
+    error,
     refresh: () => void load(true),
     details,
     plan,

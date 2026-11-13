@@ -58,6 +58,7 @@ export function BillingModal() {
           ) : b.failed || !plan ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8 text-center">
               <p className="text-sm text-zinc-300">We couldn’t load your subscription.</p>
+              {b.error && <p className="mx-auto mt-2 max-w-sm break-words font-mono text-xs text-zinc-500">{b.error}</p>}
               <button onClick={b.refresh} className="lp-btn lp-btn-ghost mt-4 !h-10 !px-4 !text-sm">
                 <RefreshCw className="h-4 w-4" /> Try again
               </button>

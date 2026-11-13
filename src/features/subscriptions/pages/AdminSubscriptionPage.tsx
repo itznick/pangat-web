@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores/useAuthStore"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useConsoleUi } from "@/components/console/useConsoleUi"
 import { cn } from "@/lib/utils"
-import { fmtDate, inr, STATUS_META, SUPPORT_WHATSAPP, TONE_CLASS, useBilling } from "../billing"
+import { featureLabel, fmtDate, inr, limitValue, STATUS_META, SUPPORT_WHATSAPP, TONE_CLASS, useBilling } from "../billing"
 import { InvoicePill, Row, StatusPill, UsageMeter } from "../components/BillingParts"
 import type { SubscriptionPlan } from "@/types/domain"
 
@@ -76,13 +76,14 @@ export function AdminSubscriptionPage() {
       ) : b.failed || !plan ? (
         <div className="mx-auto mt-16 max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center">
           <p className="text-zinc-300">We couldn’t load your subscription right now.</p>
+          {b.error && <p className="mx-auto mt-2 break-words font-mono text-xs text-zinc-500">{b.error}</p>}
           <button onClick={b.refresh} className="lp-btn lp-btn-ghost mt-5 !h-10 !px-5 !text-sm">Try again</button>
         </div>
       ) : (
         <div className="mt-8">
           {/* ───────────── Overview ───────────── */}
           {tab === "overview" && (
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
               <div className="space-y-5">
                 <section className="console-card overflow-hidden rounded-2xl p-6 sm:p-7">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -94,7 +95,7 @@ export function AdminSubscriptionPage() {
                     <StatusPill status={b.status} />
                   </div>
 
-                  <div className="mt-7 grid gap-6 sm:grid-cols-3">
+                  <div className="mt-7 grid grid-cols-1 gap-6 sm:grid-cols-3">
                     <div>
                       <p className="text-xs text-zinc-500">Price</p>
                       <p className="mt-1 text-xl font-semibold tabular-nums text-white">
@@ -140,11 +141,11 @@ export function AdminSubscriptionPage() {
 
                 <section className="console-card rounded-2xl p-6 sm:p-7">
                   <h2 className="font-heading text-lg font-semibold text-white">Included in {plan.name}</h2>
-                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-start gap-3 text-sm text-zinc-300">
                         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/12 text-emerald-300"><Check className="h-3 w-3" strokeWidth={3} /></span>
-                        {f}
+                        {featureLabel(f)}
                       </li>
                     ))}
                   </ul>
@@ -197,7 +198,7 @@ export function AdminSubscriptionPage() {
               {visiblePlans.length === 0 ? (
                 <p className="rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center text-sm text-zinc-500">No {interval.toLowerCase()} plans are available right now.</p>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {visiblePlans.map((p) => (
                     <PlanCard key={p.id} p={p} current={p.id === plan.id} onChoose={() => ask(`I'd like to move to the ${p.name} plan (${inr(p.pricing?.totalPayable ?? p.basePrice, 2)} incl. GST).`)} />
                   ))}
@@ -215,11 +216,11 @@ export function AdminSubscriptionPage() {
                     </thead>
                     <tbody className="divide-y divide-white/[0.05] text-zinc-300">
                       <tr><td className="px-5 py-3.5 text-zinc-500">Price (excl. GST)</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5 tabular-nums">{inr(p.basePrice)}</td>)}</tr>
-                      <tr><td className="px-5 py-3.5 text-zinc-500">Outlets</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{p.maxOutlets}</td>)}</tr>
-                      <tr><td className="px-5 py-3.5 text-zinc-500">Tables per outlet</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{p.maxTablesPerOutlet}</td>)}</tr>
+                      <tr><td className="px-5 py-3.5 text-zinc-500">Outlets</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{limitValue(p.maxOutlets)}</td>)}</tr>
+                      <tr><td className="px-5 py-3.5 text-zinc-500">Tables per outlet</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{limitValue(p.maxTablesPerOutlet)}</td>)}</tr>
                       {[...new Set(visiblePlans.flatMap((p) => p.features))].map((f) => (
                         <tr key={f}>
-                          <td className="px-5 py-3.5 text-zinc-500">{f}</td>
+                          <td className="px-5 py-3.5 text-zinc-500">{featureLabel(f)}</td>
                           {visiblePlans.map((p) => (
                             <td key={p.id} className="px-5 py-3.5">{p.features.includes(f) ? <Check className="h-4 w-4 text-emerald-300" strokeWidth={3} /> : <span className="text-zinc-700">—</span>}</td>
                           ))}
@@ -304,9 +305,9 @@ function PlanCard({ p, current, onChoose }: { p: SubscriptionPlan; current: bool
         {current ? "Your plan" : "Choose plan"}
       </button>
       <ul className="mt-6 space-y-2.5 border-t border-white/[0.07] pt-5 text-sm text-zinc-300">
-        <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" strokeWidth={3} />{p.maxOutlets} outlet{p.maxOutlets > 1 ? "s" : ""}, {p.maxTablesPerOutlet} tables each</li>
+        <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" strokeWidth={3} />{limitValue(p.maxOutlets)} outlet{p.maxOutlets === 1 ? "" : "s"}, {limitValue(p.maxTablesPerOutlet).toLowerCase()} tables each</li>
         {p.features.map((f) => (
-          <li key={f} className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" strokeWidth={3} />{f}</li>
+          <li key={f} className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" strokeWidth={3} />{featureLabel(f)}</li>
         ))}
       </ul>
     </div>

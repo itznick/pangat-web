@@ -25,7 +25,8 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/stores/useCartStore"
 import { cn } from "@/lib/utils"
-import type { PaymentMethod, OrderType } from "@/types/domain"
+import type { PaymentMethod, OrderType, OutletOperations } from "@/types/domain"
+import { resolveOps } from "@/features/admin/settings/operations"
 
 interface CheckoutDrawerProps {
   open: boolean
@@ -33,6 +34,10 @@ interface CheckoutDrawerProps {
   tableId?: string
   isSubmitting?: boolean
   errorMessage?: string | null
+  /** The outlet's operating rules: which order types and payment methods to offer */
+  operations?: Partial<OutletOperations> | null
+  /** The outlet's GST rate, so the bill shown matches what the server charges */
+  gstPercentage?: number
   onProceedToPay: (data: {
     mobile?: string
     paymentMethod: PaymentMethod
@@ -50,8 +55,11 @@ export function CheckoutDrawer({
   tableId,
   isSubmitting = false,
   errorMessage = null,
+  operations = null,
+  gstPercentage = 5,
   onProceedToPay,
 }: CheckoutDrawerProps) {
+  const ops = resolveOps(operations)
   const [orderType, setOrderType] = useState<OrderType>(tableId ? "DINE_IN" : "TAKEAWAY")
   const [tableNumber, setTableNumber] = useState(tableId || "")
   const [customerName, setCustomerName] = useState("")
@@ -69,10 +77,30 @@ export function CheckoutDrawer({
     }
   }, [tableId])
 
+  const typeAllowed = (t: OrderType) => (t === "DINE_IN" ? ops.orderTypes.dineIn : t === "TAKEAWAY" ? ops.orderTypes.takeaway : ops.orderTypes.delivery)
+  const payAllowed = (m: PaymentMethod, t: OrderType) =>
+    m === "UPI_INSTANT" ? ops.payments.upi : m === "COD" ? ops.payments.cod && t === "DELIVERY" : ops.payments.payAtCounter && t !== "DELIVERY"
+
+  useEffect(() => {
+    if (!typeAllowed(orderType)) {
+      const next = (["DINE_IN", "TAKEAWAY", "DELIVERY"] as OrderType[]).find(typeAllowed)
+      if (next) setOrderType(next)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [operations, orderType])
+
+  useEffect(() => {
+    if (!payAllowed(paymentMethod, orderType)) {
+      const next = (["UPI_INSTANT", orderType === "DELIVERY" ? "COD" : "PAY_AT_COUNTER"] as PaymentMethod[]).find((m) => payAllowed(m, orderType))
+      if (next) setPaymentMethod(next)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [operations, orderType, paymentMethod])
+
   const entries = useCartStore((s) => s.entries)
   const subtotal = useCartStore((s) => s.subtotal())
-  const gst = useCartStore((s) => s.gstAmount(5))
-  const baseTotal = useCartStore((s) => s.total(5))
+  const gst = useCartStore((s) => s.gstAmount(gstPercentage))
+  const baseTotal = useCartStore((s) => s.total(gstPercentage))
   const incrementItem = useCartStore((s) => s.incrementItem)
   const decrementItem = useCartStore((s) => s.decrementItem)
 
@@ -144,8 +172,8 @@ export function CheckoutDrawer({
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
             Fulfillment Type
           </span>
-          <div className="grid grid-cols-3 gap-2">
-            <button
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.max(1, Object.values(ops.orderTypes).filter(Boolean).length)}, minmax(0, 1fr))` }}>
+            {ops.orderTypes.dineIn && <button
               type="button"
               onClick={() => {
                 setOrderType("DINE_IN");
@@ -160,8 +188,8 @@ export function CheckoutDrawer({
             >
               <Utensils className="h-4 w-4" />
               <span>Dine-In</span>
-            </button>
-            <button
+            </button>}
+            {ops.orderTypes.takeaway && <button
               type="button"
               onClick={() => {
                 setOrderType("TAKEAWAY");
@@ -176,8 +204,8 @@ export function CheckoutDrawer({
             >
               <ShoppingBag className="h-4 w-4" />
               <span>Takeaway</span>
-            </button>
-            <button
+            </button>}
+            {ops.orderTypes.delivery && <button
               type="button"
               onClick={() => {
                 setOrderType("DELIVERY");
@@ -192,7 +220,7 @@ export function CheckoutDrawer({
             >
               <Bike className="h-4 w-4" />
               <span>Delivery</span>
-            </button>
+            </button>}
           </div>
 
           {orderType === "DINE_IN" && (
@@ -362,7 +390,7 @@ export function CheckoutDrawer({
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400 flex items-center gap-1">
               <IndianRupee className="h-3 w-3 text-zinc-500" />
-              Taxes & GST (5%)
+              Taxes & GST ({gstPercentage}%)
             </span>
             <span className="text-zinc-200 font-medium">₹{Number(gst || 0).toFixed(2)}</span>
           </div>
@@ -397,6 +425,7 @@ export function CheckoutDrawer({
 
           <div className="grid grid-cols-1 gap-3.5">
             {/* Option 1: UPI Instant Pay */}
+            {ops.payments.upi && (
             <div
               onClick={() => setPaymentMethod("UPI_INSTANT")}
               className={cn(
@@ -440,9 +469,10 @@ export function CheckoutDrawer({
                 </div>
               </div>
             </div>
+            )}
 
             {/* Option 2: Pay at Counter OR Cash on Delivery (COD) depending on fulfillment */}
-            {orderType === "DELIVERY" ? (
+            {orderType === "DELIVERY" ? (ops.payments.cod && (
               <div
                 onClick={() => setPaymentMethod("COD")}
                 className={cn(
@@ -485,7 +515,7 @@ export function CheckoutDrawer({
                   </div>
                 </div>
               </div>
-            ) : (
+            )) : (ops.payments.payAtCounter && (
               <div
                 onClick={() => setPaymentMethod("PAY_AT_COUNTER")}
                 className={cn(
@@ -528,7 +558,7 @@ export function CheckoutDrawer({
                   </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
 

@@ -30,6 +30,35 @@ export interface StaffUser {
   pinCode?: string
 }
 
+export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface DayHours {
+  closed: boolean
+  /** 24h "HH:mm" */
+  open: string
+  close: string
+}
+
+/** Per-outlet operating rules. Mirrors the API's OutletOperations. */
+export interface OutletOperations {
+  acceptingOrders: boolean
+  pausedMessage: string
+  enforceHours: boolean
+  hours: Record<DayKey, DayHours>
+  orderTypes: { dineIn: boolean; takeaway: boolean; delivery: boolean }
+  payments: { upi: boolean; payAtCounter: boolean; cod: boolean }
+  avgPrepMinutes: number
+  receiptFooter: string
+}
+
+/** Computed by the API: is the outlet taking orders right now? */
+export interface OrderingStatus {
+  accepting: boolean
+  reason: 'paused' | 'closed' | null
+  message: string | null
+  today: DayHours | null
+}
+
 export interface Restaurant {
   id: string
   organizationId?: string
@@ -49,6 +78,10 @@ export interface Restaurant {
   kdsNewOrderAlert?: boolean
   orderReadyChime?: boolean
   outOfStockNotification?: boolean
+  autoDeductInventory?: boolean
+  operations?: Partial<OutletOperations> | null
+  /** Only present on the public menu response */
+  ordering?: OrderingStatus
 }
 
 // ── Table ─────────────────────────────────────────────────────────────────────
