@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { Wifi, WifiOff, Leaf, Drumstick } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PangatLogo } from "@/components/ui/PangatLogo"
 import { useCartStore, type DietaryFilter } from "@/stores/useCartStore"
 
 interface DinerTopBarProps {
@@ -28,12 +29,15 @@ export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
   }
 
   return (
-    <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 space-y-2.5">
+    <div className="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.07] px-4 py-3 space-y-2.5">
       {/* Row 1: Cafe name + Table ID + Live connectivity */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-bold text-zinc-100 tracking-tight">{cafeName}</h1>
-          <p className="text-xs text-zinc-400 font-medium">Table {tableId}</p>
+        <div className="flex items-center gap-3 min-w-0">
+          <PangatLogo size="sm" className="shrink-0" />
+          <div className="min-w-0">
+            <h1 className="truncate font-heading text-base font-semibold text-zinc-100 tracking-tight">{cafeName}</h1>
+            <p className="text-xs text-zinc-400 font-medium">Table {tableId}</p>
+          </div>
         </div>
 
         {/* Connectivity status pill */}

@@ -1,3 +1,4 @@
+import { useEscapeKey } from "@/hooks/useEscapeKey"
 import { useState, useCallback, useMemo } from "react"
 import {
   Breadcrumb,
@@ -65,7 +66,7 @@ function MetricCard({
   iconBgClass,
 }: MetricCardProps) {
   return (
-    <div className={cn("rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 p-4 sm:p-5 flex flex-col justify-between shadow-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700/80", bgClass)}>
+    <div className={cn("console-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all hover:-translate-y-0.5 dark:hover:border-white/[0.14]")} data-tone={bgClass ? "tinted" : undefined}>
       <div className="flex items-start justify-between gap-2">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0", iconBgClass)}>
           <Icon className={cn("h-4.5 w-4.5", accentClass)} />
@@ -85,7 +86,7 @@ function MetricCard({
         )}
       </div>
       <div className="mt-2.5">
-        <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{value}</p>
+        <p className="font-heading text-[1.7rem] font-semibold tracking-tight tabular-nums text-zinc-900 dark:text-zinc-50">{value}</p>
         <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-1">{title}</p>
         <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</p>
       </div>
@@ -305,6 +306,8 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
   const outOfStockIds = useKdsStore((s) => s.outOfStockIds)
   const toggleOutOfStock = useKdsStore((s) => s.toggleOutOfStock)
   const toggleMenuAvailability = useAdminStore((s) => s.toggleMenuAvailability)
+
+  useEscapeKey(open, onClose)
 
   const handleToggle = (id: string) => {
     toggleOutOfStock(id)

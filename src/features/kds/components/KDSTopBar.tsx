@@ -1,3 +1,4 @@
+import { PangatLogo } from "@/components/ui/PangatLogo"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router"
 import { useKdsStore } from "@/stores/useKdsStore"
@@ -8,7 +9,6 @@ import {
   Volume2,
   VolumeX,
   Wifi,
-  MonitorSpeaker,
   LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const outletName = useAuthStore((s) => s.currentOutlet?.name)
 
   const soundEnabled = useKdsStore((s) => s.soundEnabled)
   const setSoundEnabled = useKdsStore((s) => s.setSoundEnabled)
@@ -59,7 +60,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between px-3 sm:px-6 py-2 sm:py-2.5 bg-zinc-900/90 backdrop-blur border-b border-zinc-800 shrink-0 gap-2 sm:gap-4">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between px-3 sm:px-6 py-2 sm:py-2.5 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.07] shrink-0 gap-2 sm:gap-4">
       {/* Left: Exit/Back button + Title */}
       <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -75,9 +76,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
           </Button>
 
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
-              <MonitorSpeaker className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
-            </div>
+            <PangatLogo size="sm" className="shrink-0 !w-7 !h-7 sm:!w-8 sm:!h-8" />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h1 className="text-xs sm:text-sm font-semibold text-zinc-100 truncate">KDS Station</h1>
@@ -87,7 +86,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
                   </span>
                 )}
               </div>
-              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{restaurantSlug ? `/r/${restaurantSlug}` : 'Kitchen'}</p>
+              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{outletName || restaurantSlug || 'Kitchen'}</p>
             </div>
           </div>
         </div>

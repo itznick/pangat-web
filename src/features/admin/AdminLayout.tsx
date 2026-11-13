@@ -1,3 +1,4 @@
+import '@/features/landing/landing.css'
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router"
 import {
   SidebarProvider,
@@ -10,7 +11,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
   SidebarInset,
   useSidebar,
 } from "@/components/ui/sidebar"
@@ -22,7 +22,6 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  User,
   Plus,
   MonitorSpeaker,
   ExternalLink,
@@ -31,6 +30,10 @@ import {
   Star,
   Boxes,
   CreditCard,
+  Keyboard,
+  Sparkles,
+  LifeBuoy,
+  MessageSquareText,
 } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -38,7 +41,16 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { AddOutletModal } from "./components/AddOutletModal"
-import { ThemeToggle } from "@/components/ui/ThemeToggle"
+import { PangatLogo } from "@/components/ui/PangatLogo"
+import { UserMenu, type MenuEntry } from "@/components/console/UserMenu"
+import { TopBar } from "@/components/console/TopBar"
+import { SettingsModal } from "./components/SettingsModal"
+import { BillingModal } from "@/features/subscriptions/components/BillingModal"
+import { useAdminNotices } from "./useAdminNotices"
+import { STATUS_META, useBilling } from "@/features/subscriptions/billing"
+import { ConsoleOverlays } from "@/components/console/ConsoleOverlays"
+import { useConsoleUi } from "@/components/console/useConsoleUi"
+import type { CommandItem } from "@/components/console/types"
 import type { Restaurant } from "@/types/domain"
 
 const OPERATIONS_NAV = [
@@ -50,10 +62,33 @@ const OPERATIONS_NAV = [
 const MANAGEMENT_NAV = [
   { label: "Menu & Modifiers", path: "/admin/menu", icon: UtensilsCrossed, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Inventory & Recipes", path: "/admin/inventory", icon: Boxes, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
-  { label: "Subscription & Billing", path: "/admin/subscription", icon: CreditCard, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Feedback & Ratings", path: "/admin/feedback", icon: Star, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
-  { label: "Settings", path: "/admin/settings", icon: Settings, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
 ] as const
+
+const SUPPORT_WHATSAPP = "https://wa.me/919890000000?text=Hi%20Pangat%20team%2C%20I%20need%20help%20with%20my%20portal."
+const FEEDBACK_MAILTO = "mailto:hello@pangat.app?subject=Pangat%20portal%20feedback"
+
+/** "G then X" go-to shortcuts, keyed by the second key */
+const GO_KEYS: Record<string, string> = {
+  d: "/admin/dashboard",
+  t: "/admin/tables",
+  o: "/admin/orders",
+  m: "/admin/menu",
+  i: "/admin/inventory",
+  b: "/admin/subscription",
+  f: "/admin/feedback",
+  s: "/admin/settings",
+}
+const GO_LABEL: Record<string, string> = {
+  "/admin/dashboard": "G D",
+  "/admin/tables": "G T",
+  "/admin/orders": "G O",
+  "/admin/menu": "G M",
+  "/admin/inventory": "G I",
+  "/admin/subscription": "G B",
+  "/admin/feedback": "G F",
+  "/admin/settings": "G S",
+}
 
 function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void }) {
   const location = useLocation()
@@ -67,6 +102,28 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const logout = useAuthStore((s) => s.logout)
   const fetchDashboardData = useAdminStore((s) => s.fetchDashboardData)
   const tables = useAdminStore((s) => s.tables)
+  const activeOrders = useAdminStore((s) => s.activeOrders)
+  const setShortcuts = useConsoleUi((s) => s.setShortcuts)
+  const setChangelog = useConsoleUi((s) => s.setChangelog)
+
+  // Live counts shown beside the nav items they belong to
+  const openOrders = activeOrders.filter((o) => o.orderStatus !== "COMPLETED" && o.orderStatus !== "CANCELLED").length
+  const occupied = tables.filter((t) => t.status !== "VACANT").length
+  const badgeFor = (path: string) => (path === "/admin/orders" ? openOrders : path === "/admin/tables" ? occupied : 0)
+
+  const setSettings = useConsoleUi((s) => s.setSettings)
+  const setBilling = useConsoleUi((s) => s.setBilling)
+  const billing = useBilling()
+
+  const menuEntries: MenuEntry[] = [
+    { label: "Settings", icon: Settings, shortcut: "G S", onSelect: () => setSettings(true) },
+    { label: "Plan & billing", icon: CreditCard, shortcut: "G B", onSelect: () => setBilling(true) },
+    { label: "Keyboard shortcuts", icon: Keyboard, shortcut: "?", onSelect: () => setShortcuts(true), divider: true },
+    { label: "What’s new", icon: Sparkles, onSelect: () => setChangelog(true) },
+    { label: "Help & support", icon: LifeBuoy, href: SUPPORT_WHATSAPP, divider: true },
+    { label: "Send feedback", icon: MessageSquareText, href: FEEDBACK_MAILTO },
+    { label: "Sign out", icon: LogOut, danger: true, divider: true, onSelect: () => { logout(); navigate("/") } },
+  ]
 
   const [showOutletMenu, setShowOutletMenu] = useState(false)
 
@@ -95,9 +152,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
       {/* Brand / Dynamic Outlet Switcher */}
       <SidebarHeader>
         <div className="flex items-center gap-2.5 w-full min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-xs border border-emerald-400/30 text-white font-bold text-xs select-none">
-            🍃
-          </div>
+          <PangatLogo size="sm" className="shrink-0" />
           {!collapsed && (
             <div className="flex-1 min-w-0 relative">
               <button
@@ -180,7 +235,6 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
               )}
             </div>
           )}
-          <SidebarTrigger className="ml-auto flex-shrink-0" />
         </div>
       </SidebarHeader>
 
@@ -204,7 +258,14 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
-                      <span className="truncate">{item.label}</span>
+                      <>
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                        {badgeFor(item.path) > 0 && (
+                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
+                            {badgeFor(item.path)}
+                          </span>
+                        )}
+                      </>
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -231,7 +292,14 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
-                      <span className="truncate">{item.label}</span>
+                      <>
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                        {badgeFor(item.path) > 0 && (
+                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
+                            {badgeFor(item.path)}
+                          </span>
+                        )}
+                      </>
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -283,39 +351,32 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer: User profile, theme toggle, and logout */}
-      <SidebarFooter>
-        <div className={cn("space-y-2", collapsed && "flex flex-col items-center")}>
-          <div className={cn("flex items-center gap-2", collapsed && "justify-center")}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center flex-shrink-0 text-white shadow-xs ring-1 ring-emerald-500/20">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-200 truncate leading-snug">
-                  {user?.name || "Team Member"}
-                </p>
-                <span className="inline-block text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded uppercase tracking-wider">
-                  {user?.role ? user.role.replace("_", " ") : "SUPER OWNER"}
-                </span>
-              </div>
-            )}
-            <ThemeToggle variant="ghost" className="h-8 w-8 p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 shrink-0" />
-            {!collapsed && (
-              <button
-                onClick={() => {
-                  logout()
-                  navigate("/")
-                }}
-                className="h-8 w-8 p-1.5 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
-                title="Logout"
-                aria-label="Logout"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
+      {/* Footer: account menu */}
+      <SidebarFooter className="!p-2.5">
+        {!collapsed && !billing.loading && billing.plan && (
+          <button
+            type="button"
+            onClick={() => setBilling(true)}
+            className="group mb-2 flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-2.5 text-left transition-colors hover:border-white/15 hover:bg-white/[0.06]"
+          >
+            <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_META[billing.status].tone === "good" ? "bg-emerald-400" : STATUS_META[billing.status].tone === "bad" ? "bg-rose-400" : "bg-amber-300")} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[12.5px] font-medium text-white">{billing.plan.name}</span>
+              <span className="block truncate text-[11px] text-zinc-500">
+                {STATUS_META[billing.status].label}
+                {billing.daysLeft !== null && billing.status === "TRIAL" ? ` · ${billing.daysLeft}d left` : ""}
+              </span>
+            </span>
+            <span className="text-[11px] text-zinc-500 transition-colors group-hover:text-emerald-300">Manage</span>
+          </button>
+        )}
+        <UserMenu
+          name={user?.name || "Team member"}
+          email={user?.email}
+          roleLabel={(user?.role || "SUPER_OWNER").replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}
+          entries={menuEntries}
+          collapsed={collapsed}
+        />
       </SidebarFooter>
     </>
   )
@@ -329,6 +390,7 @@ export function AdminLayout() {
   const setCurrentOutlet = useAuthStore((s) => s.setCurrentOutlet)
   const user = useAuthStore((s) => s.user)
   const [addOutletOpen, setAddOutletOpen] = useState(false)
+  const notices = useAdminNotices((to) => navigate(to))
 
   const isPlatformSuperAdmin = user?.role === "PLATFORM_SUPER_ADMIN"
 
@@ -449,6 +511,70 @@ export function AdminLayout() {
     return <Navigate to={`/kds/${chefSlug}`} replace />
   }
 
+  const visibleNav = [...OPERATIONS_NAV, ...MANAGEMENT_NAV].filter((n) => !user?.role || (n.roles as readonly string[]).includes(user.role))
+  const goTo: Record<string, () => void> = {}
+  Object.entries(GO_KEYS).forEach(([k, path]) => {
+    if (visibleNav.some((n) => n.path === path)) goTo[k] = () => navigate(path)
+  })
+  goTo.s = () => useConsoleUi.getState().setSettings(true)
+  goTo.b = () => useConsoleUi.getState().setBilling(true)
+  const pageTitle = visibleNav.find((n) => location.pathname.startsWith(n.path))?.label ||
+    (location.pathname.startsWith("/admin/subscription") ? "Plan & billing" : location.pathname.startsWith("/admin/settings") ? "Settings" : "")
+  const commandItems: CommandItem[] = [
+    ...visibleNav.map((n) => ({
+      id: n.path,
+      label: n.label,
+      group: "Go to",
+      icon: n.icon,
+      shortcut: GO_LABEL[n.path],
+      run: () => navigate(n.path),
+    })),
+    {
+      id: "kds",
+      label: "Open kitchen display",
+      group: "Stations",
+      icon: MonitorSpeaker,
+      keywords: "kds kitchen tickets",
+      run: () => window.open(`/kds/${currentOutlet?.slug || "main"}`, "_blank"),
+    },
+    {
+      id: "diner",
+      label: "Preview guest menu",
+      group: "Stations",
+      icon: Smartphone,
+      keywords: "diner qr customer",
+      run: () => window.open(`/r/${currentOutlet?.slug || "main"}/t/${useAdminStore.getState().tables[0]?.tableNumber || "01"}`, "_blank"),
+    },
+    ...outlets
+      .filter((o) => o.slug !== currentOutlet?.slug)
+      .map((o) => ({
+        id: `outlet-${o.slug}`,
+        label: `Switch to ${o.name}`,
+        group: "Outlets",
+        icon: LayoutGrid,
+        keywords: "outlet branch",
+        run: () => {
+          setCurrentOutlet(o)
+          useAdminStore.getState().fetchDashboardData(o.slug)
+        },
+      })),
+    { id: "settings", label: "Settings", group: "Account", icon: Settings, shortcut: "G S", keywords: "outlet gst upi alerts", run: () => useConsoleUi.getState().setSettings(true) },
+    { id: "billing", label: "Plan & billing", group: "Account", icon: CreditCard, shortcut: "G B", keywords: "subscription invoice gst payment", run: () => useConsoleUi.getState().setBilling(true) },
+    { id: "billing-console", label: "Open billing console", group: "Account", icon: CreditCard, keywords: "invoices plans usage", run: () => navigate("/admin/subscription") },
+    { id: "add-outlet", label: "Add a new outlet", group: "Outlets", icon: Plus, keywords: "branch", run: () => setAddOutletOpen(true) },
+    { id: "shortcuts", label: "Keyboard shortcuts", group: "Help", icon: Keyboard, shortcut: "?", run: () => useConsoleUi.getState().setShortcuts(true) },
+    { id: "changelog", label: "What’s new", group: "Help", icon: Sparkles, keywords: "changelog updates", run: () => useConsoleUi.getState().setChangelog(true) },
+    { id: "support", label: "Help & support", group: "Help", icon: LifeBuoy, keywords: "whatsapp contact", run: () => window.open(SUPPORT_WHATSAPP, "_blank") },
+  ]
+  const shortcutRows = [
+    { keys: "Ctrl K", label: "Open the command palette" },
+    { keys: "?", label: "Show keyboard shortcuts" },
+    ...visibleNav.filter((n) => GO_LABEL[n.path]).map((n) => ({ keys: GO_LABEL[n.path], label: `Go to ${n.label}` })),
+    { keys: "G S", label: "Open settings" },
+    { keys: "G B", label: "Open plan & billing" },
+    { keys: "Ctrl B", label: "Show or hide the sidebar" },
+  ]
+
   const handleExitImpersonation = () => {
     sessionStorage.removeItem("pangat_impersonate_outlet")
     setImpersonatingOutlet(null)
@@ -457,7 +583,7 @@ export function AdminLayout() {
 
   if (isResolvingOutlets) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-dvh bg-zinc-950 text-white flex items-center justify-center">
         <div className="flex items-center gap-2.5 text-zinc-400 text-sm">
           <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
           <span>Synchronizing restaurant operations...</span>
@@ -472,21 +598,14 @@ export function AdminLayout() {
         <AdminSidebarContent onOpenAddOutlet={() => setAddOutletOpen(true)} />
       </Sidebar>
       <SidebarInset>
-        {/* Mobile Header (< 768px) with menu trigger, brand, and theme toggle */}
-        <header className="sticky top-0 z-30 flex md:hidden items-center justify-between h-14 px-3.5 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shrink-0 select-none">
-          <div className="flex items-center gap-2 min-w-0">
-            <SidebarTrigger className="text-zinc-700 dark:text-zinc-200" />
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-sm select-none">🍃</span>
-              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                {currentOutlet?.name || "Pangat"}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <ThemeToggle variant="ghost" className="h-9 w-9 p-2 rounded-xl text-zinc-600 dark:text-zinc-400" />
-          </div>
-        </header>
+        <TopBar
+          trail={["Admin", ...(pageTitle ? [pageTitle] : [])]}
+          mobileTitle={currentOutlet?.name || "Pangat"}
+          notices={notices.items}
+          noticesLoading={notices.loading}
+          feedbackHref={FEEDBACK_MAILTO}
+          helpHref={SUPPORT_WHATSAPP}
+        />
 
         {/* Impersonation Error Alert */}
         {isPlatformSuperAdmin && impersonationError && (
@@ -532,7 +651,7 @@ export function AdminLayout() {
         {(!outlets || outlets.length === 0) && !isPlatformSuperAdmin && (
           <div className="bg-emerald-500/10 dark:bg-emerald-950/60 border-b border-emerald-500/20 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-200">
             <div className="flex items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold">🍃</span>
+              <PangatLogo size="sm" className="shrink-0" />
               <div>
                 <p className="font-bold text-zinc-900 dark:text-white">Welcome to Pangat Hospitality!</p>
                 <p className="text-[11px] text-zinc-600 dark:text-emerald-300/80">No active dining outlets configured yet. Add your first branch location to generate dynamic QR codes and accept orders.</p>
@@ -548,8 +667,14 @@ export function AdminLayout() {
             </button>
           </div>
         )}
-        <Outlet />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <Outlet />
+        </div>
       </SidebarInset>
+
+      <ConsoleOverlays items={commandItems} goTo={goTo} shortcutRows={shortcutRows} />
+      <SettingsModal />
+      <BillingModal />
 
       {/* Global Add Outlet Modal */}
       <AddOutletModal

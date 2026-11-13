@@ -1,3 +1,4 @@
+import { useEscapeKey } from "@/hooks/useEscapeKey"
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { X, KeyRound, Copy, Check, Send } from 'lucide-react'
@@ -15,6 +16,8 @@ interface ResetPasswordModalProps {
 
 export function ResetPasswordModal({ isOpen, onClose, data }: ResetPasswordModalProps) {
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
+
+  useEscapeKey(isOpen, onClose)
 
   if (!isOpen || !data) return null
 

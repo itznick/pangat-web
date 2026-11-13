@@ -1,3 +1,4 @@
+import { useEscapeKey } from "@/hooks/useEscapeKey"
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
@@ -10,6 +11,7 @@ interface DrawerProps {
 }
 
 const Drawer = ({ open, onClose, children, className }: DrawerProps) => {
+  useEscapeKey(open, onClose)
   React.useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden"
@@ -31,8 +33,12 @@ const Drawer = ({ open, onClose, children, className }: DrawerProps) => {
       />
       {/* Drawer panel */}
       <div
+        role="dialog"
+        aria-modal={open}
+        aria-hidden={!open}
+        inert={!open}
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-zinc-900 border-t border-zinc-800 shadow-2xl transition-transform duration-300 ease-out max-w-lg mx-auto pb-[env(safe-area-inset-bottom,0px)]",
+          "fixed bottom-0 left-0 right-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-2xl bg-zinc-900 border-t border-white/[0.08] shadow-2xl transition-transform duration-300 ease-out max-w-lg mx-auto pb-[env(safe-area-inset-bottom,0px)]",
           open ? "translate-y-0" : "translate-y-full",
           className
         )}

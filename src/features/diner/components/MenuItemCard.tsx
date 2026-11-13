@@ -6,15 +6,17 @@ import type { MenuItem } from "@/types/domain"
 interface MenuItemCardProps {
   item: MenuItem
   isOutOfStock?: boolean
+  /** The outlet is paused or closed: show the dish but do not allow adding it */
+  orderingClosed?: boolean
   onAdd: (item: MenuItem) => void
 }
 
-export function MenuItemCard({ item, isOutOfStock = false, onAdd }: MenuItemCardProps) {
+export function MenuItemCard({ item, isOutOfStock = false, orderingClosed = false, onAdd }: MenuItemCardProps) {
   const [pressed, setPressed] = useState(false)
   const available = item.isAvailable && !isOutOfStock
 
   const handleAdd = () => {
-    if (!available) return
+    if (!available || orderingClosed) return
     setPressed(true)
     onAdd(item)
     setTimeout(() => setPressed(false), 300)
@@ -71,7 +73,9 @@ export function MenuItemCard({ item, isOutOfStock = false, onAdd }: MenuItemCard
             ₹{item.price}
           </span>
 
-          {available ? (
+          {available && orderingClosed ? (
+            <span className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-medium">Paused</span>
+          ) : available ? (
             <button
               onClick={handleAdd}
               className={cn(

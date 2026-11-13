@@ -11,6 +11,7 @@ import type {
   SubscriptionPlan,
 } from '@/types/domain'
 import { ProvisionRestaurantModal } from './components/ProvisionRestaurantModal'
+import { useProvisionStore } from './useProvisionStore'
 import { ResetPasswordModal } from './components/ResetPasswordModal'
 import { PrintableQrKitModal } from '@/features/onboarding/components/PrintableQrKitModal'
 import { Button } from '@/components/ui/button'
@@ -57,8 +58,11 @@ export function SuperAdminDashboardPage() {
   const [selectedStatusFilter, setSelectedStatusFilter] = React.useState<string>('ALL')
 
   // Modals state
-  const [provisionModalOpen, setProvisionModalOpen] = React.useState(false)
-  const [selectedLeadForProvision, setSelectedLeadForProvision] = React.useState<Lead | null>(null)
+  const provisionModalOpen = useProvisionStore((s) => s.isOpen)
+  const selectedLeadForProvision = useProvisionStore((s) => s.lead)
+  const openProvisionForLead = useProvisionStore((s) => s.openForLead)
+  const openProvisionNew = useProvisionStore((s) => s.openNew)
+  const closeProvision = useProvisionStore((s) => s.close)
 
   const [resetPwdModalOpen, setResetPwdModalOpen] = React.useState(false)
   const [resetPwdData, setResetPwdData] = React.useState<{
@@ -162,13 +166,11 @@ export function SuperAdminDashboardPage() {
 
   // Onboard Lead (pre-fills provision modal)
   const handleOnboardLead = (lead: Lead) => {
-    setSelectedLeadForProvision(lead)
-    setProvisionModalOpen(true)
+    openProvisionForLead(lead)
   }
 
   const handleOpenNewProvision = () => {
-    setSelectedLeadForProvision(null)
-    setProvisionModalOpen(true)
+    openProvisionNew()
   }
 
   // Filtered leads
@@ -239,15 +241,6 @@ export function SuperAdminDashboardPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Hidden button trigger for top bar provision action */}
-      <button
-        id="super-admin-provision-trigger"
-        type="button"
-        className="hidden"
-        onClick={handleOpenNewProvision}
-        aria-hidden="true"
-      />
-
       {/* ── 1. PLATFORM OVERVIEW TAB ────────────────────────────────────────── */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
@@ -278,7 +271,7 @@ export function SuperAdminDashboardPage() {
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <div className="flex items-center justify-between text-zinc-500 text-xs mb-1">
                 <span>Total Organizations</span>
-                <Building2 className="w-4 h-4 text-amber-500" />
+                <Building2 className="w-4 h-4 text-emerald-500" />
               </div>
               <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white">
                 {metrics?.totalOrganizations ?? organizations.length}
@@ -314,9 +307,9 @@ export function SuperAdminDashboardPage() {
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <div className="flex items-center justify-between text-zinc-500 text-xs mb-1">
                 <span>Platform Gross GMV</span>
-                <IndianRupee className="w-4 h-4 text-amber-500" />
+                <IndianRupee className="w-4 h-4 text-emerald-500" />
               </div>
-              <div className="text-2xl font-mono font-bold text-amber-600 dark:text-amber-300">
+              <div className="text-2xl font-mono font-bold text-emerald-600 dark:text-emerald-300">
                 ₹{(metrics?.systemGmv ?? 0).toLocaleString('en-IN')}
               </div>
               <div className="text-[11px] text-zinc-500 mt-1">Direct UPI settlement</div>
@@ -351,7 +344,7 @@ export function SuperAdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSearchParams({ tab: 'leads' })}
-                  className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                  className="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
                 >
                   <span>View All Leads</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -399,7 +392,7 @@ export function SuperAdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSearchParams({ tab: 'organizations' })}
-                  className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                  className="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
                 >
                   <span>Manage All Orgs</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -421,7 +414,7 @@ export function SuperAdminDashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-amber-300 font-bold">
+                      <span className="font-mono text-emerald-300 font-bold">
                         ₹{org.totalGmv.toLocaleString('en-IN')}
                       </span>
                       {org.outlets[0] && (
@@ -465,7 +458,7 @@ export function SuperAdminDashboardPage() {
                   placeholder="Search leads..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-white placeholder:text-zinc-500 w-full sm:w-52 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-white placeholder:text-zinc-500 w-full sm:w-52 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
@@ -477,7 +470,7 @@ export function SuperAdminDashboardPage() {
                     onClick={() => setSelectedStatusFilter(st)}
                     className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                       selectedStatusFilter === st
-                        ? 'bg-amber-400 text-zinc-950 font-bold'
+                        ? 'bg-emerald-400 text-zinc-950 font-bold'
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -536,7 +529,7 @@ export function SuperAdminDashboardPage() {
                       </td>
 
                       <td className="py-3 px-4">
-                        <span className="font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[11px]">
+                        <span className="font-semibold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 text-[11px]">
                           {lead.tableCount || '12 tables'}
                         </span>
                       </td>
@@ -645,7 +638,7 @@ export function SuperAdminDashboardPage() {
                       </div>
                       <div className="flex items-center justify-between text-zinc-300">
                         <span className="text-zinc-500">Table Scope:</span>
-                        <span className="font-semibold text-amber-300">{lead.tableCount || '12 tables'}</span>
+                        <span className="font-semibold text-emerald-300">{lead.tableCount || '12 tables'}</span>
                       </div>
                     </div>
 
@@ -707,14 +700,14 @@ export function SuperAdminDashboardPage() {
                   placeholder="Search organizations..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-white placeholder:text-zinc-500 w-52 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-white placeholder:text-zinc-500 w-52 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
               <Button
                 size="sm"
                 onClick={handleOpenNewProvision}
-                className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
               >
                 <Plus className="w-3.5 h-3.5 mr-1 stroke-[2.5]" />
                 <span>New Brand</span>
@@ -765,7 +758,7 @@ export function SuperAdminDashboardPage() {
                     </td>
 
                     <td className="py-3 px-4">
-                      <span className="font-mono font-bold text-amber-300 text-sm">
+                      <span className="font-mono font-bold text-emerald-300 text-sm">
                         ₹{org.totalGmv.toLocaleString('en-IN')}
                       </span>
                       <div className="text-[10px] text-zinc-400">{org.totalOrders} orders</div>
@@ -792,7 +785,7 @@ export function SuperAdminDashboardPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleImpersonate(org.outlets[0])}
-                            className="h-7 text-xs border-zinc-800 bg-zinc-900 text-amber-300 hover:text-white hover:bg-zinc-800 font-medium"
+                            className="h-7 text-xs border-zinc-800 bg-zinc-900 text-emerald-300 hover:text-white hover:bg-zinc-800 font-medium"
                             title="Inspect this merchant's dashboard"
                           >
                             <Eye className="w-3 h-3 mr-1" />
@@ -863,7 +856,7 @@ export function SuperAdminDashboardPage() {
 
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs">
                     <span className="text-zinc-400">Platform GMV:</span>
-                    <span className="font-mono font-bold text-amber-300 text-sm">
+                    <span className="font-mono font-bold text-emerald-300 text-sm">
                       ₹{org.totalGmv.toLocaleString('en-IN')}
                     </span>
                   </div>
@@ -874,7 +867,7 @@ export function SuperAdminDashboardPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleImpersonate(org.outlets[0])}
-                        className="h-8 text-xs border-zinc-800 bg-zinc-900 text-amber-300 hover:text-white flex-1 min-h-[36px]"
+                        className="h-8 text-xs border-zinc-800 bg-zinc-900 text-emerald-300 hover:text-white flex-1 min-h-[36px]"
                       >
                         <Eye className="w-3.5 h-3.5 mr-1" />
                         <span>Inspect</span>
@@ -929,7 +922,7 @@ export function SuperAdminDashboardPage() {
                   placeholder="Search outlets..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-white placeholder:text-zinc-500 w-52 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-white placeholder:text-zinc-500 w-52 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
@@ -996,7 +989,7 @@ export function SuperAdminDashboardPage() {
                     </td>
 
                     <td className="py-3 px-4">
-                      <span className="font-mono font-bold text-amber-400">
+                      <span className="font-mono font-bold text-emerald-400">
                         {outlet.activeOrdersCount} in prep
                       </span>
                     </td>
@@ -1007,7 +1000,7 @@ export function SuperAdminDashboardPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleImpersonate(outlet)}
-                          className="h-7 text-xs border-zinc-800 bg-zinc-900 text-amber-300 hover:text-white"
+                          className="h-7 text-xs border-zinc-800 bg-zinc-900 text-emerald-300 hover:text-white"
                           title="Open Cockpit"
                         >
                           <Eye className="w-3 h-3 mr-1" />
@@ -1081,7 +1074,7 @@ export function SuperAdminDashboardPage() {
                       <span className="text-zinc-500">Capacity & Orders:</span>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-zinc-200">{outlet.tablesCount} tables</span>
-                        <span className="font-mono font-bold text-amber-400">({outlet.activeOrdersCount} prep)</span>
+                        <span className="font-mono font-bold text-emerald-400">({outlet.activeOrdersCount} prep)</span>
                       </div>
                     </div>
                   </div>
@@ -1091,7 +1084,7 @@ export function SuperAdminDashboardPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleImpersonate(outlet)}
-                      className="h-8 text-xs border-zinc-800 bg-zinc-900 text-amber-300 hover:text-white flex-1 min-h-[36px]"
+                      className="h-8 text-xs border-zinc-800 bg-zinc-900 text-emerald-300 hover:text-white flex-1 min-h-[36px]"
                     >
                       <Eye className="w-3.5 h-3.5 mr-1" />
                       <span>Cockpit</span>
@@ -1220,7 +1213,7 @@ export function SuperAdminDashboardPage() {
             <div className="p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-zinc-200 flex items-center gap-2">
-                  <Server className="w-4 h-4 text-amber-400" />
+                  <Server className="w-4 h-4 text-emerald-400" />
                   API Node.js Server
                 </span>
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
@@ -1366,7 +1359,7 @@ export function SuperAdminDashboardPage() {
       {/* ── Provisioning Modal ────────────────────────────────────────────── */}
       <ProvisionRestaurantModal
         isOpen={provisionModalOpen}
-        onClose={() => setProvisionModalOpen(false)}
+        onClose={closeProvision}
         initialLead={selectedLeadForProvision}
         onSuccess={fetchData}
       />

@@ -1,349 +1,171 @@
+import { ArrowRight, ArrowUp, Mail, MessageCircle } from "lucide-react"
 import { PangatLogo } from "@/components/ui/PangatLogo"
-import { Marquee } from "@/components/magicui/marquee"
-import {
-  MapPin,
-  MessageCircle,
-  ArrowUp,
-  Mail,
-  Coffee,
-  CheckCircle2,
-  ArrowRight,
-  ShieldCheck,
-  Zap,
-} from "lucide-react"
+import { Reveal, SplitReveal } from "./motion"
+import { scrollToHash } from "./Navbar"
 
 interface FooterProps {
   onOpenPilot: () => void
 }
 
+const AREAS = [
+  "FC Road & Deccan",
+  "Koregaon Park",
+  "Baner & Balewadi",
+  "Viman Nagar",
+  "Kalyani Nagar",
+  "Aundh & Westend",
+  "Kothrud",
+  "Hinjawadi IT Park",
+  "Law College Road",
+  "SB Road",
+]
+
+const WHATSAPP =
+  "https://wa.me/919890000000?text=Hi%20Pangat%20team,%20I'd%20like%20to%20test%20the%20table%20ordering%20for%20my%20cafe."
+
 export function Footer({ onOpenPilot }: FooterProps) {
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    })
-  }
-
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const anchor = (href: string) => (e: React.MouseEvent) => {
     e.preventDefault()
-    const target = document.querySelector(href)
-    if (target) {
-      const topOffset = 90
-      const elementPosition = target.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - topOffset
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      })
-    }
+    scrollToHash(href)
   }
-
-  const puneNeighborhoods = [
-    { name: "FC Road & Deccan", tag: "Student & Cafe Hub" },
-    { name: "Koregaon Park", tag: "Specialty Coffee" },
-    { name: "Baner & Balewadi", tag: "Bustling Dining" },
-    { name: "Viman Nagar", tag: "Fast QSRs" },
-    { name: "Kalyani Nagar", tag: "Artisan Bakeries" },
-    { name: "Aundh & Westend", tag: "Family Eateries" },
-    { name: "Kothrud", tag: "Traditional Spots" },
-    { name: "Hinjawadi IT Park", tag: "High-Volume Lunch" },
-    { name: "Law College Road", tag: "Chai & Conversations" },
-    { name: "SB Road", tag: "Urban Diners" },
-  ]
 
   return (
-    <footer className="bg-black text-zinc-300 border-t border-white/[0.08] relative overflow-hidden">
-      {/* 1. Neighborhood Delivery Strip */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20">
-        <div className="relative rounded-3xl border border-white/[0.08] bg-zinc-950/60 p-6 sm:p-8 md:p-10 shadow-2xl backdrop-blur-xl overflow-hidden ring-1 ring-white/[0.04]">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 sm:mb-8">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-zinc-300 text-xs font-normal">
-                <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                <span>On-Site Across Pune</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-tight font-heading">
-                Active Neighborhood Standee Deliveries
-              </h3>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-zinc-400 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] shrink-0 font-normal">
-              <span>Free 15-minute live audio chime test</span>
-            </div>
+    <footer className="relative overflow-hidden">
+      {/* ── Closing CTA ───────────────────────────────────────────────── */}
+      <section className="relative isolate px-5 pb-28 pt-24 text-center sm:px-8 sm:pb-40 sm:pt-36">
+        <div className="lp-aurora" aria-hidden>
+          <div className="absolute left-1/2 top-[10%] h-[560px] w-[900px] -translate-x-1/2">
+            <div className="lp-orb h-full w-full bg-[radial-gradient(closest-side,rgba(16,185,129,0.4),transparent)]" />
           </div>
-
-          {/* Marquee Strip with Apple-style glass pills */}
-          <div className="relative [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)] py-2">
-            <Marquee pauseOnHover className="[--duration:40s]">
-              {puneNeighborhoods.map((area) => (
-                <div
-                  key={area.name}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-white/20 transition-colors text-xs text-zinc-200 cursor-default"
-                >
-                  <div className="w-6 h-6 rounded-full bg-white/[0.06] flex items-center justify-center text-zinc-300 shrink-0">
-                    <Coffee className="w-3 h-3" />
-                  </div>
-                  <div>
-                    <span className="font-medium text-white text-xs block leading-tight">{area.name}</span>
-                    <span className="text-[10px] text-zinc-500 font-normal">
-                      {area.tag}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </Marquee>
+          <div className="absolute right-[5%] top-[40%] h-[320px] w-[420px]">
+            <div className="lp-orb h-full w-full bg-[radial-gradient(closest-side,rgba(251,191,36,0.18),transparent)]" style={{ animationDelay: "-6s" }} />
           </div>
         </div>
-      </div>
 
-      {/* 2. Pre-Footer Spotlight Card */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="relative rounded-3xl border border-white/[0.08] bg-zinc-950/70 p-6 sm:p-10 md:p-12 overflow-hidden shadow-2xl backdrop-blur-xl ring-1 ring-white/[0.04]">
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            {/* Left Content */}
-            <div className="space-y-4 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-zinc-300 text-xs font-normal">
-                <span>Pune Cafe Partnership</span>
-                <span className="text-zinc-600">·</span>
-                <span className="flex items-center gap-1 text-zinc-400">
-                  <Zap className="w-3 h-3" /> 15-Min Setup
+        <div className="relative mx-auto max-w-[900px]">
+          <SplitReveal
+            text="Your next rush, handled."
+            className="lp-display lp-grad-text text-[3rem] sm:text-[5.2rem] lg:text-[6.4rem]"
+            accent={[3]}
+          />
+          <Reveal as="p" delay={300} className="mx-auto mt-7 max-w-[32rem] text-[1.05rem] leading-relaxed text-zinc-400 sm:text-xl">
+            We&rsquo;ll bring two standees to your cafe in Pune, set up your menu in 15 minutes, and test the chime together.
+          </Reveal>
+          <Reveal delay={450} className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+            <button type="button" onClick={onOpenPilot} className="lp-btn lp-btn-primary w-full sm:w-auto sm:!h-[3.25rem] sm:!px-8 sm:!text-base">
+              Book your free trial <ArrowRight className="lp-arrow h-4 w-4" />
+            </button>
+            <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="lp-btn lp-btn-ghost w-full sm:w-auto sm:!h-[3.25rem] sm:!px-7 sm:!text-base">
+              <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
+            </a>
+          </Reveal>
+          <Reveal as="p" delay={550} className="mt-5 text-[13px] text-zinc-500">
+            Usually replies within 2 hours · No credit card · No hardware to buy
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Neighbourhood marquee ─────────────────────────────────────── */}
+      <div
+        className="relative border-y border-white/[0.06] py-5"
+        style={{ maskImage: "linear-gradient(to right, transparent, #000 12%, #000 88%, transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, #000 12%, #000 88%, transparent)" }}
+        aria-label="Neighbourhoods we serve in Pune"
+      >
+        <div className="lp-marquee">
+          {[0, 1].map((k) => (
+            <div key={k} className="flex shrink-0 items-center" aria-hidden={k === 1}>
+              {AREAS.map((a) => (
+                <span key={a + k} className="flex items-center whitespace-nowrap px-6 text-[0.95rem] text-zinc-500 sm:px-9">
+                  {a}
+                  <span className="ml-6 h-1 w-1 rounded-full bg-zinc-700 sm:ml-9" />
                 </span>
-              </div>
-
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight font-heading leading-tight">
-                Brewing in Pune?
-                <span className="block text-zinc-400 font-medium mt-1">Let&apos;s grab a chai.</span>
-              </h3>
-
-              <p className="text-sm sm:text-base text-zinc-400 leading-relaxed font-normal">
-                We&apos;ll drop by your cafe with 2 sample acrylic QR standees, configure your menu live in 15 minutes, and test the audio chime alert together. No credit card, no hardware purchase, no pressure.
-              </p>
-
-              {/* Trust Checkmarks */}
-              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-zinc-400">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
-                  <span>Free 7-day in-person trial</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
-                  <span>Works on any existing tablet or phone</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
-                  <span>Zero POS lock-in · Keep your counter UPI</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
-                  <span>Same-day setup anywhere in Pune</span>
-                </div>
-              </div>
+              ))}
             </div>
-
-            {/* Right CTAs - Apple Style */}
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 w-full sm:w-auto lg:min-w-[240px]">
-              <button
-                type="button"
-                onClick={onOpenPilot}
-                className="w-full py-3.5 px-6 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 font-semibold text-sm transition-all duration-200 active:scale-[0.98] shadow-lg shadow-white/5 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Schedule Free Demo</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <a
-                href="https://wa.me/919890000000?text=Hi%20Pangat%20team,%20I'd%20like%20to%20test%20the%20table%20ordering%20for%20my%20cafe."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium text-sm border border-white/10 transition-all active:scale-[0.98]"
-              >
-                <MessageCircle className="w-4 h-4 text-zinc-300" />
-                <span>Chat on WhatsApp</span>
-              </a>
-
-              <p className="text-[11px] text-zinc-500 text-center pt-1 font-normal">
-                Direct founder line · Usually responds within 2 hours
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* 3. Main Architectural 4-Column Footer */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 pt-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-12 border-b border-white/[0.08]">
-          {/* Column 1: Brand & Philosophy */}
-          <div className="lg:col-span-5 space-y-4">
+      {/* ── Links ─────────────────────────────────────────────────────── */}
+      <div className="relative mx-auto max-w-[1180px] px-5 pb-8 pt-16 sm:px-8 sm:pt-20">
+        <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div>
             <div className="flex items-center gap-2.5">
               <PangatLogo size="sm" />
-              <span className="text-xl font-bold tracking-tight text-white font-heading">
-                Pangat
-              </span>
-              <span className="text-xs font-normal text-zinc-400 px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
-                पंगत
-              </span>
+              <span className="font-heading text-xl font-semibold tracking-tight text-white">Pangat</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[11px] text-zinc-400">पंगत</span>
             </div>
-
-            <p className="text-sm text-zinc-400 leading-relaxed max-w-sm font-normal">
-              Modern dining speed, rooted in timeless hospitality. Zero-hardware table ordering and kitchen orchestration for independent cafes and specialty coffee spots.
+            <p className="mt-4 max-w-[19rem] text-[0.95rem] leading-relaxed text-zinc-500">
+              Modern dining speed, rooted in timeless hospitality. Table ordering and kitchen orchestration for independent cafes.
             </p>
-
-            {/* Operational Status */}
-            <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-zinc-300 text-xs font-normal">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span>All Systems Operational</span>
-              </div>
-
-              <a
-                href="mailto:hello@pangat.app"
-                className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
-              >
-                <Mail className="w-3.5 h-3.5 text-zinc-500" />
-                <span>hello@pangat.app</span>
-              </a>
-            </div>
+            <a href="mailto:hello@pangat.app" className="mt-5 inline-flex items-center gap-2 text-[13px] text-zinc-400 transition-colors hover:text-white">
+              <Mail className="h-3.5 w-3.5" /> hello@pangat.app
+            </a>
           </div>
 
-          {/* Column 2: Product */}
-          <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-500">
-              Product
-            </h4>
-            <ul className="space-y-2.5 text-sm text-zinc-400 font-normal">
-              <li>
-                <button
-                  type="button"
-                  onClick={onOpenPilot}
-                  className="hover:text-white transition-colors text-white font-medium flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Book Free Demo</span>
-                  <ArrowRight className="w-3 h-3 text-zinc-400" />
-                </button>
-              </li>
-              <li>
-                <a
-                  href="#direct-ordering"
-                  onClick={(e) => scrollToSection(e, "#direct-ordering")}
-                  className="hover:text-white transition-colors"
-                >
-                  Table Ordering
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#kds-station"
-                  onClick={(e) => scrollToSection(e, "#kds-station")}
-                  className="hover:text-white transition-colors"
-                >
-                  Kitchen KDS
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#zero-hardware"
-                  onClick={(e) => scrollToSection(e, "#zero-hardware")}
-                  className="hover:text-white transition-colors"
-                >
-                  Zero Hardware
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#calculator"
-                  onClick={(e) => scrollToSection(e, "#calculator")}
-                  className="hover:text-white transition-colors"
-                >
-                  Turnover Calculator
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#pricing"
-                  onClick={(e) => scrollToSection(e, "#pricing")}
-                  className="hover:text-white transition-colors"
-                >
-                  Pricing (₹699/mo)
-                </a>
-              </li>
-            </ul>
-          </div>
+          <FooterCol title="Product">
+            <a href="#journey" onClick={anchor("#journey")}>How it works</a>
+            <a href="#operations" onClick={anchor("#operations")}>Owner portal</a>
+            <a href="#calculator" onClick={anchor("#calculator")}>Impact calculator</a>
+            <a href="#pricing" onClick={anchor("#pricing")}>Pricing</a>
+          </FooterCol>
 
-          {/* Column 3: Pune Hubs */}
-          <div className="lg:col-span-3 space-y-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-500">
-              Pune Hubs
-            </h4>
-            <ul className="grid grid-cols-2 gap-x-2 gap-y-2 text-xs text-zinc-400">
-              <li>FC Road & Deccan</li>
-              <li>Koregaon Park</li>
-              <li>Baner & Balewadi</li>
-              <li>Viman Nagar</li>
-              <li>Hinjawadi</li>
-              <li>Kothrud</li>
-              <li>Aundh</li>
-              <li>Kalyani Nagar</li>
-            </ul>
-          </div>
+          <FooterCol title="Get started">
+            <button type="button" onClick={onOpenPilot}>Book a free trial</button>
+            <a href={WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp us</a>
+            <a href="/login">Owner sign in</a>
+            <a href="/login?tab=pin">Kitchen sign in</a>
+          </FooterCol>
 
-          {/* Column 4: Guarantees */}
-          <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-500">
-              Guarantees
-            </h4>
-            <ul className="space-y-2 text-xs text-zinc-400">
-              <li className="flex items-start gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
-                <span>0% commission cuts</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
-                <span>Zero thermal roll costs</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
-                <span>Nightly WhatsApp summary</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
-                <span>Direct founder support</span>
-              </li>
-            </ul>
-          </div>
+          <FooterCol title="Promise">
+            <span>0% commission</span>
+            <span>No hardware to buy</span>
+            <span>Nightly WhatsApp summary</span>
+            <span>Direct founder support</span>
+          </FooterCol>
         </div>
 
-        {/* 4. Bottom Legal & Back to Top */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1">
-            <span>© 2026 Pangat Technologies · Pune, Maharashtra.</span>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={onOpenPilot}
-              className="hover:text-zinc-300 transition-colors cursor-pointer"
-            >
-              Privacy Policy
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={onOpenPilot}
-              className="hover:text-zinc-300 transition-colors cursor-pointer"
-            >
-              Terms of Service
-            </button>
-          </div>
-
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 text-[12px] text-zinc-600 sm:flex-row">
+          <span className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            © 2026 Pangat Technologies · Made in Pune, Maharashtra
+          </span>
           <button
-            onClick={scrollToTop}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/10 text-xs transition-colors cursor-pointer"
-            aria-label="Scroll to top"
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-zinc-400 transition-colors hover:bg-white/[0.08] hover:text-white"
+            aria-label="Back to top"
           >
-            <span>Back to top</span>
-            <ArrowUp className="w-3 h-3" />
+            Back to top <ArrowUp className="h-3 w-3" />
           </button>
         </div>
       </div>
+
+      {/* Oversized wordmark */}
+      <div aria-hidden className="pointer-events-none relative -mb-[0.16em] select-none overflow-hidden text-center">
+        <span
+          className="lp-display block text-[24vw] leading-[0.82]"
+          style={{
+            background: "linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0) 78%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+            letterSpacing: "-0.06em",
+          }}
+        >
+          Pangat
+        </span>
+      </div>
     </footer>
+  )
+}
+
+function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-4 text-[13px] font-medium text-white">{title}</p>
+      <div className="flex flex-col items-start gap-3 text-[0.95rem] text-zinc-500 [&>a]:transition-colors [&>a]:hover:text-white [&>button]:cursor-pointer [&>button]:transition-colors [&>button]:hover:text-white">
+        {children}
+      </div>
+    </div>
   )
 }

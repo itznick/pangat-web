@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router'
 import { PangatLogo } from '@/components/ui/PangatLogo'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useAdminStore } from '@/stores/useAdminStore'
-import { Lock, Mail, KeyRound, AlertCircle, Loader2, Store } from 'lucide-react'
+import { Lock, Mail, KeyRound, AlertCircle, Loader2, Store, ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { BookDemoModal } from '@/features/landing'
+import '@/features/landing/landing.css'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -91,214 +91,213 @@ export function LoginPage() {
     }
   }
 
+  const field =
+    'h-12 rounded-xl border-white/10 bg-white/[0.04] pl-10 text-[15px] text-white placeholder:text-zinc-600 transition-colors focus-visible:border-emerald-400/60 focus-visible:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-emerald-400/20'
+
   return (
-    <div className="dark relative min-h-screen bg-zinc-950 text-white antialiased flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
-      {/* Header */}
-      <header className="relative z-20 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-xs">
-        <Link to="/" className="flex items-center gap-2.5">
-          <PangatLogo size="sm" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-lg font-bold text-white font-heading">Pangat</span>
-            <span className="text-[10px] font-serif font-bold text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-              पंगत
-            </span>
+    <div className="lp dark relative grid min-h-screen overflow-hidden lg:grid-cols-[1.05fr_1fr]">
+      {/* Brand side */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-white/[0.06] p-12 lg:flex">
+        <div className="lp-aurora" aria-hidden>
+          <div className="absolute -left-20 top-[10%] h-[560px] w-[640px]">
+            <div className="lp-orb h-full w-full bg-[radial-gradient(closest-side,rgba(16,185,129,0.45),transparent)]" />
           </div>
+          <div className="absolute bottom-[-10%] right-[-10%] h-[420px] w-[520px]">
+            <div className="lp-orb h-full w-full bg-[radial-gradient(closest-side,rgba(251,191,36,0.2),transparent)]" style={{ animationDelay: '-7s' }} />
+          </div>
+          <div className="lp-grid-bg absolute inset-0" />
+          <div className="lp-grain" />
+        </div>
+
+        <Link to="/" className="relative flex items-center gap-2.5">
+          <PangatLogo size="sm" />
+          <span className="font-heading text-xl font-semibold tracking-tight text-white">Pangat</span>
         </Link>
 
-        <div className="flex items-center gap-4">
-          <Link
-            to="/"
-            className="text-xs text-zinc-400 hover:text-zinc-100 transition-colors flex items-center gap-1.5"
-          >
-            &larr; Back to Home
-          </Link>
+        <div className="relative max-w-[30rem]">
+          <h2 className="lp-display lp-grad-text text-[3.4rem] xl:text-[4.2rem]">Welcome back to the floor.</h2>
+          <p className="mt-5 text-lg leading-relaxed text-zinc-400">
+            Live orders, kitchen timers and today&rsquo;s settlements, exactly where you left them.
+          </p>
+          <ul className="mt-9 space-y-3.5 text-[0.95rem] text-zinc-300">
+            {['Every table, live on one screen', 'Kitchen chimes the moment an order is paid', 'Nightly WhatsApp closing summary'].map((t) => (
+              <li key={t} className="flex items-center gap-3">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/15">
+                  <Check className="h-3 w-3 text-emerald-300" strokeWidth={3} />
+                </span>
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
-      </header>
 
-      {/* Main Login Card */}
-      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-md bg-zinc-900/95 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-          {/* Card Title */}
-          <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-3">
-              <Lock className="w-5 h-5 text-emerald-400" />
+        <p className="relative text-[13px] text-zinc-600">पंगत · Modern dining speed, rooted in timeless hospitality.</p>
+      </aside>
+
+      {/* Form side */}
+      <div className="relative flex flex-col bg-[var(--lp-bg)]">
+        <header className="flex items-center justify-between px-5 py-5 sm:px-8">
+          <Link to="/" className="flex items-center gap-2.5 lg:invisible">
+            <PangatLogo size="sm" />
+            <span className="font-heading text-lg font-semibold tracking-tight text-white">Pangat</span>
+          </Link>
+          <Link to="/" className="inline-flex items-center gap-1.5 text-[13px] text-zinc-400 transition-colors hover:text-white">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to home
+          </Link>
+        </header>
+
+        <main className="relative flex flex-1 items-center justify-center px-5 pb-10 sm:px-8">
+          <div className="lp-aurora lg:hidden" aria-hidden>
+            <div className="absolute left-1/2 top-[-10%] h-[420px] w-[560px] -translate-x-1/2">
+              <div className="lp-orb h-full w-full bg-[radial-gradient(closest-side,rgba(16,185,129,0.3),transparent)]" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Sign in to Pangat
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              Access your live floor cockpit, orders, and settlements
+          </div>
+
+          <div className="relative w-full max-w-[26rem]">
+            <h1 className="lp-display text-[2.2rem] text-white">Sign in</h1>
+            <p className="mt-2 text-[0.95rem] text-zinc-400">
+              {mode === 'credentials' ? 'Access your floor, orders and settlements.' : 'Launch the kitchen display for your station.'}
             </p>
-          </div>
 
-          {/* Login Mode Tabs */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-950 rounded-xl border border-zinc-800 mb-6">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('credentials')
-                setErrorMsg(null)
-              }}
-              className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                mode === 'credentials'
-                  ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Email & Password
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('pin')
-                setErrorMsg(null)
-              }}
-              className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                mode === 'pin'
-                  ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Kitchen Station PIN
-            </button>
-          </div>
+            {/* Mode switch */}
+            <div className="relative mt-7 grid grid-cols-2 rounded-full border border-white/10 bg-white/[0.04] p-1">
+              <span
+                aria-hidden
+                className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] transition-transform duration-500 [transition-timing-function:var(--lp-ease)]"
+                style={{ transform: mode === 'pin' ? 'translateX(100%)' : 'none' }}
+              />
+              {([['credentials', 'Owner'], ['pin', 'Kitchen PIN']] as const).map(([m, label]) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setMode(m)
+                    setErrorMsg(null)
+                  }}
+                  className={`relative z-10 cursor-pointer rounded-full py-2 text-[13px] font-medium transition-colors ${mode === m ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            {mode === 'credentials' ? (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="owner@yourbrand.com"
-                      className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                    <Input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      required
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                    Kitchen / Outlet Slug
-                  </label>
-                  <div className="relative">
-                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                    <Input
-                      type="text"
-                      value={outletSlug}
-                      onChange={(e) => setOutletSlug(e.target.value)}
-                      placeholder="e.g. fc-road or cafe-slug (optional)"
-                      className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-xs"
-                    />
-                  </div>
-                  <p className="text-[10px] text-zinc-400 mt-1">
-                    Your outlet branch slug to launch the station KDS directly.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                    Station Quick PIN
-                  </label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                    <Input
-                      type="password"
-                      maxLength={6}
-                      value={pinCode}
-                      onChange={(e) => setPinCode(e.target.value)}
-                      placeholder="e.g. 1234"
-                      className="pl-9 bg-zinc-950 border-zinc-800 text-white text-center font-mono text-lg tracking-widest placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                  <p className="text-[10px] text-zinc-400 mt-1">
-                    Enter the 4-digit station PIN configured during onboarding.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isLoading || (mode === 'credentials' ? !email || !password : !pinCode)}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-emerald-950 cursor-pointer transition-all"
-            >
-              {isLoading ? (
+            <form onSubmit={handleLogin} className="mt-6 space-y-4">
+              {mode === 'credentials' ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Authenticating...
+                  <div>
+                    <label htmlFor="email" className="mb-1.5 block text-[13px] text-zinc-400">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <Input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="owner@yourbrand.com"
+                        className={field}
+                        required
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="password" className="mb-1.5 block text-[13px] text-zinc-400">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <Input
+                        id="password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={field}
+                        required
+                      />
+                    </div>
+                  </div>
                 </>
-              ) : mode === 'credentials' ? (
-                'Sign In to Floor Cockpit'
               ) : (
-                'Sign In to Kitchen Display (KDS)'
+                <>
+                  <div>
+                    <label htmlFor="slug" className="mb-1.5 block text-[13px] text-zinc-400">
+                      Outlet slug <span className="text-zinc-600">(optional)</span>
+                    </label>
+                    <div className="relative">
+                      <Store className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <Input
+                        id="slug"
+                        type="text"
+                        value={outletSlug}
+                        onChange={(e) => setOutletSlug(e.target.value)}
+                        placeholder="e.g. fc-road"
+                        className={field}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="pin" className="mb-1.5 block text-[13px] text-zinc-400">Station PIN</label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <Input
+                        id="pin"
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={pinCode}
+                        onChange={(e) => setPinCode(e.target.value)}
+                        placeholder="••••"
+                        className={`${field} text-center font-mono text-lg tracking-[0.5em]`}
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <p className="mt-1.5 text-[12px] text-zinc-600">The 4-digit PIN set during onboarding.</p>
+                  </div>
+                </>
               )}
-            </Button>
-          </form>
 
-          {/* Footer Link */}
-          <div className="mt-6 pt-4 border-t border-zinc-800 text-center">
-            <p className="text-xs text-zinc-400">
+              {errorMsg && (
+                <div role="alert" className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-[13px] text-rose-300">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading || (mode === 'credentials' ? !email || !password : !pinCode)}
+                className="lp-btn lp-btn-primary w-full !h-12 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Signing in…
+                  </>
+                ) : (
+                  <>
+                    {mode === 'credentials' ? 'Sign in' : 'Open kitchen display'}
+                    <ArrowRight className="lp-arrow h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p className="mt-8 border-t border-white/[0.07] pt-6 text-center text-[13px] text-zinc-500">
               New to Pangat?{' '}
               <button
                 type="button"
                 onClick={() => setBookDemoOpen(true)}
-                className="text-emerald-400 hover:text-emerald-300 hover:underline font-semibold transition-colors cursor-pointer inline-flex items-center gap-1 ml-1"
+                className="cursor-pointer font-medium text-white underline-offset-4 transition-colors hover:text-emerald-300 hover:underline"
               >
-                <span>Book a Free On-Site Demo</span>
-                <span aria-hidden="true">&rarr;</span>
+                Book a free demo
               </button>
             </p>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="relative z-20 py-4 text-center text-xs text-zinc-500 border-t border-zinc-900">
-        Pangat Hospitality Management Platform · Zero-Hardware POS
-      </footer>
-
-      {/* Book a Demo Lead Capture Modal */}
-      <BookDemoModal
-        isOpen={bookDemoOpen}
-        onClose={() => setBookDemoOpen(false)}
-      />
+      <BookDemoModal isOpen={bookDemoOpen} onClose={() => setBookDemoOpen(false)} />
     </div>
   )
 }

@@ -442,7 +442,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     })
   },
 
-  updateSettings: async (settings, slug = 'pangat') => {
+  updateSettings: async (settings, slug = useAuthStore.getState().currentOutlet?.slug ?? 'pangat') => {
     set((s) => ({
       restaurant: { ...s.restaurant, ...settings },
     }))

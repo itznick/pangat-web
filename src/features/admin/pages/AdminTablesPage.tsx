@@ -22,8 +22,7 @@ import { cn, isSameTableNumber } from "@/lib/utils"
 import type { TableStatus } from "@/types/domain"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { TableQrModal } from "../components/TableQrModal"
-import { QrCodeImage } from "@/components/ui/QrCodeImage"
+import { QrKitModal } from "../components/qr/QrKitModal"
 
 const STATUS_CONFIG: Record<TableStatus, { label: string; bg: string; border: string; text: string; badge: string }> = {
   VACANT: {
@@ -443,113 +442,19 @@ export function AdminTablesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Single Table QR Code Modal */}
-      {selectedQrTable && (
-        <TableQrModal
-          open={Boolean(selectedQrTable)}
-          onClose={() => setSelectedQrTable(null)}
-          tableNumber={selectedQrTable}
-          outletSlug={outletSlug}
-          outletName={outletName}
-        />
-      )}
-
-      {/* Master Batch Table QR Print Kit Modal */}
-      <Dialog open={batchPrintOpen} onOpenChange={setBatchPrintOpen}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-3xl w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-4 sm:p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-          <style dangerouslySetInnerHTML={{ __html: `
-            @media print {
-              body * {
-                visibility: hidden;
-              }
-              .batch-print-area, .batch-print-area * {
-                visibility: visible;
-              }
-              .batch-print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                display: grid !important;
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 20px !important;
-                background: white !important;
-                color: black !important;
-              }
-              .batch-card {
-                page-break-inside: avoid;
-                border: 2px solid #000 !important;
-                padding: 16px !important;
-                text-align: center;
-              }
-            }
-          ` }} />
-
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-lg font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Printer className="h-5 w-5 text-emerald-500" />
-                  <span>Batch Table QR Tent Print Kit ({tables.length} Tables)</span>
-                </DialogTitle>
-                <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  Ready-to-print 4x6 acrylic stand templates for all dining tables of {outletName}.
-                </DialogDescription>
-              </div>
-
-              <Button
-                onClick={() => window.print()}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-1.5 shadow-xs"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Print All Sheets</span>
-              </Button>
-            </div>
-          </DialogHeader>
-
-          <div className="batch-print-area grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 py-4">
-            {tables.map((t) => {
-              const origin = typeof window !== "undefined" ? window.location.origin : "https://layerform.in"
-              const qrUrl = `${origin}/r/${outletSlug}/t/${t.tableNumber}`
-              return (
-                <div
-                  key={t.id}
-                  className="batch-card bg-white text-zinc-950 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-300 shadow-xs flex flex-col items-center text-center space-y-2"
-                >
-                  <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
-                    🍃 PANGAT • {outletName}
-                  </p>
-                  <div className="bg-zinc-900 text-white px-3 py-0.5 rounded-full text-xs font-black tracking-widest uppercase">
-                    Table {t.tableNumber}
-                  </div>
-                  <div className="p-1 bg-white rounded-lg">
-                    <QrCodeImage value={qrUrl} size={140} />
-                  </div>
-                  <p className="text-[10px] font-bold text-zinc-800">
-                    Scan with Phone Camera to Order
-                  </p>
-                  <p className="text-[8px] text-zinc-500 font-mono">
-                    Zero-Wait Table Ordering & Settlements
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-
-          <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3 flex items-center justify-between">
-            <span className="text-xs text-zinc-500">
-              Formatted for standard 4" x 6" acrylic table stands.
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setBatchPrintOpen(false)}
-              className="border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs"
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Table QR cards: preview, download and print one table or the whole floor */}
+      <QrKitModal
+        open={Boolean(selectedQrTable) || batchPrintOpen}
+        onClose={() => {
+          setSelectedQrTable(null)
+          setBatchPrintOpen(false)
+        }}
+        outletName={outletName}
+        outletSlug={outletSlug}
+        upiVpa={currentOutlet?.upiVpa}
+        tables={tables.map((t) => ({ label: t.tableNumber }))}
+        initial={Math.max(0, tables.findIndex((t) => t.tableNumber === selectedQrTable))}
+      />
     </div>
   )
 }

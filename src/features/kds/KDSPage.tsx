@@ -52,7 +52,7 @@ export function KDSPage() {
   const activeMobileColumn = columns.find((c) => c.id === mobileStage) || columns[0]
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950 overflow-hidden relative">
+    <div className="h-dvh flex flex-col bg-zinc-950 overflow-hidden relative">
       <KDSTopBar restaurantSlug={restaurantSlug} />
 
       {/* Audio alert chime visual indicator */}

@@ -287,7 +287,7 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#0c0b0a] text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white flex flex-col justify-between">
+    <div className="relative min-h-dvh bg-[#0c0b0a] text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white flex flex-col justify-between">
       {/* Authentic Maharashtrian Backdrop */}
       <TraditionalBackdrop patternOpacity={0.07} />
 
