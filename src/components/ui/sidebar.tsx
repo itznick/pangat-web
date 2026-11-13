@@ -58,7 +58,7 @@ const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProvider
         closeMobile,
       }}
     >
-      <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+      <div className="flex h-dvh overflow-hidden bg-zinc-50 dark:bg-[#050506] text-zinc-900 dark:text-zinc-100">
         {children}
       </div>
     </SidebarContext.Provider>
@@ -81,7 +81,7 @@ const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDiv
       {/* Mobile Slide-in Drawer */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 shadow-2xl transition-transform duration-200 ease-in-out md:hidden",
+          "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col h-full bg-white dark:bg-[#09090b] border-r border-zinc-200 dark:border-white/[0.07] shadow-2xl transition-transform duration-200 ease-in-out md:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -91,7 +91,7 @@ const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDiv
       {/* Desktop Persistent Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 shrink-0",
+          "hidden md:flex flex-col h-full bg-white dark:bg-[#09090b] border-r border-zinc-200 dark:border-white/[0.07] transition-all duration-300 shrink-0",
           collapsed ? "w-16" : "w-64",
           className
         )}
@@ -104,7 +104,7 @@ const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDiv
 }
 
 const SidebarHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex items-center px-4 py-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0", className)} {...props} />
+  <div className={cn("flex items-center px-4 py-4 border-b border-zinc-200 dark:border-white/[0.07] shrink-0", className)} {...props} />
 )
 
 const SidebarContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -112,7 +112,7 @@ const SidebarContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivEle
 )
 
 const SidebarFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("border-t border-zinc-200 dark:border-zinc-800 p-4 shrink-0", className)} {...props} />
+  <div className={cn("border-t border-zinc-200 dark:border-white/[0.07] p-4 shrink-0", className)} {...props} />
 )
 
 const SidebarGroup = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -124,7 +124,7 @@ const SidebarGroupLabel = ({ className, ...props }: React.HTMLAttributes<HTMLPar
   return (
     <p
       className={cn(
-        "px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 transition-opacity",
+        "px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-600 mb-1 transition-opacity",
         collapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100",
         className
       )}
@@ -155,10 +155,10 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonP
         title={collapsed ? tooltip : undefined}
         data-active={isActive ? "true" : undefined}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 min-h-[44px] text-xs font-medium transition-all duration-150 cursor-pointer select-none",
-          "hover:bg-zinc-100 dark:hover:bg-zinc-800/70 hover:text-zinc-900 dark:hover:text-zinc-100",
+          "group/nav relative flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 min-h-[44px] text-[13px] font-medium transition-all duration-200 cursor-pointer select-none",
+          "hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-white",
           isActive
-            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold hover:bg-emerald-500/15"
+            ? "bg-zinc-900/[0.06] text-zinc-900 dark:bg-white/[0.08] dark:text-white font-semibold before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:rounded-full before:bg-emerald-400 before:content-[''] [&_svg]:text-emerald-500 dark:[&_svg]:text-emerald-400"
             : "text-zinc-600 dark:text-zinc-400",
           collapsed ? "justify-center px-2" : "",
           className
@@ -210,7 +210,7 @@ const SidebarTrigger = ({ className, ...props }: React.ButtonHTMLAttributes<HTML
 }
 
 const SidebarInset = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden", className)} {...props} />
+  <div className={cn("console-glow flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden", className)} {...props} />
 )
 
 export {

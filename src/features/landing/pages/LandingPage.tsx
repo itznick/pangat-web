@@ -23,19 +23,10 @@ export function LandingPage() {
     }
   }, [])
 
-  // The landing page is always strictly locked to premium dark mode
+  // Pangat is dark-only; make sure the class is present even after client-side navigation
   React.useEffect(() => {
-    const savedTheme = localStorage.getItem("pangat_theme")
     document.documentElement.classList.add("dark")
     document.documentElement.style.colorScheme = "dark"
-
-    return () => {
-      // Restore user's saved preference when navigating into the admin app
-      if (savedTheme === "light") {
-        document.documentElement.classList.remove("dark")
-        document.documentElement.style.colorScheme = "light"
-      }
-    }
   }, [])
 
   const openPilot = () => setPilotModalOpen(true)

@@ -3,6 +3,7 @@
 // Shows items, payment status, and Settle / Clear actions.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useEscapeKey } from "@/hooks/useEscapeKey"
 import { X, CheckCircle2, Trash2, IndianRupee, Clock, Hash } from "lucide-react"
 import { cn, isSameTableNumber } from "@/lib/utils"
 import { useAdminStore } from "@/stores/useAdminStore"
@@ -15,6 +16,7 @@ interface TableDrawerProps {
 }
 
 export function TableDrawer({ table, onClose }: TableDrawerProps) {
+  useEscapeKey(Boolean(table), onClose)
   const activeOrders = useAdminStore((s) => s.activeOrders)
   const settleOrder = useAdminStore((s) => s.settleOrder)
   const updateTableStatus = useAdminStore((s) => s.updateTableStatus)

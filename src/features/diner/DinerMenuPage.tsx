@@ -219,8 +219,8 @@ export function DinerMenuPage() {
     activeOrder.orderStatus !== "COMPLETED"
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <div className="max-w-md mx-auto relative">
+    <div className="min-h-dvh bg-[#050506]">
+      <div className="max-w-md mx-auto relative min-h-dvh bg-zinc-950 sm:border-x sm:border-white/[0.06]">
         <DinerTopBar
           cafeName={restaurant.name || (isLoading ? "Loading..." : "Pangat Dining")}
           tableId={tableId || (activeOrder?.tableNumber ?? "Takeaway")}

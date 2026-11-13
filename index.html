@@ -11,28 +11,9 @@
     <meta name="description" content="Modern dining speed, rooted in timeless hospitality. Instant UPI payments, zero thermal printers, and live kitchen tracking for independent cafes and specialty coffee spots." />
     <meta name="theme-color" content="#050506" />
     <script>
-      (function() {
-        try {
-          var isAuthOrLanding = window.location.pathname === '/' ||
-            window.location.pathname === '' ||
-            window.location.pathname.startsWith('/login') ||
-            window.location.pathname.startsWith('/kds-login');
-          if (isAuthOrLanding) {
-            document.documentElement.classList.add('dark');
-            document.documentElement.style.colorScheme = 'dark';
-            return;
-          }
-          var saved = localStorage.getItem('pangat_theme');
-          var isDark = saved ? saved === 'dark' : !window.matchMedia('(prefers-color-scheme: light)').matches;
-          if (isDark) {
-            document.documentElement.classList.add('dark');
-            document.documentElement.style.colorScheme = 'dark';
-          } else {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.style.colorScheme = 'light';
-          }
-        } catch (e) {}
-      })();
+      // Pangat is a dark-only product: landing, login, dashboards, KDS and the diner menu.
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
     </script>
   </head>
   <body>

@@ -1,3 +1,4 @@
+import { useEscapeKey } from "@/hooks/useEscapeKey"
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -179,6 +180,8 @@ export function ProvisionRestaurantModal({
       setSubmitting(false)
     }
   }
+
+  useEscapeKey(isOpen && !submitting, onClose)
 
   if (!isOpen) return null
 

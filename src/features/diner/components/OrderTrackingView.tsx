@@ -358,7 +358,7 @@ export function OrderTrackingView({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col pb-12">
+    <div className="min-h-dvh bg-zinc-950 flex flex-col pb-12">
       {/* Top bar */}
       <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3">
         <h1 className="text-base font-bold text-zinc-100">Live Order Tracker</h1>

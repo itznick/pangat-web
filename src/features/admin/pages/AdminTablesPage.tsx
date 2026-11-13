@@ -517,7 +517,7 @@ export function AdminTablesPage() {
                   className="batch-card bg-white text-zinc-950 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-300 shadow-xs flex flex-col items-center text-center space-y-2"
                 >
                   <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
-                    🍃 PANGAT • {outletName}
+                    PANGAT • {outletName}
                   </p>
                   <div className="bg-zinc-900 text-white px-3 py-0.5 rounded-full text-xs font-black tracking-widest uppercase">
                     Table {t.tableNumber}

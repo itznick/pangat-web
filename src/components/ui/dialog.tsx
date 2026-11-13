@@ -1,3 +1,4 @@
+import { useEscapeKey } from "@/hooks/useEscapeKey"
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
@@ -9,6 +10,7 @@ interface DialogProps {
 }
 
 const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
+  useEscapeKey(open, () => onOpenChange(false))
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden"
     else document.body.style.overflow = ""
@@ -18,7 +20,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
@@ -33,7 +35,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
 const DialogContent = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 animate-in fade-in-0 zoom-in-95",
+      "bg-zinc-900 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/60 p-6 max-h-[88dvh] overflow-y-auto animate-in fade-in-0 zoom-in-95",
       className
     )}
     {...props}

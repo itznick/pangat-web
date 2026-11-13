@@ -38,7 +38,7 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { AddOutletModal } from "./components/AddOutletModal"
-import { ThemeToggle } from "@/components/ui/ThemeToggle"
+import { PangatLogo } from "@/components/ui/PangatLogo"
 import type { Restaurant } from "@/types/domain"
 
 const OPERATIONS_NAV = [
@@ -95,9 +95,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
       {/* Brand / Dynamic Outlet Switcher */}
       <SidebarHeader>
         <div className="flex items-center gap-2.5 w-full min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-xs border border-emerald-400/30 text-white font-bold text-xs select-none">
-            🍃
-          </div>
+          <PangatLogo size="sm" className="shrink-0" />
           {!collapsed && (
             <div className="flex-1 min-w-0 relative">
               <button
@@ -300,7 +298,6 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                 </span>
               </div>
             )}
-            <ThemeToggle variant="ghost" className="h-8 w-8 p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 shrink-0" />
             {!collapsed && (
               <button
                 onClick={() => {
@@ -457,7 +454,7 @@ export function AdminLayout() {
 
   if (isResolvingOutlets) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-dvh bg-zinc-950 text-white flex items-center justify-center">
         <div className="flex items-center gap-2.5 text-zinc-400 text-sm">
           <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
           <span>Synchronizing restaurant operations...</span>
@@ -477,15 +474,13 @@ export function AdminLayout() {
           <div className="flex items-center gap-2 min-w-0">
             <SidebarTrigger className="text-zinc-700 dark:text-zinc-200" />
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-sm select-none">🍃</span>
+              <PangatLogo size="sm" className="!w-6 !h-6" />
               <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
                 {currentOutlet?.name || "Pangat"}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <ThemeToggle variant="ghost" className="h-9 w-9 p-2 rounded-xl text-zinc-600 dark:text-zinc-400" />
-          </div>
+
         </header>
 
         {/* Impersonation Error Alert */}
@@ -532,7 +527,7 @@ export function AdminLayout() {
         {(!outlets || outlets.length === 0) && !isPlatformSuperAdmin && (
           <div className="bg-emerald-500/10 dark:bg-emerald-950/60 border-b border-emerald-500/20 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-200">
             <div className="flex items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold">🍃</span>
+              <PangatLogo size="sm" className="shrink-0" />
               <div>
                 <p className="font-bold text-zinc-900 dark:text-white">Welcome to Pangat Hospitality!</p>
                 <p className="text-[11px] text-zinc-600 dark:text-emerald-300/80">No active dining outlets configured yet. Add your first branch location to generate dynamic QR codes and accept orders.</p>

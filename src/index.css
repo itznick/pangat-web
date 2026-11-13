@@ -35,18 +35,53 @@ html:not(.dark) .bg-zinc-900 {
 }
 
 html.dark {
-  --color-zinc-950: oklch(14.1% .005 285.823);
-  --color-zinc-900: oklch(21% .006 285.885);
-  --color-zinc-850: oklch(24% .006 285.95);
-  --color-zinc-800: oklch(27.4% .006 286.033);
-  --color-zinc-700: oklch(37% .013 285.805);
-  --color-zinc-600: oklch(44.2% .017 285.786);
-  --color-zinc-500: oklch(55.2% .016 285.938);
-  --color-zinc-400: oklch(70.5% .015 286.067);
-  --color-zinc-300: oklch(87.1% .006 286.286);
-  --color-zinc-200: oklch(92% .004 286.32);
-  --color-zinc-100: oklch(96.7% .001 286.375);
-  --color-zinc-50: oklch(98.5% 0 none);
+  /* Pangat Console dark palette — cooler, deeper neutrals shared with the marketing site */
+  --color-zinc-950: #09090b;
+  --color-zinc-900: #101013;
+  --color-zinc-850: #15151a;
+  --color-zinc-800: #1c1c22;
+  --color-zinc-700: #2c2c34;
+  --color-zinc-600: #44444e;
+  --color-zinc-500: #71717c;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-200: #e8e8ec;
+  --color-zinc-100: #f4f4f6;
+  --color-zinc-50: #fafafa;
+}
+
+html.dark body {
+  background: #050506;
+}
+
+/* ── Console surfaces (shared by every authenticated screen) ───────────────── */
+.console-glow {
+  position: relative;
+  isolation: isolate;
+}
+.console-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 420px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(16, 185, 129, 0.08), transparent 70%),
+    radial-gradient(ellipse 30% 60% at 90% 0%, rgba(251, 191, 36, 0.035), transparent 70%);
+}
+html:not(.dark) .console-glow::before {
+  background: radial-gradient(ellipse 60% 100% at 50% 0%, rgba(16, 185, 129, 0.06), transparent 70%);
+}
+.dark .console-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 50px -30px rgba(0, 0, 0, 0.8);
+}
+html:not(.dark) .console-card {
+  background: #fff;
+  border: 1px solid rgb(228 228 231);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 }
 
 /* ── Modern Thin Aesthetic Scrollbar ────────────────────────────────────────── */
@@ -621,3 +656,22 @@ html.dark {
   animation: spin-around calc(var(--speed) * 2) infinite linear;
 }
 
+
+
+/* ── Console typographic rhythm: page titles match the marketing site ───────── */
+.console-glow h1 {
+  font-family: var(--font-heading);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+.console-glow > header h1,
+.console-glow main h1,
+.console-glow h1.text-lg,
+.console-glow h1.text-xl {
+  font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  line-height: 1.15;
+}
+/* keep long forms and settings readable on wide screens */
+.console-readable {
+  max-width: 880px;
+}

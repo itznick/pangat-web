@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { X, Minus, Plus, ChefHat } from "lucide-react"
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter } from "@/components/ui/drawer"
 import { Textarea } from "@/components/ui/textarea"
@@ -19,7 +19,21 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
   const [notes, setNotes] = useState("")
   const [quantity, setQuantity] = useState(1)
 
+  // Start fresh every time the sheet opens (stale picks from a dismissed sheet must not leak into the next item)
+  useEffect(() => {
+    if (open) {
+      setSelectedSingle({})
+      setSelectedMulti({})
+      setNotes("")
+      setQuantity(1)
+    }
+  }, [open, item?.id])
+
   if (!item) return null
+
+  const missingRequired = item.modifiers.find(
+    (g) => g.type === "SINGLE" && g.isRequired && !selectedSingle[g.id]
+  )
 
   const getModifierPrice = (): number => {
     let total = 0
@@ -167,10 +181,11 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
         </div>
 
         <Button
-          className="w-full h-12 text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 min-h-[44px] touch-manipulation"
+          className="w-full h-12 text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 min-h-[44px] touch-manipulation disabled:bg-zinc-800 disabled:text-zinc-400 disabled:shadow-none disabled:opacity-100"
           onClick={handleConfirm}
+          disabled={Boolean(missingRequired)}
         >
-          Add to Order • ₹{totalPrice}
+          {missingRequired ? `Choose ${missingRequired.name} to continue` : `Add to Order • ₹${totalPrice}`}
         </Button>
       </DrawerFooter>
     </Drawer>

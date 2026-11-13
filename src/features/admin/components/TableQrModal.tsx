@@ -123,7 +123,7 @@ export function TableQrModal({
             {/* Table Tent Header */}
             <div>
               <div className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-emerald-800">
-                <span>🍃 PANGAT DINING</span>
+                <span>PANGAT DINING</span>
               </div>
               <h3 className="text-xs font-semibold text-zinc-700 truncate max-w-[200px]">
                 {outletName}

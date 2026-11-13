@@ -2,7 +2,6 @@ import * as React from 'react'
 import { Outlet, Navigate, useNavigate, useSearchParams } from 'react-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { PangatLogo } from '@/components/ui/PangatLogo'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import {
   BarChart3,
   Inbox,
@@ -65,7 +64,7 @@ export function SuperAdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex font-sans selection:bg-amber-500 selection:text-zinc-950 antialiased overflow-x-hidden relative">
+    <div className="min-h-dvh bg-zinc-50 dark:bg-[#050506] text-zinc-900 dark:text-zinc-100 flex font-sans selection:bg-emerald-400 selection:text-zinc-950 antialiased overflow-x-hidden relative">
       {/* ── Mobile Drawer Backdrop ────────────────────────────────────────── */}
       {mobileDrawerOpen && (
         <div
@@ -77,19 +76,19 @@ export function SuperAdminLayout() {
 
       {/* ── High-Density Enterprise Operations Sidebar ─────────────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] md:static md:z-30 shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col justify-between transition-transform duration-200 ease-in-out md:transition-all select-none shadow-2xl md:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] md:static md:z-30 shrink-0 border-r border-zinc-200 dark:border-white/[0.07] bg-white dark:bg-[#09090b] flex flex-col justify-between transition-transform duration-200 ease-in-out md:transition-all select-none shadow-2xl md:shadow-none ${
           mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } ${sidebarCollapsed ? 'md:w-16' : 'md:w-64'}`}
       >
         {/* Sidebar Header */}
-        <div className="p-3.5 border-b border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between">
+        <div className="p-3.5 border-b border-zinc-200 dark:border-white/[0.07] flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
             <PangatLogo size="sm" />
             {!sidebarCollapsed && (
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-zinc-900 dark:text-white">Pangat</span>
-                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase">
+                  <span className="font-heading text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-white">Pangat</span>
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/25 uppercase tracking-wider">
                     Ops
                   </span>
                 </div>
@@ -115,7 +114,7 @@ export function SuperAdminLayout() {
         {/* Sidebar Navigation */}
         <div className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
           {!sidebarCollapsed && (
-            <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
+            <p className="px-3 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-600">
               Operations Toolkit
             </p>
           )}
@@ -128,14 +127,14 @@ export function SuperAdminLayout() {
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabSelect(tab.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 min-h-[44px] rounded-xl text-[13px] font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-semibold shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent'
+                    ? "bg-zinc-900/[0.06] dark:bg-white/[0.08] text-zinc-900 dark:text-white font-semibold before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:rounded-full before:bg-emerald-400 before:content-['']"
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
                 } ${sidebarCollapsed ? 'justify-center px-2' : ''}`}
                 title={tab.label}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber-500' : 'text-zinc-400'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-zinc-400'}`} />
                 {!sidebarCollapsed && (
                   <span className="truncate">{tab.label}</span>
                 )}
@@ -144,16 +143,16 @@ export function SuperAdminLayout() {
           })}
 
           {/* Quick jump to Merchant Dashboard (Zero impersonation) */}
-          <div className="pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-800/80">
+          <div className="pt-4 mt-4 border-t border-zinc-200 dark:border-white/[0.07]">
             {!sidebarCollapsed && (
-              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              <p className="px-3 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-600">
                 Portals
               </p>
             )}
             <button
               type="button"
               onClick={() => navigate('/admin/dashboard')}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 min-h-[44px] rounded-xl text-[13px] font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer ${
                 sidebarCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Merchant Portal"
@@ -170,15 +169,15 @@ export function SuperAdminLayout() {
         </div>
 
         {/* Sidebar Footer: Admin profile & logout */}
-        <div className="p-3 border-t border-zinc-200 dark:border-zinc-800/80 space-y-2">
+        <div className="p-3 border-t border-zinc-200 dark:border-white/[0.07] space-y-2">
           <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center shrink-0">
               {user.name?.charAt(0).toUpperCase() || 'A'}
             </div>
             {!sidebarCollapsed && (
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold text-zinc-900 dark:text-white truncate">{user.name}</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-400/90 truncate flex items-center gap-1 font-semibold">
+                <div className="text-[10px] text-emerald-600 dark:text-emerald-400/90 truncate flex items-center gap-1 font-semibold">
                   <Shield className="w-2.5 h-2.5" />
                   <span>PLATFORM SUPER ADMIN</span>
                 </div>
@@ -198,15 +197,14 @@ export function SuperAdminLayout() {
               <LogOut className="w-3.5 h-3.5" />
               {!sidebarCollapsed && <span>Sign Out</span>}
             </button>
-            <ThemeToggle variant="ghost" className="h-7 w-7 p-1 text-zinc-400 shrink-0" />
           </div>
         </div>
       </aside>
 
       {/* ── Main Operations Canvas ─────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-zinc-50 dark:bg-black">
+      <div className="console-glow flex-1 flex flex-col min-w-0 bg-zinc-50 dark:bg-[#050506]">
         {/* Top Operational Header */}
-        <header className="h-14 border-b border-zinc-200 dark:border-zinc-800 px-3.5 sm:px-8 flex items-center justify-between bg-white/95 dark:bg-zinc-950/80 backdrop-blur-sm shrink-0">
+        <header className="sticky top-0 z-20 h-14 border-b border-zinc-200 dark:border-white/[0.07] px-3.5 sm:px-8 flex items-center justify-between bg-white/90 dark:bg-[#050506]/70 backdrop-blur-xl shrink-0">
           <div className="flex items-center gap-2 text-xs">
             {/* Mobile Hamburger */}
             <button
@@ -221,9 +219,9 @@ export function SuperAdminLayout() {
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <span className="text-zinc-500 font-mono hidden sm:inline">Platform Ops</span>
-            <span className="text-zinc-400 dark:text-zinc-600 font-mono hidden sm:inline">/</span>
-            <span className="font-semibold text-zinc-900 dark:text-white capitalize font-mono text-xs">
+            <span className="text-zinc-500 hidden sm:inline">Platform Ops</span>
+            <span className="text-zinc-400 dark:text-zinc-600 hidden sm:inline">/</span>
+            <span className="font-semibold text-zinc-900 dark:text-white text-[13px]">
               {OPS_TABS.find((t) => t.id === activeTab)?.label || 'Overview'}
             </span>
           </div>
@@ -231,7 +229,7 @@ export function SuperAdminLayout() {
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden xs:inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-700 dark:text-emerald-300 font-mono">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Neon DB Online</span>
+              <span>Platform live</span>
             </div>
 
             <button
@@ -240,7 +238,7 @@ export function SuperAdminLayout() {
                 const trigger = document.getElementById('super-admin-provision-trigger')
                 if (trigger) trigger.click()
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs shadow-xs transition-colors cursor-pointer min-h-[36px]"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-sm shadow-emerald-600/20 transition-colors cursor-pointer min-h-[36px]"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">Provision Restaurant</span>

@@ -20,7 +20,7 @@ export function RouteErrorBoundary() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 text-center select-none">
+    <div className="min-h-dvh bg-zinc-950 flex flex-col items-center justify-center p-6 text-center select-none">
       <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4 shadow-xl shadow-rose-500/5">
         <ShieldAlert className="h-8 w-8 text-rose-400" />
       </div>
