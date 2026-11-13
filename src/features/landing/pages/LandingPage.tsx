@@ -1,16 +1,16 @@
 import * as React from "react"
 import { Navbar } from "../components/Navbar"
 import { Hero } from "../components/Hero"
-import { CulturalCallout } from "../components/CulturalCallout"
-import { WarliArtSection } from "../components/WarliArtSection"
-import { ProblemSolution } from "../components/ProblemSolution"
-import { HowItWorks } from "../components/HowItWorks"
+import { Statement, Proof } from "../components/Statement"
+import { Journey } from "../components/Journey"
+import { Operations } from "../components/Operations"
+import { Heritage } from "../components/Heritage"
 import { RoiCalculator } from "../components/RoiCalculator"
 import { Pricing } from "../components/Pricing"
 import { Footer } from "../components/Footer"
 import { PilotModal } from "../components/PilotModal"
 import { LiveDemoModal } from "../components/LiveDemoModal"
-import { TraditionalBackdrop } from "@/components/traditional/TraditionalBackdrop"
+import "../landing.css"
 
 export function LandingPage() {
   const [pilotModalOpen, setPilotModalOpen] = React.useState(false)
@@ -18,7 +18,7 @@ export function LandingPage() {
 
   React.useEffect(() => {
     // If URL has ?demo=true or #book-demo, open lead modal automatically
-    if (window.location.search.includes('demo=true') || window.location.hash === '#book-demo') {
+    if (window.location.search.includes("demo=true") || window.location.hash === "#book-demo") {
       setPilotModalOpen(true)
     }
   }, [])
@@ -38,55 +38,31 @@ export function LandingPage() {
     }
   }, [])
 
+  const openPilot = () => setPilotModalOpen(true)
+
   return (
-    <div className="dark relative min-h-screen bg-[#050505] text-zinc-100 antialiased selection:bg-white selection:text-black overflow-x-hidden font-sans">
-      {/* Subtle, restrained Warli art watermark in chalk-white + Deccan stone depth */}
-      <TraditionalBackdrop patternOpacity={0.025} showMandalas={false} />
+    <div className="lp dark relative min-h-screen overflow-x-clip selection:bg-white selection:text-black">
+      <Navbar onOpenPilot={openPilot} />
 
-      {/* 1. Sticky Header / Navbar */}
-      <Navbar onOpenPilot={() => setPilotModalOpen(true)} />
-
-      <main className="relative z-10">
-        {/* 2. Hero Section */}
-        <Hero
-          onOpenPilot={() => setPilotModalOpen(true)}
-          onOpenDemo={() => setDemoModalOpen(true)}
-        />
-
-        {/* 3. The Cultural Context / "Why Pangat?" */}
-        <CulturalCallout />
-
-        {/* 3b. Dedicated Full-Width Black Section for the Warli Painting Exhibition */}
-        <WarliArtSection />
-
-        {/* 4. Problem vs. Solution Grid */}
-        <ProblemSolution />
-
-        {/* 5. How It Works */}
-        <HowItWorks />
-
-        {/* 6. Interactive ROI / Table Turnover Calculator */}
-        <RoiCalculator onOpenPilot={() => setPilotModalOpen(true)} />
-
-        {/* 7. Transparent Merchant Pricing */}
-        <Pricing onOpenPilot={() => setPilotModalOpen(true)} />
+      <main className="relative">
+        <Hero onOpenPilot={openPilot} onOpenDemo={() => setDemoModalOpen(true)} />
+        <Statement />
+        <Proof />
+        <Journey onOpenPilot={openPilot} />
+        <Operations />
+        <Heritage />
+        <RoiCalculator onOpenPilot={openPilot} />
+        <Pricing onOpenPilot={openPilot} />
       </main>
 
-      {/* 8. Modern Cultural Footer */}
-      <div className="relative z-10">
-        <Footer onOpenPilot={() => setPilotModalOpen(true)} />
-      </div>
+      <Footer onOpenPilot={openPilot} />
 
-      {/* Conversion Modals */}
-      <PilotModal
-        isOpen={pilotModalOpen}
-        onClose={() => setPilotModalOpen(false)}
-      />
-
+      {/* Conversion modals */}
+      <PilotModal isOpen={pilotModalOpen} onClose={() => setPilotModalOpen(false)} />
       <LiveDemoModal
         isOpen={demoModalOpen}
         onClose={() => setDemoModalOpen(false)}
-        onClaimPilot={() => setPilotModalOpen(true)}
+        onClaimPilot={openPilot}
       />
     </div>
   )

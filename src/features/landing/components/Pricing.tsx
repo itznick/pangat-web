@@ -1,125 +1,74 @@
-import { useScrollReveal } from "@/hooks/useScrollReveal"
-import { Check, ArrowRight, ShieldCheck, MapPin } from "lucide-react"
+import { ArrowRight, Check } from "lucide-react"
+import { Reveal, SplitReveal, Spotlight } from "./motion"
 
 interface PricingProps {
   onOpenPilot: () => void
 }
 
+const INCLUDED = [
+  "Unlimited table QR standees, branded to your cafe",
+  "Live kitchen display on any phone, iPad or tablet",
+  "Distinct audio chime for noisy counters",
+  "Direct UPI settlement — keep 100% of every bill",
+  "Menu, modifiers, inventory and recipes",
+  "Daily WhatsApp closing summary",
+  "Free on-site standee setup in Pune",
+  "Direct WhatsApp line to the founding team",
+]
+
 export function Pricing({ onOpenPilot }: PricingProps) {
-  const { ref, isVisible } = useScrollReveal()
-
-  const inclusions = [
-    "Unlimited table QR standees with custom cafe branding",
-    "0% transaction commission cuts (keep 100% of every bill)",
-    "Real-time Web KDS on any staff phone, iPad, or tablet",
-    "Distinct kitchen audio chime for noisy barista & grill counters",
-    "Direct diner-to-merchant instant UPI settlement",
-    "Daily WhatsApp sales summary delivered every night",
-    "Free on-site standee setup for Pune cafes",
-    "Direct WhatsApp support from the founding team",
-  ]
-
   return (
-    <section id="pricing" className="py-20 sm:py-28 bg-transparent text-white relative overflow-hidden border-t border-white/[0.06]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Header */}
-        <div
-          ref={ref}
-          className={`text-center max-w-xl mx-auto mb-16 sm:mb-20 transition-all duration-700 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
-        >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-zinc-300 text-xs font-normal mb-4">
-            <span>Simple Pricing</span>
-          </div>
-
-          <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white font-heading leading-tight">
-            One flat fee.
-            <span className="block text-zinc-400 font-medium mt-1">Zero commissions.</span>
-          </h2>
-
-          <p className="mt-4 text-base sm:text-lg text-zinc-400 leading-relaxed font-normal">
-            No per-order commissions. No expensive POS hardware leases. Keep 100% of what your diners spend.
-          </p>
+    <section id="pricing" className="relative py-28 sm:py-40">
+      <div className="mx-auto max-w-[1080px] px-5 sm:px-8">
+        <div className="mx-auto max-w-[40rem] text-center">
+          <Reveal as="p" className="lp-eyebrow mb-5">Pricing</Reveal>
+          <SplitReveal
+            text="One price. Nothing hiding behind it."
+            className="lp-display lp-grad-text text-[2.6rem] sm:text-[3.8rem] lg:text-[4.6rem]"
+          />
         </div>
 
-        {/* Apple-Style Pricing Card */}
-        <div className="max-w-2xl mx-auto rounded-3xl border border-white/[0.08] bg-zinc-950/70 backdrop-blur-2xl shadow-2xl overflow-hidden relative ring-1 ring-white/[0.04]">
-          {/* Top Pune Pilot Banner */}
-          <div className="bg-white/[0.04] border-b border-white/[0.06] px-5 py-2.5 text-zinc-300 text-center text-xs font-normal flex items-center justify-center gap-2">
-            <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Free 7-Day Trial in Pune · Zero Upfront Card Required</span>
-          </div>
-
-          <div className="p-6 sm:p-10 md:p-12 space-y-8">
-            {/* Header info */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-white/[0.06]">
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">
-                  Starter Cafe Plan
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-semibold text-white mt-1 font-heading">
-                  Everything included
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-                  For independent cafes, roasteries, and busy QSRs.
-                </p>
-              </div>
-
-              <div className="text-left sm:text-right shrink-0">
-                <div className="flex items-baseline gap-1 sm:justify-end">
-                  <span className="text-4xl sm:text-5xl font-bold font-heading text-white tracking-tight tabular-nums">
-                    ₹699
+        <Reveal delay={150} variant="scale" className="mt-14 sm:mt-20">
+          <Spotlight className="lp-glass overflow-hidden rounded-[2rem] sm:rounded-[2.5rem]">
+            <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+              <div className="relative flex flex-col justify-between gap-12 p-8 sm:p-12">
+                <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-emerald-500/20 blur-[80px]" />
+                <div className="relative">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[12px] text-emerald-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    7-day free trial in Pune
                   </span>
-                  <span className="text-sm text-zinc-400 font-normal">/ month</span>
+                  <p className="mt-7 flex items-baseline gap-2">
+                    <span className="lp-display lp-grad-text text-[4.4rem] leading-none sm:text-[7rem]">₹699</span>
+                    <span className="text-lg text-zinc-400">/ month</span>
+                  </p>
+                  <p className="mt-4 text-[1.05rem] text-zinc-300">Everything included. 0% commission, always.</p>
                 </div>
-                <p className="text-xs text-emerald-400 font-medium mt-0.5">
-                  0% commission cuts
-                </p>
+
+                <div className="relative">
+                  <button type="button" onClick={onOpenPilot} className="lp-btn lp-btn-primary w-full sm:!h-[3.25rem]">
+                    Start your free trial <ArrowRight className="lp-arrow h-4 w-4" />
+                  </button>
+                  <p className="mt-4 text-center text-[12px] text-zinc-500">No credit card · Cancel anytime</p>
+                </div>
+              </div>
+
+              <div className="border-t border-white/[0.07] bg-black/25 p-8 sm:p-12 lg:border-l lg:border-t-0">
+                <p className="mb-6 text-[13px] text-zinc-500">What&rsquo;s included</p>
+                <ul className="space-y-4">
+                  {INCLUDED.map((f, i) => (
+                    <Reveal as="li" key={f} delay={i * 60} className="flex items-start gap-3.5 text-[0.98rem] leading-snug text-zinc-200">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.08]">
+                        <Check className="h-3 w-3 text-emerald-300" strokeWidth={3} />
+                      </span>
+                      {f}
+                    </Reveal>
+                  ))}
+                </ul>
               </div>
             </div>
-
-            {/* Inclusions Grid */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-500">
-                Included in your plan:
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-zinc-300">
-                {inclusions.map((feature, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0 mt-0.5 text-zinc-200">
-                      <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                    </div>
-                    <span className="leading-snug text-xs sm:text-sm text-zinc-300">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* CTA & Guarantee */}
-            <div className="pt-4 border-t border-white/[0.06] space-y-4">
-              <button
-                type="button"
-                onClick={onOpenPilot}
-                className="w-full py-4 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 font-semibold text-base transition-all duration-200 active:scale-[0.98] shadow-lg shadow-white/5 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Start Free 7-Day Trial</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-400 pt-1">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>No credit card required</span>
-                </span>
-                <span>·</span>
-                <span>Cancel anytime</span>
-                <span>·</span>
-                <span>Free on-site setup in Pune</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          </Spotlight>
+        </Reveal>
       </div>
     </section>
   )
