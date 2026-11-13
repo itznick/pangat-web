@@ -2,10 +2,10 @@ import * as React from "react"
 import { CountUp, Reveal, prefersReducedMotion, useScrollLinked } from "./motion"
 
 const COPY =
-  "Your best minutes disappear into waving for a waiter, waiting on a bill, and a printer that jams on Friday night. Pangat gives them back — so every table turns faster and every guest feels looked after."
+  "Ever waved at a waiter who never looked up? Yeah, your guests have too. With Pangat they order and pay from their seat, your kitchen hears it instantly, and tables turn faster."
 
 // words (lowercase, punctuation stripped) that get the accent colour once lit
-const HL = new Set(["waving", "waiting", "printer", "back", "faster", "looked"])
+const HL = new Set(["waved", "order", "pay", "instantly", "faster"])
 
 const clean = (w: string) => w.toLowerCase().replace(/[^a-z]/g, "")
 
@@ -32,7 +32,7 @@ export function Statement() {
     <section ref={section} className="relative lg:h-[230vh]" aria-label="Why Pangat">
       <div className="top-0 flex flex-col justify-center py-24 lg:sticky lg:h-screen lg:py-0">
         <div className="mx-auto max-w-[1080px] px-5 sm:px-8">
-          <p className="lp-eyebrow mb-6 sm:mb-8">The problem with a busy room</p>
+          <p className="lp-eyebrow mb-6 sm:mb-8">Sound familiar?</p>
           <p className="lp-display lp-scrubtext text-[1.9rem] leading-[1.14] sm:text-[3.2rem] lg:text-[4rem]" style={{ fontWeight: 600 }}>
             {words.map((w, i) => (
               <React.Fragment key={i}>

@@ -13,11 +13,22 @@ const LINKS = [
   { name: "Pricing", href: "#pricing" },
 ]
 
-export function scrollToHash(href: string, offset = 88) {
-  const target = document.querySelector(href)
+/**
+ * Jump straight to a section (no long smooth scroll through the pinned story).
+ * Lands on the section's content, not its decorative top padding, just under the nav.
+ */
+export function scrollToHash(href: string, offset = 96) {
+  const target = document.querySelector<HTMLElement>(href)
   if (!target) return
-  const top = target.getBoundingClientRect().top + window.scrollY - offset
-  window.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
+  const pad = parseFloat(getComputedStyle(target).paddingTop) || 0
+  // The story section manages its own top spacing (pinned stage / carousel padding), so land on its very top.
+  const nav = target.id === "journey" ? 0 : offset
+  const top = target.getBoundingClientRect().top + window.scrollY + pad - nav
+  const root = document.documentElement
+  const prev = root.style.scrollBehavior
+  root.style.scrollBehavior = "auto"
+  window.scrollTo({ top: Math.max(0, top), behavior: "auto" })
+  root.style.scrollBehavior = prev
 }
 
 export function Navbar({ onOpenPilot }: NavbarProps) {

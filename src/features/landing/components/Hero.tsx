@@ -85,7 +85,7 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
         <div className="flex flex-col items-center text-center">
           <Reveal className="lp-glass mb-7 inline-flex items-center gap-2.5 rounded-full py-1.5 pl-2 pr-4 sm:mb-9">
             <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">New</span>
-            <span className="text-[13px] text-zinc-300">Live table ordering for Pune cafes</span>
+            <span className="text-[13px] text-zinc-300">Live table ordering for modern cafes</span>
           </Reveal>
 
           <h1 className="lp-display max-w-[15ch] text-[2.9rem] sm:max-w-none sm:text-[5.2rem] lg:text-[6.6rem]">

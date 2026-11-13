@@ -287,7 +287,7 @@ export function Journey({ onOpenPilot }: { onOpenPilot: () => void }) {
       className="relative"
       style={pinned ? { height: `calc(100vh + ${Math.round(distance * 0.78)}px)` } : undefined}
     >
-      <div className={pinned ? "sticky top-0 flex h-screen flex-col justify-center overflow-hidden" : "py-24 sm:py-32"}>
+      <div className={pinned ? "sticky top-0 flex h-screen flex-col justify-center overflow-hidden pb-4 pt-24" : "py-24 sm:py-32"}>
         {/* Ambient */}
         <div className="lp-aurora" aria-hidden>
           <div className="absolute left-[10%] top-[20%] h-[480px] w-[480px]">
