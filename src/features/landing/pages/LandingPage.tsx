@@ -11,7 +11,6 @@ import { Footer } from "../components/Footer"
 import { PilotModal } from "../components/PilotModal"
 import { LiveDemoModal } from "../components/LiveDemoModal"
 import { TraditionalBackdrop } from "@/components/traditional/TraditionalBackdrop"
-import { TraditionalToranBorder } from "@/components/traditional/WarliArt"
 
 export function LandingPage() {
   const [pilotModalOpen, setPilotModalOpen] = React.useState(false)
@@ -40,9 +39,9 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="dark relative min-h-screen bg-[#0c0b0a] text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white overflow-x-hidden">
-      {/* Authentic Maharashtrian Traditional Backdrop: Warli art in chalk-white + Deccan stone warmth */}
-      <TraditionalBackdrop patternOpacity={0.075} />
+    <div className="dark relative min-h-screen bg-[#050505] text-zinc-100 antialiased selection:bg-white selection:text-black overflow-x-hidden font-sans">
+      {/* Subtle, restrained Warli art watermark in chalk-white + Deccan stone depth */}
+      <TraditionalBackdrop patternOpacity={0.025} showMandalas={false} />
 
       {/* 1. Sticky Header / Navbar */}
       <Navbar onOpenPilot={() => setPilotModalOpen(true)} />
@@ -53,11 +52,6 @@ export function LandingPage() {
           onOpenPilot={() => setPilotModalOpen(true)}
           onOpenDemo={() => setDemoModalOpen(true)}
         />
-
-        {/* Traditional Toran Runner before Cultural Callout */}
-        <div className="max-w-6xl mx-auto px-4 opacity-40">
-          <TraditionalToranBorder />
-        </div>
 
         {/* 3. The Cultural Context / "Why Pangat?" */}
         <CulturalCallout />
@@ -73,11 +67,6 @@ export function LandingPage() {
 
         {/* 6. Interactive ROI / Table Turnover Calculator */}
         <RoiCalculator onOpenPilot={() => setPilotModalOpen(true)} />
-
-        {/* Traditional Toran Runner before Pricing */}
-        <div className="max-w-6xl mx-auto px-4 opacity-40">
-          <TraditionalToranBorder />
-        </div>
 
         {/* 7. Transparent Merchant Pricing */}
         <Pricing onOpenPilot={() => setPilotModalOpen(true)} />

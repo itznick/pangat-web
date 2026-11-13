@@ -95,12 +95,9 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 @theme inline {
-    /* ── Typography
-     * Only Inter Variable is installed (@fontsource-variable/inter).
-     * Plus Jakarta Sans is NOT installed — removed from font stack.
-     */
-    --font-heading: 'Inter Variable', 'Inter', system-ui, sans-serif;
-    --font-sans:    'Inter Variable', 'Inter', system-ui, sans-serif;
+    /* ── Apple-Grade Typography ─────────────────────────────────────────── */
+    --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", "Inter Variable", "Inter", -apple-system, system-ui, sans-serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "Inter Variable", "Inter", -apple-system, system-ui, sans-serif;
     --color-zinc-850: var(--color-zinc-850);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -214,26 +211,23 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
-    /*
-     * Use bg-zinc-950 intentionally — the zinc remap in html:not(.dark)
-     * maps this to #f8fafc (near-white) in light mode and the native dark
-     * value in dark mode. This is the correct adaptive surface for the app shell.
-     */
     @apply bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-150;
-    /* Refined letter-spacing and line-height for Inter at all sizes */
-    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.015em;
     line-height: 1.5;
-    }
+  }
   html {
     @apply font-sans scroll-smooth;
-    }
-  /* Smooth font rendering across platforms */
-  h1, h2, h3, h4, h5, h6 {
-    letter-spacing: -0.02em;
+  }
+  /* Apple-grade smooth typography & tight tracking across display headings */
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    letter-spacing: -0.028em;
     font-feature-settings: "cv01", "cv02", "cv03", "cv04", "cv11";
-    }
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════

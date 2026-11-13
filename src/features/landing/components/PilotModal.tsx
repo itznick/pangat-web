@@ -1,9 +1,6 @@
 import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   X,
-  Sparkles,
   CheckCircle2,
   ShieldCheck,
   ArrowRight,
@@ -54,7 +51,6 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
 
       setSubmitted(true)
       setToastVisible(true)
-      // Auto-hide toast after 5s
       setTimeout(() => setToastVisible(false), 5000)
     } catch (err: unknown) {
       setErrorMessage(
@@ -72,55 +68,50 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastVisible && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-emerald-950 border border-emerald-500/50 text-emerald-200 shadow-2xl shadow-emerald-950 animate-in slide-in-from-top duration-300">
-          <Clock className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span className="text-xs sm:text-sm font-semibold">
-            Demo request received! Our team will connect within 4 hours.
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2.5 px-5 py-3 rounded-full bg-white text-zinc-950 shadow-2xl animate-in slide-in-from-top duration-300">
+          <Clock className="w-4 h-4 text-zinc-950 shrink-0" />
+          <span className="text-xs sm:text-sm font-medium">
+            Demo request received. Our team will connect within 4 hours.
           </span>
         </div>
       )}
 
-      <div className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-950 text-white p-6 sm:p-9 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg rounded-3xl border border-white/[0.08] bg-zinc-950 text-white p-6 sm:p-9 shadow-2xl max-h-[92vh] overflow-y-auto ring-1 ring-white/[0.04]">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
           aria-label="Close modal"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {!submitted ? (
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="emerald" className="text-xs font-semibold font-sans">
-                Assisted B2B Provisioning
-              </Badge>
-              <span className="text-xs text-zinc-400 font-sans">
-                Zero Upfront Tech Hassle
-              </span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs text-zinc-300 mb-3 font-normal">
+              <span>On-Site Setup in Pune</span>
             </div>
 
             <h3 className="text-2xl font-bold tracking-tight text-white font-heading">
               Book a 15-Minute Live Demo
             </h3>
-            <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed font-sans">
-              Our ops engineering team will inspect your floor layout, provision your branded QR standees, and connect your kitchen tablet.
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed">
+              We&apos;ll bring sample branded acrylic standees to your cafe, configure your menu live in 15 minutes, and test the audio chime alert.
             </p>
 
             {errorMessage && (
-              <div className="mt-4 p-3 rounded-xl bg-red-950/60 border border-red-500/30 text-xs text-red-200 font-sans">
+              <div className="mt-4 p-3 rounded-xl bg-red-950/40 border border-red-500/20 text-xs text-red-200">
                 {errorMessage}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left font-sans">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left">
               {/* Owner Name */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Owner / Decision Maker Name
                 </label>
                 <div className="relative">
@@ -133,14 +124,14 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, ownerName: e.target.value })
                     }
-                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/[0.08] bg-white/[0.03] text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
                   />
                 </div>
               </div>
 
               {/* Restaurant Name */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Restaurant / Cafe Name
                 </label>
                 <div className="relative">
@@ -153,14 +144,14 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, restaurantName: e.target.value })
                     }
-                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/[0.08] bg-white/[0.03] text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
                   />
                 </div>
               </div>
 
               {/* WhatsApp Number */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   WhatsApp Contact Number
                 </label>
                 <div className="relative">
@@ -173,7 +164,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
-                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 tabular-nums"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/[0.08] bg-white/[0.03] text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30 tabular-nums"
                   />
                 </div>
               </div>
@@ -181,7 +172,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* City / Area */}
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">
                     City / Area
                   </label>
                   <div className="relative">
@@ -194,14 +185,14 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                       onChange={(e) =>
                         setFormData({ ...formData, city: e.target.value })
                       }
-                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/[0.08] bg-white/[0.03] text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
 
                 {/* Daily Table Count */}
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">
                     Daily Table Count
                   </label>
                   <div className="relative">
@@ -211,7 +202,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                       onChange={(e) =>
                         setFormData({ ...formData, tableCount: e.target.value })
                       }
-                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/10 bg-zinc-900 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-white/[0.08] bg-zinc-900 text-white focus:outline-none focus:ring-1 focus:ring-white/30 cursor-pointer"
                     >
                       <option value="6-12 tables">6 - 12 tables</option>
                       <option value="13-24 tables">13 - 24 tables</option>
@@ -223,65 +214,63 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
               </div>
 
               {/* Guarantees */}
-              <div className="pt-2 text-xs text-zinc-400 space-y-1.5 font-sans">
+              <div className="pt-2 text-xs text-zinc-400 space-y-1.5">
                 <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Assisted Table Onboarding · Hardware-free QR Standees</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <span>Free on-site standee trial · Zero hardware purchase</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Instant settlement directly to your restaurant UPI VPA</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <span>Direct UPI settlement to your bank account</span>
                 </div>
               </div>
 
               <div className="pt-2">
-                <Button
+                <button
                   type="submit"
-                  size="lg"
                   disabled={submitting}
-                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm shadow-xl shadow-emerald-950 py-3.5 cursor-pointer font-sans"
+                  className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-sm rounded-full py-3.5 cursor-pointer shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
-                      <span>Submitting Request...</span>
+                      <span>Submitting...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 text-zinc-950" />
-                      <span>Book a Demo</span>
+                      <span>Book Free Demo</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
         ) : (
-          <div className="py-6 text-center space-y-4 font-sans">
-            <div className="w-16 h-16 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto animate-in zoom-in duration-300 shadow-xl shadow-emerald-950">
-              <CheckCircle2 className="w-9 h-9" />
+          <div className="py-6 text-center space-y-4">
+            <div className="w-14 h-14 rounded-full bg-white/[0.08] text-white flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
             </div>
 
-            <h3 className="text-2xl font-extrabold text-white font-heading">
-              Demo Request Received!
+            <h3 className="text-2xl font-bold text-white font-heading">
+              Demo Request Received
             </h3>
 
-            <p className="text-sm text-zinc-300 max-w-sm mx-auto leading-relaxed">
-              Our team will connect within <strong className="text-emerald-400">4 hours</strong> via WhatsApp to schedule your personalized live demo and setup for{" "}
-              <strong className="text-zinc-100">
+            <p className="text-sm text-zinc-400 max-w-sm mx-auto leading-relaxed">
+              Our team will connect within <strong className="text-white">4 hours</strong> via WhatsApp to schedule your personalized live demo for{" "}
+              <strong className="text-zinc-200">
                 {formData.restaurantName || "your restaurant"}
               </strong>.
             </p>
 
-            <div className="p-4 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-left space-y-2">
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-xs text-left space-y-2">
               <div className="flex justify-between">
                 <span className="text-zinc-400">Owner:</span>
-                <span className="text-zinc-200 font-bold">{formData.ownerName}</span>
+                <span className="text-zinc-200 font-medium">{formData.ownerName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-400">WhatsApp Contact:</span>
-                <span className="text-zinc-200 font-bold">{formData.phone}</span>
+                <span className="text-zinc-200 font-medium">{formData.phone}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-400">City / Area:</span>
@@ -289,16 +278,16 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-400">Daily Table Count:</span>
-                <span className="text-emerald-400 font-bold">{formData.tableCount}</span>
+                <span className="text-zinc-200 font-medium">{formData.tableCount}</span>
               </div>
             </div>
 
-            <Button
+            <button
               onClick={handleReset}
-              className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-bold cursor-pointer"
+              className="w-full py-3 rounded-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-sm transition-colors cursor-pointer"
             >
               Done
-            </Button>
+            </button>
           </div>
         )}
       </div>
