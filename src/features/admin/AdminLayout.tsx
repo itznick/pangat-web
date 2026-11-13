@@ -1,3 +1,4 @@
+import '@/features/landing/landing.css'
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router"
 import {
   SidebarProvider,
@@ -10,7 +11,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
   SidebarInset,
   useSidebar,
 } from "@/components/ui/sidebar"
@@ -30,7 +30,6 @@ import {
   Star,
   Boxes,
   CreditCard,
-  Search,
   Keyboard,
   Sparkles,
   LifeBuoy,
@@ -44,6 +43,11 @@ import { api } from "@/lib/api"
 import { AddOutletModal } from "./components/AddOutletModal"
 import { PangatLogo } from "@/components/ui/PangatLogo"
 import { UserMenu, type MenuEntry } from "@/components/console/UserMenu"
+import { TopBar } from "@/components/console/TopBar"
+import { SettingsModal } from "./components/SettingsModal"
+import { BillingModal } from "@/features/subscriptions/components/BillingModal"
+import { useAdminNotices } from "./useAdminNotices"
+import { STATUS_META, useBilling } from "@/features/subscriptions/billing"
 import { ConsoleOverlays } from "@/components/console/ConsoleOverlays"
 import { useConsoleUi } from "@/components/console/useConsoleUi"
 import type { CommandItem } from "@/components/console/types"
@@ -58,9 +62,7 @@ const OPERATIONS_NAV = [
 const MANAGEMENT_NAV = [
   { label: "Menu & Modifiers", path: "/admin/menu", icon: UtensilsCrossed, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Inventory & Recipes", path: "/admin/inventory", icon: Boxes, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
-  { label: "Subscription & Billing", path: "/admin/subscription", icon: CreditCard, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Feedback & Ratings", path: "/admin/feedback", icon: Star, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
-  { label: "Settings", path: "/admin/settings", icon: Settings, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
 ] as const
 
 const SUPPORT_WHATSAPP = "https://wa.me/919890000000?text=Hi%20Pangat%20team%2C%20I%20need%20help%20with%20my%20portal."
@@ -101,7 +103,6 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const fetchDashboardData = useAdminStore((s) => s.fetchDashboardData)
   const tables = useAdminStore((s) => s.tables)
   const activeOrders = useAdminStore((s) => s.activeOrders)
-  const setPalette = useConsoleUi((s) => s.setPalette)
   const setShortcuts = useConsoleUi((s) => s.setShortcuts)
   const setChangelog = useConsoleUi((s) => s.setChangelog)
 
@@ -110,9 +111,13 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const occupied = tables.filter((t) => t.status !== "VACANT").length
   const badgeFor = (path: string) => (path === "/admin/orders" ? openOrders : path === "/admin/tables" ? occupied : 0)
 
+  const setSettings = useConsoleUi((s) => s.setSettings)
+  const setBilling = useConsoleUi((s) => s.setBilling)
+  const billing = useBilling()
+
   const menuEntries: MenuEntry[] = [
-    { label: "Settings", icon: Settings, shortcut: "G S", onSelect: () => navigate("/admin/settings") },
-    { label: "Plan & billing", icon: CreditCard, shortcut: "G B", onSelect: () => navigate("/admin/subscription") },
+    { label: "Settings", icon: Settings, shortcut: "G S", onSelect: () => setSettings(true) },
+    { label: "Plan & billing", icon: CreditCard, shortcut: "G B", onSelect: () => setBilling(true) },
     { label: "Keyboard shortcuts", icon: Keyboard, shortcut: "?", onSelect: () => setShortcuts(true), divider: true },
     { label: "What’s new", icon: Sparkles, onSelect: () => setChangelog(true) },
     { label: "Help & support", icon: LifeBuoy, href: SUPPORT_WHATSAPP, divider: true },
@@ -230,30 +235,8 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
               )}
             </div>
           )}
-          <SidebarTrigger className="ml-auto flex-shrink-0" />
         </div>
       </SidebarHeader>
-
-      {/* Quick search / command palette */}
-      <div className="px-3 pt-3">
-        <button
-          type="button"
-          onClick={() => setPalette(true)}
-          title="Search (Ctrl K)"
-          className={cn(
-            "group flex w-full items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-[13px] text-zinc-500 transition-colors hover:border-white/15 hover:bg-white/[0.06] hover:text-zinc-300",
-            collapsed ? "h-10 justify-center" : "h-10 px-3"
-          )}
-        >
-          <Search className="h-4 w-4 shrink-0" />
-          {!collapsed && (
-            <>
-              <span className="flex-1 truncate whitespace-nowrap text-left">Search…</span>
-              <kbd className="rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] text-zinc-500 group-hover:text-zinc-400">Ctrl K</kbd>
-            </>
-          )}
-        </button>
-      </div>
 
       {/* Navigation */}
       <SidebarContent>
@@ -370,6 +353,23 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
 
       {/* Footer: account menu */}
       <SidebarFooter className="!p-2.5">
+        {!collapsed && !billing.loading && billing.plan && (
+          <button
+            type="button"
+            onClick={() => setBilling(true)}
+            className="group mb-2 flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-2.5 text-left transition-colors hover:border-white/15 hover:bg-white/[0.06]"
+          >
+            <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_META[billing.status].tone === "good" ? "bg-emerald-400" : STATUS_META[billing.status].tone === "bad" ? "bg-rose-400" : "bg-amber-300")} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[12.5px] font-medium text-white">{billing.plan.name}</span>
+              <span className="block truncate text-[11px] text-zinc-500">
+                {STATUS_META[billing.status].label}
+                {billing.daysLeft !== null && billing.status === "TRIAL" ? ` · ${billing.daysLeft}d left` : ""}
+              </span>
+            </span>
+            <span className="text-[11px] text-zinc-500 transition-colors group-hover:text-emerald-300">Manage</span>
+          </button>
+        )}
         <UserMenu
           name={user?.name || "Team member"}
           email={user?.email}
@@ -390,6 +390,7 @@ export function AdminLayout() {
   const setCurrentOutlet = useAuthStore((s) => s.setCurrentOutlet)
   const user = useAuthStore((s) => s.user)
   const [addOutletOpen, setAddOutletOpen] = useState(false)
+  const notices = useAdminNotices((to) => navigate(to))
 
   const isPlatformSuperAdmin = user?.role === "PLATFORM_SUPER_ADMIN"
 
@@ -515,6 +516,10 @@ export function AdminLayout() {
   Object.entries(GO_KEYS).forEach(([k, path]) => {
     if (visibleNav.some((n) => n.path === path)) goTo[k] = () => navigate(path)
   })
+  goTo.s = () => useConsoleUi.getState().setSettings(true)
+  goTo.b = () => useConsoleUi.getState().setBilling(true)
+  const pageTitle = visibleNav.find((n) => location.pathname.startsWith(n.path))?.label ||
+    (location.pathname.startsWith("/admin/subscription") ? "Plan & billing" : location.pathname.startsWith("/admin/settings") ? "Settings" : "")
   const commandItems: CommandItem[] = [
     ...visibleNav.map((n) => ({
       id: n.path,
@@ -553,6 +558,9 @@ export function AdminLayout() {
           useAdminStore.getState().fetchDashboardData(o.slug)
         },
       })),
+    { id: "settings", label: "Settings", group: "Account", icon: Settings, shortcut: "G S", keywords: "outlet gst upi alerts", run: () => useConsoleUi.getState().setSettings(true) },
+    { id: "billing", label: "Plan & billing", group: "Account", icon: CreditCard, shortcut: "G B", keywords: "subscription invoice gst payment", run: () => useConsoleUi.getState().setBilling(true) },
+    { id: "billing-console", label: "Open billing console", group: "Account", icon: CreditCard, keywords: "invoices plans usage", run: () => navigate("/admin/subscription") },
     { id: "add-outlet", label: "Add a new outlet", group: "Outlets", icon: Plus, keywords: "branch", run: () => setAddOutletOpen(true) },
     { id: "shortcuts", label: "Keyboard shortcuts", group: "Help", icon: Keyboard, shortcut: "?", run: () => useConsoleUi.getState().setShortcuts(true) },
     { id: "changelog", label: "What’s new", group: "Help", icon: Sparkles, keywords: "changelog updates", run: () => useConsoleUi.getState().setChangelog(true) },
@@ -562,6 +570,9 @@ export function AdminLayout() {
     { keys: "Ctrl K", label: "Open the command palette" },
     { keys: "?", label: "Show keyboard shortcuts" },
     ...visibleNav.filter((n) => GO_LABEL[n.path]).map((n) => ({ keys: GO_LABEL[n.path], label: `Go to ${n.label}` })),
+    { keys: "G S", label: "Open settings" },
+    { keys: "G B", label: "Open plan & billing" },
+    { keys: "Ctrl B", label: "Show or hide the sidebar" },
   ]
 
   const handleExitImpersonation = () => {
@@ -587,19 +598,14 @@ export function AdminLayout() {
         <AdminSidebarContent onOpenAddOutlet={() => setAddOutletOpen(true)} />
       </Sidebar>
       <SidebarInset>
-        {/* Mobile Header (< 768px) with menu trigger, brand, and theme toggle */}
-        <header className="sticky top-0 z-30 flex md:hidden items-center justify-between h-14 px-3.5 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shrink-0 select-none">
-          <div className="flex items-center gap-2 min-w-0">
-            <SidebarTrigger className="text-zinc-700 dark:text-zinc-200" />
-            <div className="flex items-center gap-1.5 min-w-0">
-              <PangatLogo size="sm" className="!w-6 !h-6" />
-              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                {currentOutlet?.name || "Pangat"}
-              </span>
-            </div>
-          </div>
-
-        </header>
+        <TopBar
+          trail={["Admin", ...(pageTitle ? [pageTitle] : [])]}
+          mobileTitle={currentOutlet?.name || "Pangat"}
+          notices={notices.items}
+          noticesLoading={notices.loading}
+          feedbackHref={FEEDBACK_MAILTO}
+          helpHref={SUPPORT_WHATSAPP}
+        />
 
         {/* Impersonation Error Alert */}
         {isPlatformSuperAdmin && impersonationError && (
@@ -661,10 +667,14 @@ export function AdminLayout() {
             </button>
           </div>
         )}
-        <Outlet />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <Outlet />
+        </div>
       </SidebarInset>
 
       <ConsoleOverlays items={commandItems} goTo={goTo} shortcutRows={shortcutRows} />
+      <SettingsModal />
+      <BillingModal />
 
       {/* Global Add Outlet Modal */}
       <AddOutletModal

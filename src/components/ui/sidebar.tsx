@@ -1,27 +1,58 @@
 import * as React from "react"
+import { PanelLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useEscapeKey } from "@/hooks/useEscapeKey"
 
-// Sidebar context
+// ─────────────────────────────────────────────────────────────────────────────
+// Sidebar system
+//  • Desktop: persistent rail that collapses to icons (state remembered).
+//  • Mobile (<768px): off-canvas drawer, always shown expanded.
+//  • Ctrl/⌘ B toggles whichever applies.
+// Only ONE copy of the sidebar contents is ever mounted.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const COLLAPSE_KEY = "pangat_sidebar_collapsed"
+const MOBILE_QUERY = "(max-width: 767px)"
+
 interface SidebarContextType {
+  /** True only when the desktop rail is collapsed. The mobile drawer is never "collapsed". */
   collapsed: boolean
-  setCollapsed: (v: boolean) => void
+  isMobile: boolean
   mobileOpen: boolean
+  setCollapsed: (v: boolean) => void
   setMobileOpen: (v: boolean) => void
+  /** Toggles the drawer on mobile, the rail on desktop */
+  toggle: () => void
   toggleMobile: () => void
   closeMobile: () => void
 }
 
 const SidebarContext = React.createContext<SidebarContextType>({
   collapsed: false,
-  setCollapsed: () => {},
+  isMobile: false,
   mobileOpen: false,
+  setCollapsed: () => {},
   setMobileOpen: () => {},
+  toggle: () => {},
   toggleMobile: () => {},
   closeMobile: () => {},
 })
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSidebar() {
   return React.useContext(SidebarContext)
+}
+
+function useIsMobile() {
+  const [m, setM] = React.useState(() => typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches)
+  React.useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY)
+    const on = () => setM(mq.matches)
+    on()
+    mq.addEventListener("change", on)
+    return () => mq.removeEventListener("change", on)
+  }, [])
+  return m
 }
 
 interface SidebarProviderProps {
@@ -30,102 +61,159 @@ interface SidebarProviderProps {
 }
 
 const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProviderProps) => {
-  const [collapsed, setCollapsed] = React.useState(defaultCollapsed)
+  const isMobile = useIsMobile()
+  const [collapsedRaw, setCollapsedRaw] = React.useState(() => {
+    try {
+      const v = localStorage.getItem(COLLAPSE_KEY)
+      return v === null ? defaultCollapsed : v === "1"
+    } catch {
+      return defaultCollapsed
+    }
+  })
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
-  const toggleMobile = () => setMobileOpen((prev) => !prev)
-  const closeMobile = () => setMobileOpen(false)
-
-  // Close mobile sidebar on resize to desktop
-  React.useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth >= 768) {
-        setMobileOpen(false)
-      }
+  const setCollapsed = React.useCallback((v: boolean) => {
+    setCollapsedRaw(v)
+    try {
+      localStorage.setItem(COLLAPSE_KEY, v ? "1" : "0")
+    } catch {
+      /* storage unavailable: still works for this session */
     }
-    window.addEventListener("resize", onResize)
-    return () => window.removeEventListener("resize", onResize)
   }, [])
 
+  // Leaving mobile width must not leave the drawer "open"
+  React.useEffect(() => {
+    if (!isMobile) setMobileOpen(false)
+  }, [isMobile])
+
+  // Lock page scroll while the drawer is open
+  React.useEffect(() => {
+    if (!(isMobile && mobileOpen)) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [isMobile, mobileOpen])
+
+  useEscapeKey(isMobile && mobileOpen, () => setMobileOpen(false))
+
+  const toggle = React.useCallback(() => {
+    if (isMobile) setMobileOpen((o) => !o)
+    else setCollapsed(!collapsedRaw)
+  }, [isMobile, collapsedRaw, setCollapsed])
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault()
+        toggle()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [toggle])
+
+  const value = React.useMemo<SidebarContextType>(
+    () => ({
+      collapsed: !isMobile && collapsedRaw,
+      isMobile,
+      mobileOpen,
+      setCollapsed,
+      setMobileOpen,
+      toggle,
+      toggleMobile: () => setMobileOpen((o) => !o),
+      closeMobile: () => setMobileOpen(false),
+    }),
+    [isMobile, collapsedRaw, mobileOpen, setCollapsed, toggle]
+  )
+
   return (
-    <SidebarContext.Provider
-      value={{
-        collapsed,
-        setCollapsed,
-        mobileOpen,
-        setMobileOpen,
-        toggleMobile,
-        closeMobile,
-      }}
-    >
-      <div className="flex h-dvh overflow-hidden bg-zinc-50 dark:bg-[#050506] text-zinc-900 dark:text-zinc-100">
-        {children}
-      </div>
+    <SidebarContext.Provider value={value}>
+      <div className="flex h-dvh overflow-hidden bg-zinc-50 dark:bg-[#050506] text-zinc-900 dark:text-zinc-100">{children}</div>
     </SidebarContext.Provider>
   )
 }
 
 const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
-  const { collapsed, mobileOpen, closeMobile } = useSidebar()
-  return (
-    <>
-      {/* Mobile Drawer Backdrop */}
-      {mobileOpen && (
+  const { collapsed, isMobile, mobileOpen, closeMobile } = useSidebar()
+
+  if (isMobile) {
+    return (
+      <>
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden animate-in fade-in-0 duration-200"
+          className={cn(
+            "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+            mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          )}
           onClick={closeMobile}
           aria-hidden="true"
         />
+        <aside
+          aria-label="Navigation"
+          aria-hidden={!mobileOpen}
+          inert={!mobileOpen}
+          className={cn(
+            "fixed inset-y-0 left-0 z-50 flex h-full w-[19rem] max-w-[86vw] flex-col border-r border-zinc-200 bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/[0.07] dark:bg-[#09090b]",
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          {children}
+        </aside>
+      </>
+    )
+  }
+
+  return (
+    <aside
+      aria-label="Navigation"
+      data-state={collapsed ? "collapsed" : "expanded"}
+      className={cn(
+        "flex h-full shrink-0 flex-col overflow-hidden border-r border-zinc-200 bg-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/[0.07] dark:bg-[#09090b]",
+        collapsed ? "w-[68px]" : "w-64",
+        className
       )}
-
-      {/* Mobile Slide-in Drawer */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col h-full bg-white dark:bg-[#09090b] border-r border-zinc-200 dark:border-white/[0.07] shadow-2xl transition-transform duration-200 ease-in-out md:hidden",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        {children}
-      </aside>
-
-      {/* Desktop Persistent Sidebar */}
-      <aside
-        className={cn(
-          "hidden md:flex flex-col h-full bg-white dark:bg-[#09090b] border-r border-zinc-200 dark:border-white/[0.07] transition-all duration-300 shrink-0",
-          collapsed ? "w-16" : "w-64",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </aside>
-    </>
+      {...props}
+    >
+      {children}
+    </aside>
   )
 }
 
-const SidebarHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex items-center px-4 py-4 border-b border-zinc-200 dark:border-white/[0.07] shrink-0", className)} {...props} />
-)
+const SidebarHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  const { collapsed } = useSidebar()
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center border-b border-zinc-200 py-4 dark:border-white/[0.07]",
+        collapsed ? "justify-center px-2" : "px-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
 
 const SidebarContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex-1 overflow-y-auto py-4", className)} {...props} />
+  <div className={cn("flex-1 overflow-y-auto overflow-x-hidden py-3", className)} {...props} />
 )
 
 const SidebarFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("border-t border-zinc-200 dark:border-white/[0.07] p-4 shrink-0", className)} {...props} />
+  <div className={cn("shrink-0 border-t border-zinc-200 p-3 dark:border-white/[0.07]", className)} {...props} />
 )
 
 const SidebarGroup = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("px-2 mb-4", className)} {...props} />
+  <div className={cn("mb-3 px-2.5", className)} {...props} />
 )
 
 const SidebarGroupLabel = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => {
   const { collapsed } = useSidebar()
+  // Collapsed: a hairline replaces the label so groups stay visually separated
+  if (collapsed) return <div className="mx-3 mb-2 mt-1 h-px bg-zinc-200 dark:bg-white/[0.07]" aria-hidden />
   return (
     <p
       className={cn(
-        "px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-600 mb-1 transition-opacity",
-        collapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100",
+        "mb-1 px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-600",
         className
       )}
       {...props}
@@ -153,14 +241,16 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonP
       <button
         ref={ref}
         title={collapsed ? tooltip : undefined}
+        aria-label={collapsed ? tooltip : undefined}
+        aria-current={isActive ? "page" : undefined}
         data-active={isActive ? "true" : undefined}
         className={cn(
-          "group/nav relative flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 min-h-[44px] text-[13px] font-medium transition-all duration-200 cursor-pointer select-none",
-          "hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-white",
+          "group/nav relative flex min-h-[44px] w-full cursor-pointer select-none items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+          "hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/[0.05] dark:hover:text-white",
           isActive
-            ? "bg-zinc-900/[0.06] text-zinc-900 dark:bg-white/[0.08] dark:text-white font-semibold before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:rounded-full before:bg-emerald-400 before:content-[''] [&_svg]:text-emerald-500 dark:[&_svg]:text-emerald-400"
+            ? "bg-zinc-900/[0.06] font-semibold text-zinc-900 before:absolute before:bottom-2.5 before:left-0 before:top-2.5 before:w-[3px] before:rounded-full before:bg-emerald-400 before:content-[''] dark:bg-white/[0.08] dark:text-white [&_svg]:text-emerald-500 dark:[&_svg]:text-emerald-400"
             : "text-zinc-600 dark:text-zinc-400",
-          collapsed ? "justify-center px-2" : "",
+          collapsed && "justify-center px-0",
           className
         )}
         {...props}
@@ -172,45 +262,30 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonP
 )
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
+/** Panel icon that opens/closes the sidebar. Lives in the top bar. */
 const SidebarTrigger = ({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => {
-  const { collapsed, setCollapsed, toggleMobile } = useSidebar()
+  const { toggle, collapsed, isMobile, mobileOpen } = useSidebar()
+  const expanded = isMobile ? mobileOpen : !collapsed
   return (
     <button
-      onClick={() => {
-        if (typeof window !== "undefined" && window.innerWidth < 768) {
-          toggleMobile()
-        } else {
-          setCollapsed(!collapsed)
-        }
-      }}
+      type="button"
+      onClick={toggle}
+      aria-label={expanded ? "Close sidebar" : "Open sidebar"}
+      aria-expanded={expanded}
+      title={`${expanded ? "Close" : "Open"} sidebar (Ctrl B)`}
       className={cn(
-        "h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer",
+        "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/[0.07] dark:hover:text-white",
         className
       )}
-      aria-label="Toggle navigation menu"
       {...props}
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <line x1="3" y1="12" x2="21" y2="12" />
-        <line x1="3" y1="6" x2="21" y2="6" />
-        <line x1="3" y1="18" x2="21" y2="18" />
-      </svg>
+      <PanelLeft className="h-[18px] w-[18px]" />
     </button>
   )
 }
 
 const SidebarInset = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("console-glow flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden", className)} {...props} />
+  <div className={cn("console-glow flex min-w-0 flex-1 flex-col overflow-hidden", className)} {...props} />
 )
 
 export {

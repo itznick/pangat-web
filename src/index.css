@@ -675,3 +675,8 @@ html.dark {
 .console-readable {
   max-width: 880px;
 }
+
+/* The top bar owns the breadcrumb; page-level sticky headers tuck in beneath it */
+.console-glow nav[aria-label="breadcrumb"] {
+  display: none;
+}

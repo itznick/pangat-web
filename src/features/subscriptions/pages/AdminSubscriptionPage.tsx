@@ -1,680 +1,314 @@
-import { useState, useEffect } from "react"
+import * as React from "react"
+import { useSearchParams } from "react-router"
+import { Check, Download, FileText, Loader2, RefreshCw, ShieldCheck, Sparkles } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthStore"
-import { api } from "@/lib/api"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from "@/components/ui/table"
-import {
-  CreditCard,
-  CheckCircle2,
-  AlertTriangle,
-  Receipt,
-  ShieldCheck,
-  RefreshCw,
-  Sparkles,
-  Building2,
-  LayoutGrid,
-  Clock,
-  Check,
-  Zap,
-} from "lucide-react"
+import { useAdminStore } from "@/stores/useAdminStore"
+import { useConsoleUi } from "@/components/console/useConsoleUi"
 import { cn } from "@/lib/utils"
-import type {
-  SubscriptionPlan,
-  SubscriptionDetailsResponse,
-  SubscriptionStatus,
-} from "@/types/domain"
+import { fmtDate, inr, STATUS_META, SUPPORT_WHATSAPP, TONE_CLASS, useBilling } from "../billing"
+import { InvoicePill, Row, StatusPill, UsageMeter } from "../components/BillingParts"
+import type { SubscriptionPlan } from "@/types/domain"
 
-type SubscriptionTab = "OVERVIEW" | "TIERS" | "INVOICES"
-
-const STATUS_CONFIG: Record<
-  SubscriptionStatus,
-  { label: string; badge: string; icon: typeof CheckCircle2; alertText?: string }
-> = {
-  TRIAL: {
-    label: "Free Trial",
-    badge: "bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/30",
-    icon: Clock,
-    alertText: "Your 14-day full access trial is active with no credit card required.",
-  },
-  ACTIVE: {
-    label: "Active Plan",
-    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-    icon: CheckCircle2,
-    alertText: "Your subscription is active with automated GST tax invoicing and priority SLA.",
-  },
-  PAST_DUE: {
-    label: "Payment Pending",
-    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30",
-    icon: AlertTriangle,
-    alertText: "Your last recurring payment did not settle. Please check your payment method.",
-  },
-  GRACE_PERIOD: {
-    label: "Grace Period",
-    badge: "bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/30",
-    icon: AlertTriangle,
-    alertText: "Payment retry in progress. All restaurant services remain 100% operational during your 7-day grace window.",
-  },
-  HALTED: {
-    label: "Suspended",
-    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30",
-    icon: AlertTriangle,
-    alertText: "Subscription halted due to consecutive payment retries. Historical data and export remain accessible.",
-  },
-  CANCELLED: {
-    label: "Cancelled",
-    badge: "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
-    icon: Clock,
-    alertText: "Subscription has been cancelled. Historical data and tax invoices remain preserved.",
-  },
-  EXPIRED: {
-    label: "Plan Expired",
-    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30",
-    icon: AlertTriangle,
-    alertText: "Plan has expired. Renew your plan to resume dine-in and kitchen ordering. Historical records are preserved.",
-  },
-}
+const TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "plans", label: "Plans" },
+  { id: "invoices", label: "Invoices" },
+] as const
+type TabId = (typeof TABS)[number]["id"]
 
 export function AdminSubscriptionPage() {
-  const user = useAuthStore((s) => s.user)
-  const currentOutlet = useAuthStore((s) => s.currentOutlet)
+  const [params, setParams] = useSearchParams()
+  const tab: TabId = (TABS.find((t) => t.id === params.get("tab"))?.id ?? "overview") as TabId
+  const setTab = (t: TabId) => setParams({ tab: t }, { replace: true })
+  const b = useBilling()
+  const outlet = useAuthStore((s) => s.currentOutlet)
+  const restaurant = useAdminStore((s) => s.restaurant)
+  const setSettings = useConsoleUi((s) => s.setSettings)
+  const [interval, setInterval] = React.useState<"MONTHLY" | "YEARLY">("MONTHLY")
 
-  const [activeTab, setActiveTab] = useState<SubscriptionTab>("OVERVIEW")
-  const [subDetails, setSubDetails] = useState<SubscriptionDetailsResponse | null>(null)
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
-  const [loading, setLoading] = useState(false)
-  const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null)
+  const ask = (msg: string) => window.open(SUPPORT_WHATSAPP(`${msg} (${outlet?.name || "my outlet"})`), "_blank")
+  const plan = b.plan
+  const gstin = restaurant.gstin || outlet?.gstin
 
-  const loadSubscriptionData = async () => {
-    setLoading(true)
-    try {
-      const [subData, allPlans] = await Promise.all([
-        api.subscriptions.getMySubscription().catch(() => null),
-        api.subscriptions.listPlans().catch(() => []),
-      ])
-      setSubDetails(subData)
-      setPlans(allPlans || [])
-    } catch (err) {
-      console.error("Failed to load subscription data", err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Trial / period progress
+  const total = b.periodStart && b.periodEnd ? Math.max(1, new Date(b.periodEnd).getTime() - new Date(b.periodStart).getTime()) : 0
+  const elapsed = total ? Math.min(100, Math.round(((Date.now() - new Date(b.periodStart!).getTime()) / total) * 100)) : 0
 
-  useEffect(() => {
-    loadSubscriptionData()
-  }, [])
-
-  const currentSub = subDetails?.subscription
-  const activePlan = subDetails?.plan || currentSub?.plan
-  const invoices = subDetails?.invoices || []
-  const status = currentSub?.status || "TRIAL"
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.TRIAL
-  const StatusIcon = cfg.icon
-
-  const handleUpgrade = (plan: SubscriptionPlan) => {
-    setCheckoutNotice(
-      `Razorpay Test Mode: Upgrade to ${plan.name} selected (₹${plan.pricing?.basePrice} + 18% GST = ₹${plan.pricing?.totalPayable}/mo). Contact Pangat Support or use Razorpay test mandate to activate.`
-    )
-  }
-
-  const periodEndFormatted = currentSub?.currentPeriodEnd
-    ? new Date(currentSub.currentPeriodEnd).toLocaleDateString("en-IN", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "14-Day Window"
+  const visiblePlans = b.plans.filter((p) => p.billingInterval === interval)
+  const hasYearly = b.plans.some((p) => p.billingInterval === "YEARLY")
 
   return (
-    <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {/* ── Sticky Page Header (Matching Admin Orders & Inventory) ──────────── */}
-      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
+    <div className="lp mx-auto w-full max-w-[1120px] !bg-transparent px-4 pb-16 pt-8 sm:px-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink className="text-zinc-400">Admin</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage className="text-zinc-900 dark:text-zinc-100 font-medium">
-                  Subscription & Billing
-                </BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-            SaaS Subscription & Billing
-          </h1>
+          <h1 className="text-[1.75rem]">Plan & billing</h1>
+          <p className="mt-1.5 text-sm text-zinc-500">Your subscription, usage and GST invoices for {outlet?.name || "your organisation"}.</p>
         </div>
-
-        {/* Header Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-end">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold shadow-xs">
-            <span className="text-zinc-500">Plan:</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-              {activePlan?.name || "Free Trial"}
-            </span>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadSubscriptionData}
-            disabled={loading}
-            className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold h-8 rounded-lg shadow-xs min-h-[36px] sm:min-h-0"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </div>
+        <button onClick={b.refresh} disabled={b.loading} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-50">
+          <RefreshCw className={cn("h-3.5 w-3.5", b.loading && "animate-spin")} /> Refresh
+        </button>
       </div>
 
-      <div className="flex-1 p-4 sm:p-6 space-y-6">
-        {/* ── Metric KPI Cards ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
-            <div className="flex items-start justify-between">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-              </div>
-              <Badge variant="outline" className={cn("text-[11px] font-bold", cfg.badge)}>
-                {cfg.label}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
-                {activePlan?.name || "Free Trial"}
-              </p>
-              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
-                Current Subscription Tier
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
-                {user?.organizationName || "Merchant Brand"}
-              </p>
-            </div>
-          </div>
+      {/* Tabs */}
+      <div role="tablist" className="mt-7 flex gap-1 border-b border-white/[0.07]">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "relative px-4 pb-3 pt-2 text-[14px] transition-colors",
+              tab === t.id ? "font-medium text-white" : "text-zinc-500 hover:text-zinc-300"
+            )}
+          >
+            {t.label}
+            {t.id === "invoices" && b.invoices.length > 0 && <span className="ml-2 rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[11px] text-zinc-400">{b.invoices.length}</span>}
+            {tab === t.id && <span className="absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-emerald-400" />}
+          </button>
+        ))}
+      </div>
 
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
-            <div className="flex items-start justify-between">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-500" />
-              </div>
-              <span className="text-[11px] font-mono text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-bold">
-                Excl. GST
-              </span>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-amber-700 dark:text-amber-400">
-                ₹{activePlan?.pricing?.totalPayable ?? (activePlan?.basePrice ? activePlan.basePrice * 1.18 : 0)}
-              </p>
-              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
-                Monthly SaaS Charge
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-0.5">
-                Base ₹{activePlan?.pricing?.basePrice ?? activePlan?.basePrice ?? 0} + 18% GST
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
-            <div className="flex items-start justify-between">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Receipt className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-              </div>
-              <span className="text-[11px] font-mono text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
-                Audited
-              </span>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                {invoices.length}
-              </p>
-              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
-                Tax Invoices Issued
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-0.5">Downloadable GST tax receipts</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col gap-3 shadow-xs">
-            <div className="flex items-start justify-between">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-              </div>
-              <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">
-                Protected
-              </span>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-400">
-                100%
-              </p>
-              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
-                Permanent Retention
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-0.5">Zero data loss on expiry</p>
-            </div>
-          </div>
+      {b.loading && !b.details ? (
+        <div className="flex items-center justify-center gap-2 py-32 text-sm text-zinc-500">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading billing…
         </div>
-
-        {/* ── Sub-Tab Switcher (Signature Pangat Pill Tabs) ───────────────────── */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-full sm:w-fit overflow-x-auto max-w-full">
-          <button
-            type="button"
-            onClick={() => setActiveTab("OVERVIEW")}
-            className={cn(
-              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
-              activeTab === "OVERVIEW"
-                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            )}
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>Active Plan & Overview</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("TIERS")}
-            className={cn(
-              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
-              activeTab === "TIERS"
-                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            )}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Subscription Tiers ({plans.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("INVOICES")}
-            className={cn(
-              "px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
-              activeTab === "INVOICES"
-                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            )}
-          >
-            <Receipt className="w-3.5 h-3.5" />
-            <span>GST Tax Invoices ({invoices.length})</span>
-          </button>
+      ) : b.failed || !plan ? (
+        <div className="mx-auto mt-16 max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center">
+          <p className="text-zinc-300">We couldn’t load your subscription right now.</p>
+          <button onClick={b.refresh} className="lp-btn lp-btn-ghost mt-5 !h-10 !px-5 !text-sm">Try again</button>
         </div>
-
-        {/* ── Tab 1: Active Plan & Overview ──────────────────────────────────── */}
-        {activeTab === "OVERVIEW" && (
-          <div className="space-y-6">
-            {/* Active Plan Detail Card */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                    <StatusIcon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                        {activePlan?.name || "Growth Plan"}
-                      </h2>
-                      <Badge variant="outline" className={cn("text-xs font-bold", cfg.badge)}>
-                        {cfg.label}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      Organization: <strong className="text-zinc-700 dark:text-zinc-300">{user?.organizationName || "Merchant Organization"}</strong>
-                      {currentOutlet && ` • Current Branch: ${currentOutlet.name}`}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-left sm:text-right font-mono">
-                  {activePlan?.pricing ? (
+      ) : (
+        <div className="mt-8">
+          {/* ───────────── Overview ───────────── */}
+          {tab === "overview" && (
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+              <div className="space-y-5">
+                <section className="console-card overflow-hidden rounded-2xl p-6 sm:p-7">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <span className="text-3xl font-black text-zinc-900 dark:text-zinc-100">
-                        ₹{activePlan.pricing.totalPayable}
-                      </span>
-                      <span className="text-xs text-zinc-500"> / month</span>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-sans mt-0.5">
-                        (₹{activePlan.pricing.basePrice} base + 18% GST ₹{activePlan.pricing.taxAmount})
+                      <p className="text-[13px] text-zinc-500">Current plan</p>
+                      <p className="lp-display mt-1 text-[2rem] text-white">{plan.name}</p>
+                      <p className="mt-1 text-sm text-zinc-400">{plan.description}</p>
+                    </div>
+                    <StatusPill status={b.status} />
+                  </div>
+
+                  <div className="mt-7 grid gap-6 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs text-zinc-500">Price</p>
+                      <p className="mt-1 text-xl font-semibold tabular-nums text-white">
+                        {inr(plan.pricing?.basePrice ?? plan.basePrice)}
+                        <span className="text-sm font-normal text-zinc-500"> / {plan.billingInterval === "YEARLY" ? "yr" : "mo"}</span>
                       </p>
+                      <p className="mt-0.5 text-xs text-zinc-600">+ {plan.taxPercentage}% GST</p>
                     </div>
-                  ) : (
                     <div>
-                      <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                        Active Free Trial
-                      </span>
-                      <p className="text-xs text-zinc-500 mt-0.5">No billing charges incurred</p>
+                      <p className="text-xs text-zinc-500">{b.status === "TRIAL" ? "Trial ends" : "Renews on"}</p>
+                      <p className="mt-1 text-xl font-semibold text-white">{fmtDate(b.periodEnd, { day: "numeric", month: "short" })}</p>
+                      <p className="mt-0.5 text-xs text-zinc-600">{b.daysLeft !== null ? `${b.daysLeft} day${b.daysLeft === 1 ? "" : "s"} left` : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500">Next payment</p>
+                      <p className="mt-1 text-xl font-semibold tabular-nums text-white">{inr(plan.pricing?.totalPayable ?? plan.basePrice, 2)}</p>
+                      <p className="mt-0.5 text-xs text-zinc-600">Including GST</p>
+                    </div>
+                  </div>
+
+                  {total > 0 && (
+                    <div className="mt-7">
+                      <div className="mb-1.5 flex justify-between text-xs text-zinc-500">
+                        <span>{fmtDate(b.periodStart, { day: "numeric", month: "short" })}</span>
+                        <span>{fmtDate(b.periodEnd, { day: "numeric", month: "short" })}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-amber-200" style={{ width: `${elapsed}%` }} />
+                      </div>
                     </div>
                   )}
-                </div>
+
+                  <p className={cn("mt-6 rounded-xl border px-4 py-3 text-[13px]", TONE_CLASS[STATUS_META[b.status].tone])}>{STATUS_META[b.status].note}</p>
+
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    <button onClick={() => setTab("plans")} className="lp-btn lp-btn-primary !h-10 !px-5 !text-sm">Compare plans</button>
+                    <button onClick={() => ask(`I'd like to switch my Pangat plan to ${plan.billingInterval === "YEARLY" ? "monthly" : "yearly"} billing.`)} className="lp-btn lp-btn-ghost !h-10 !px-5 !text-sm">
+                      Switch to {plan.billingInterval === "YEARLY" ? "monthly" : "yearly"}
+                    </button>
+                    <button onClick={() => ask("I'd like to cancel my Pangat subscription.")} className="lp-btn lp-btn-ghost !h-10 !px-5 !text-sm">Cancel plan</button>
+                  </div>
+                </section>
+
+                <section className="console-card rounded-2xl p-6 sm:p-7">
+                  <h2 className="font-heading text-lg font-semibold text-white">Included in {plan.name}</h2>
+                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-3 text-sm text-zinc-300">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/12 text-emerald-300"><Check className="h-3 w-3" strokeWidth={3} /></span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               </div>
 
-              {/* Status Alert Callout */}
-              {cfg.alertText && (
-                <div className="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>{cfg.alertText}</span>
+              <aside className="space-y-5">
+                <section className="console-card rounded-2xl p-6">
+                  <h2 className="font-heading text-base font-semibold text-white">Usage</h2>
+                  <div className="mt-5 space-y-5">
+                    <UsageMeter label="Tables at this outlet" used={b.usage.tables} limit={b.usage.tableLimit} />
+                    <UsageMeter label="Outlets" used={b.usage.outlets} limit={b.usage.outletLimit} />
                   </div>
-                  <span className="text-zinc-500 font-mono text-[11px]">
-                    Period window: {periodEndFormatted}
-                  </span>
-                </div>
-              )}
+                </section>
 
-              {/* Checkout Notification */}
-              {checkoutNotice && (
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-3">
-                  <span>{checkoutNotice}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCheckoutNotice(null)}
-                    className="h-7 text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              )}
-
-              {/* Plan Feature Inclusions */}
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
-                  Included In Your Tier
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center gap-3">
-                    <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Branch Outlets</p>
-                      <p className="text-[11px] text-zinc-500">
-                        {activePlan?.maxOutlets === -1 ? "Unlimited Branches" : `${activePlan?.maxOutlets || 1} Branch Location`}
-                      </p>
-                    </div>
+                <section className="console-card rounded-2xl px-6 py-2">
+                  <Row label="Payment method"><span className="text-zinc-400">Not set up</span></Row>
+                  <Row label="GSTIN"><span className={gstin ? "font-mono text-[13px]" : "text-zinc-400"}>{gstin || "Not added"}</span></Row>
+                  <Row label="Billing email"><span className="max-w-[170px] truncate text-[13px]">{restaurant.email || "—"}</span></Row>
+                  <div className="py-3.5">
+                    <button onClick={() => setSettings(true)} className="lp-btn lp-btn-ghost !h-9 !w-full !text-[13px]">Edit billing details</button>
                   </div>
+                </section>
 
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center gap-3">
-                    <LayoutGrid className="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Tables per Branch</p>
-                      <p className="text-[11px] text-zinc-500">
-                        {activePlan?.maxTablesPerOutlet === -1 ? "Unlimited Dining Tables" : `Up to ${activePlan?.maxTablesPerOutlet || 20} Tables`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center gap-3">
-                    <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">KDS & QR Ordering</p>
-                      <p className="text-[11px] text-zinc-500">Multi-Order & Inventory Active</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <section className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.04] p-6">
+                  <ShieldCheck className="h-5 w-5 text-emerald-300" />
+                  <p className="mt-3 text-sm font-medium text-white">Your data is always yours</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">Menus, orders, customers and tax invoices stay exportable even if a plan lapses or is cancelled.</p>
+                </section>
+              </aside>
             </div>
+          )}
 
-            {/* Permanent Data Retention Guarantee Card */}
-            <div className="p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-4 shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                  Permanent Data Retention & Owner Export Guarantee
-                </p>
-                <p className="leading-relaxed">
-                  In accordance with Pangat core business principles, your restaurant data, menus, historical dine-in orders, table turnover metrics, and tax invoices are <strong className="text-zinc-900 dark:text-zinc-200">never deleted</strong> upon plan expiration. Owner credentials, invoice downloads, and data export remain permanently accessible, and active service can be resumed at any time without losing historical setup.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Tab 2: Subscription Tiers ─────────────────────────────────────── */}
-        {activeTab === "TIERS" && (
-          <div className="space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  Transparent Subscription Tiers (Exclusive of 18% GST)
-                </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  Select a tier that fits your hospitality footprint. Invoices include full GST input tax credit details.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {plans.map((p) => {
-                const isCurrent = activePlan?.id === p.id || activePlan?.code === p.code
-                const base = p.pricing?.basePrice ?? p.basePrice
-                const tax = p.pricing?.taxAmount ?? Math.round(base * 0.18 * 100) / 100
-                const total = p.pricing?.totalPayable ?? Math.round((base + tax) * 100) / 100
-
-                return (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "p-6 rounded-2xl border transition-all flex flex-col justify-between shadow-xs bg-white dark:bg-zinc-900",
-                      isCurrent
-                        ? "border-emerald-500 ring-2 ring-emerald-500/20"
-                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-base">{p.name}</h4>
-                        {isCurrent && (
-                          <Badge variant="outline" className="text-[11px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
-                            Current Tier
-                          </Badge>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-zinc-500 mt-1 min-h-[36px]">{p.description}</p>
-
-                      <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">₹{base}</span>
-                          <span className="text-xs text-zinc-500">/ mo</span>
-                        </div>
-                        <p className="text-xs text-zinc-500 mt-1 font-mono">
-                          + 18% GST (₹{tax}) = <strong className="text-zinc-900 dark:text-zinc-100">₹{total}</strong> payable
-                        </p>
-                      </div>
-
-                      <div className="mt-5 space-y-2.5 text-xs text-zinc-600 dark:text-zinc-300">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>Outlets: <strong>{p.maxOutlets === -1 ? "Unlimited" : p.maxOutlets}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <LayoutGrid className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>Tables / Outlet: <strong>{p.maxTablesPerOutlet === -1 ? "Unlimited" : p.maxTablesPerOutlet}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
-                          <span>Features: {Array.isArray(p.features) ? p.features.join(", ") : p.features}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                      <Button
-                        variant={isCurrent ? "outline" : "default"}
-                        size="sm"
-                        disabled={isCurrent}
-                        onClick={() => handleUpgrade(p)}
-                        className={cn(
-                          "w-full text-xs font-semibold h-9 rounded-xl transition-all shadow-xs",
-                          isCurrent
-                            ? "border-zinc-200 dark:border-zinc-800 text-zinc-400"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                        )}
-                      >
-                        {isCurrent ? "Active Plan" : `Switch to ${p.name}`}
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── Tab 3: GST Tax Invoices ────────────────────────────────────────── */}
-        {activeTab === "INVOICES" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-                  Audited Tax Invoices & Payment Receipts
-                </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  Official GST-compliant tax invoices generated for recurring subscription billing.
-                </p>
-              </div>
-              <span className="text-xs font-mono text-zinc-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                18% SaaS GST
-              </span>
-            </div>
-
-            {/* Invoices Table */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xs">
-              <Table className="hidden md:table">
-                <TableHeader>
-                  <TableRow className="border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
-                    <TableHead className="text-zinc-500 dark:text-zinc-400">Invoice #</TableHead>
-                    <TableHead className="text-zinc-500 dark:text-zinc-400">Billing Period</TableHead>
-                    <TableHead className="text-right text-zinc-500 dark:text-zinc-400">Base Amount</TableHead>
-                    <TableHead className="text-right text-zinc-500 dark:text-zinc-400">GST (18%)</TableHead>
-                    <TableHead className="text-right text-zinc-500 dark:text-zinc-400">Total Paid</TableHead>
-                    <TableHead className="text-zinc-500 dark:text-zinc-400">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invoices.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-16 text-center">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <Receipt className="w-8 h-8 text-zinc-400 dark:text-zinc-600" />
-                          <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                            No billing invoices generated yet
-                          </p>
-                          <p className="text-xs text-zinc-500">
-                            Invoices are automatically created upon recurring payment settlements.
-                          </p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    invoices.map((inv) => (
-                      <TableRow
-                        key={inv.id}
-                        className="border-zinc-200/70 dark:border-zinc-800/50 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
-                      >
-                        <TableCell className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
-                          {inv.invoiceNumber}
-                        </TableCell>
-                        <TableCell className="text-xs text-zinc-500">
-                          {new Date(inv.billingPeriodStart).toLocaleDateString("en-IN", { dateStyle: "short" })} –{" "}
-                          {new Date(inv.billingPeriodEnd).toLocaleDateString("en-IN", { dateStyle: "short" })}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs text-zinc-700 dark:text-zinc-300">
-                          ₹{Number(inv.baseAmount).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs text-zinc-500">
-                          ₹{Number(inv.taxAmount).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                          ₹{Number(inv.totalAmount).toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-semibold"
-                          >
-                            {inv.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-
-              {/* Mobile Cards for Invoices */}
-              <div className="block md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
-                {invoices.map((inv) => (
-                  <div key={inv.id} className="p-4 space-y-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
-                          {inv.invoiceNumber}
-                        </span>
-                        <p className="text-[11px] text-zinc-500 mt-0.5">
-                          {new Date(inv.billingPeriodStart).toLocaleDateString("en-IN", { dateStyle: "short" })} –{" "}
-                          {new Date(inv.billingPeriodEnd).toLocaleDateString("en-IN", { dateStyle: "short" })}
-                        </p>
-                      </div>
-
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-semibold"
-                      >
-                        {inv.status}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/60 text-xs">
-                      <div>
-                        <span className="text-[10px] text-zinc-500 block">Base + 18% GST</span>
-                        <span className="font-mono text-zinc-600 dark:text-zinc-400">
-                          ₹{Number(inv.baseAmount).toFixed(0)} + ₹{Number(inv.taxAmount).toFixed(0)}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-zinc-500 block">Total Settled</span>
-                        <span className="font-mono font-bold text-sm text-emerald-700 dark:text-emerald-400">
-                          ₹{Number(inv.totalAmount).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {invoices.length === 0 && (
-                  <div className="py-12 px-4 text-center text-zinc-500 space-y-2">
-                    <Receipt className="w-8 h-8 mx-auto text-zinc-400 dark:text-zinc-600" />
-                    <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No invoices generated yet</p>
+          {/* ───────────── Plans ───────────── */}
+          {tab === "plans" && (
+            <div>
+              <div className="mb-6 flex items-center justify-between gap-3">
+                <p className="text-sm text-zinc-400">Prices exclude {plan.taxPercentage}% GST. Change or cancel any time.</p>
+                {hasYearly && (
+                  <div className="flex rounded-full border border-white/10 bg-white/[0.04] p-1 text-[13px]">
+                    {(["MONTHLY", "YEARLY"] as const).map((i) => (
+                      <button key={i} onClick={() => setInterval(i)} className={cn("rounded-full px-4 py-1.5 transition-colors", interval === i ? "bg-white text-zinc-950" : "text-zinc-400 hover:text-white")}>
+                        {i === "MONTHLY" ? "Monthly" : "Yearly"}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
+
+              {visiblePlans.length === 0 ? (
+                <p className="rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center text-sm text-zinc-500">No {interval.toLowerCase()} plans are available right now.</p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {visiblePlans.map((p) => (
+                    <PlanCard key={p.id} p={p} current={p.id === plan.id} onChoose={() => ask(`I'd like to move to the ${p.name} plan (${inr(p.pricing?.totalPayable ?? p.basePrice, 2)} incl. GST).`)} />
+                  ))}
+                </div>
+              )}
+
+              {visiblePlans.length > 1 && (
+                <div className="console-card mt-8 overflow-x-auto rounded-2xl">
+                  <table className="w-full min-w-[560px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-white/[0.07] text-xs text-zinc-500">
+                        <th className="px-5 py-3.5 font-medium">Compare</th>
+                        {visiblePlans.map((p) => <th key={p.id} className="px-5 py-3.5 font-medium text-white">{p.name}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-zinc-300">
+                      <tr><td className="px-5 py-3.5 text-zinc-500">Price (excl. GST)</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5 tabular-nums">{inr(p.basePrice)}</td>)}</tr>
+                      <tr><td className="px-5 py-3.5 text-zinc-500">Outlets</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{p.maxOutlets}</td>)}</tr>
+                      <tr><td className="px-5 py-3.5 text-zinc-500">Tables per outlet</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{p.maxTablesPerOutlet}</td>)}</tr>
+                      {[...new Set(visiblePlans.flatMap((p) => p.features))].map((f) => (
+                        <tr key={f}>
+                          <td className="px-5 py-3.5 text-zinc-500">{f}</td>
+                          {visiblePlans.map((p) => (
+                            <td key={p.id} className="px-5 py-3.5">{p.features.includes(f) ? <Check className="h-4 w-4 text-emerald-300" strokeWidth={3} /> : <span className="text-zinc-700">—</span>}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.025] p-6">
+                <div>
+                  <p className="font-heading text-base font-semibold text-white">Running more than five outlets?</p>
+                  <p className="mt-1 text-sm text-zinc-400">Talk to us about volume pricing, dedicated onboarding and custom invoicing.</p>
+                </div>
+                <button onClick={() => ask("I'd like to talk about an enterprise plan for Pangat.")} className="lp-btn lp-btn-ghost !h-10 !px-5 !text-sm">Talk to sales</button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {/* ───────────── Invoices ───────────── */}
+          {tab === "invoices" && (
+            <div className="console-card overflow-hidden rounded-2xl">
+              {b.invoices.length === 0 ? (
+                <div className="px-6 py-20 text-center">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.05] text-zinc-500"><FileText className="h-5 w-5" /></span>
+                  <p className="mt-4 text-sm font-medium text-white">No invoices yet</p>
+                  <p className="mt-1 text-sm text-zinc-500">{b.status === "TRIAL" ? "You’re on a free trial. Your first GST invoice appears after your first payment." : "GST tax invoices will appear here."}</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[720px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-white/[0.07] text-xs text-zinc-500">
+                        {["Invoice", "Billing period", "Amount", "GST", "Total", "Status", ""].map((h, i) => (
+                          <th key={i} className={cn("px-5 py-3.5 font-medium", i >= 2 && i <= 4 && "text-right")}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05]">
+                      {b.invoices.map((inv) => (
+                        <tr key={inv.id} className="transition-colors hover:bg-white/[0.02]">
+                          <td className="px-5 py-4"><p className="font-mono text-[13px] text-white">{inv.invoiceNumber}</p><p className="mt-0.5 text-xs text-zinc-600">{fmtDate(inv.createdAt)}</p></td>
+                          <td className="px-5 py-4 text-zinc-400">{fmtDate(inv.billingPeriodStart, { day: "numeric", month: "short" })} – {fmtDate(inv.billingPeriodEnd)}</td>
+                          <td className="px-5 py-4 text-right tabular-nums text-zinc-300">{inr(inv.baseAmount, 2)}</td>
+                          <td className="px-5 py-4 text-right tabular-nums text-zinc-500">{inr(inv.taxAmount, 2)}</td>
+                          <td className="px-5 py-4 text-right font-medium tabular-nums text-white">{inr(inv.totalAmount, 2)}</td>
+                          <td className="px-5 py-4"><InvoicePill status={inv.status} /></td>
+                          <td className="px-5 py-4 text-right">
+                            {inv.invoicePdfUrl ? (
+                              <a href={inv.invoicePdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 transition-colors hover:bg-white/10"><Download className="h-3.5 w-3.5" /> PDF</a>
+                            ) : (
+                              <button onClick={() => ask(`Please send me a PDF copy of invoice ${inv.invoiceNumber}.`)} className="rounded-lg px-2.5 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-white/10 hover:text-white">Request PDF</button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PlanCard({ p, current, onChoose }: { p: SubscriptionPlan; current: boolean; onChoose: () => void }) {
+  return (
+    <div className={cn("console-card relative flex flex-col rounded-2xl p-6", current && "!border-emerald-400/40")}>
+      {current && <span className="absolute right-5 top-5 flex items-center gap-1 rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300"><Sparkles className="h-3 w-3" /> Current</span>}
+      <p className="font-heading text-lg font-semibold text-white">{p.name}</p>
+      <p className="mt-1 min-h-10 text-sm text-zinc-500">{p.description}</p>
+      <p className="mt-5 text-[2rem] font-semibold tabular-nums tracking-tight text-white">
+        {inr(p.pricing?.basePrice ?? p.basePrice)}
+        <span className="text-sm font-normal text-zinc-500"> / {p.billingInterval === "YEARLY" ? "year" : "month"}</span>
+      </p>
+      <p className="mt-0.5 text-xs text-zinc-600">{inr(p.pricing?.totalPayable ?? p.basePrice, 2)} with {p.taxPercentage}% GST</p>
+      <button onClick={onChoose} disabled={current} className={cn("lp-btn mt-6 !h-11 w-full !text-sm", current ? "lp-btn-ghost opacity-60" : "lp-btn-primary")}>
+        {current ? "Your plan" : "Choose plan"}
+      </button>
+      <ul className="mt-6 space-y-2.5 border-t border-white/[0.07] pt-5 text-sm text-zinc-300">
+        <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" strokeWidth={3} />{p.maxOutlets} outlet{p.maxOutlets > 1 ? "s" : ""}, {p.maxTablesPerOutlet} tables each</li>
+        {p.features.map((f) => (
+          <li key={f} className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" strokeWidth={3} />{f}</li>
+        ))}
+      </ul>
     </div>
   )
 }

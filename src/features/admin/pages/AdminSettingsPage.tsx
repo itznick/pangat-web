@@ -14,7 +14,7 @@ import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { Building2, FileText, Volume2, Save, CheckCircle2, AlertCircle, Loader2, Lock } from "lucide-react"
 
-export function AdminSettingsPage() {
+export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const restaurant = useAdminStore((s) => s.restaurant)
   const updateSettings = useAdminStore((s) => s.updateSettings)
   const user = useAuthStore((s) => s.user)
@@ -80,10 +80,10 @@ export function AdminSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className={embedded ? "flex flex-col text-zinc-100" : "flex flex-col min-h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100"}>
       {/* Page header */}
-      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3">
-        <div>
+      <div className={embedded ? "order-last sticky -bottom-6 sm:-bottom-8 z-10 -mx-6 sm:-mx-8 mt-6 -mb-6 sm:-mb-8 flex items-center justify-end gap-3 border-t border-white/[0.07] bg-[#0c0c0f]/95 px-6 py-4 sm:px-8 backdrop-blur" : "sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 gap-3"}>
+        <div className={embedded ? "hidden" : undefined}>
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem><BreadcrumbLink>Admin</BreadcrumbLink></BreadcrumbItem>
@@ -117,7 +117,7 @@ export function AdminSettingsPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-4 sm:p-6 max-w-3xl space-y-6">
+      <div className={embedded ? "flex-1 space-y-6" : "flex-1 p-4 sm:p-6 max-w-3xl space-y-6"}>
         {/* Outlet Info */}
         <SettingsSection
           icon={<Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
