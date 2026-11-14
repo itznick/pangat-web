@@ -4,6 +4,7 @@ import { router } from "@/routes"
 import { Toaster, toast } from "@/components/ui/toast"
 import { sessionGate, subscriptionGate } from "@/lib/api"
 import { useAuthStore } from "@/stores/useAuthStore"
+import { PlatformGateScreen } from "@/components/platform/PlatformGateScreen"
 
 export default function App() {
   // An expired / revoked session (password changed elsewhere, account deactivated): sign out once and explain
@@ -22,6 +23,7 @@ export default function App() {
   return (
     <>
       <RouterProvider router={router} />
+      <PlatformGateScreen />
       <Toaster />
     </>
   )

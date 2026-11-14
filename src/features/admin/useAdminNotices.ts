@@ -1,6 +1,7 @@
 import * as React from "react"
-import { AlertTriangle, ChefHat, CreditCard, PackageX, Star } from "lucide-react"
+import { AlertTriangle, Bell, ChefHat, CreditCard, PackageX, Star } from "lucide-react"
 import { api } from "@/lib/api"
+import { merchant } from "@/features/super-admin/api"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { useConsoleUi } from "@/components/console/useConsoleUi"
@@ -17,6 +18,7 @@ export function useAdminNotices(navigate: (to: string) => void) {
 
   const [alerts, setAlerts] = React.useState<InventoryAlerts | null>(null)
   const [feedback, setFeedback] = React.useState<CustomerFeedbackSummary | null>(null)
+  const [inbox, setInbox] = React.useState<{ id: string; subject: string; body: string; read_at: string | null }[]>([])
 
   React.useEffect(() => {
     if (!outlet?.id || !outlet.slug) return
@@ -33,8 +35,34 @@ export function useAdminNotices(navigate: (to: string) => void) {
     }
   }, [outlet?.id, outlet?.slug])
 
+  // Messages from the Pangat team (sent from the platform control centre)
+  React.useEffect(() => {
+    let alive = true
+    const load = () => merchant.inbox().then((r) => alive && setInbox(r.items as typeof inbox)).catch(() => {})
+    load()
+    const t = window.setInterval(load, 120000)
+    return () => {
+      alive = false
+      clearInterval(t)
+    }
+  }, [])
+
   const items = React.useMemo<Notice[]>(() => {
-    const out: Notice[] = []
+    const out: Notice[] = inbox
+      .filter((m) => !m.read_at)
+      .slice(0, 5)
+      .map((m) => ({
+        id: `platform-${m.id}`,
+        tone: "info" as const,
+        icon: Bell,
+        title: m.subject,
+        body: m.body.length > 160 ? `${m.body.slice(0, 157)}…` : m.body,
+        actionLabel: "Mark as read",
+        action: () => {
+          void merchant.markRead(m.id).catch(() => {})
+          setInbox((p) => p.map((x) => (x.id === m.id ? { ...x, read_at: new Date().toISOString() } : x)))
+        },
+      }))
 
     const fresh = activeOrders.filter((o) => o.orderStatus === "RECEIVED").length
     if (fresh > 0)
@@ -107,7 +135,7 @@ export function useAdminNotices(navigate: (to: string) => void) {
         })
     }
     return out
-  }, [activeOrders, alerts, feedback, billing.loading, billing.failed, billing.status, billing.daysLeft, navigate, setBilling])
+  }, [inbox, activeOrders, alerts, feedback, billing.loading, billing.failed, billing.status, billing.daysLeft, navigate, setBilling])
 
   return { items, loading: !alerts && !feedback && billing.loading }
 }

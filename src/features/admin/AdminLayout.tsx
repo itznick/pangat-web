@@ -47,6 +47,7 @@ import { TopBar } from "@/components/console/TopBar"
 import { OutletSwitcher } from "@/components/console/OutletSwitcher"
 import { SettingsModal } from "./components/SettingsModal"
 import { BillingModal } from "@/features/subscriptions/components/BillingModal"
+import { AnnouncementBanner } from "@/components/platform/AnnouncementBanner"
 import { useAdminNotices } from "./useAdminNotices"
 import { STATUS_META, useBilling } from "@/features/subscriptions/billing"
 import { ConsoleOverlays } from "@/components/console/ConsoleOverlays"
@@ -65,6 +66,7 @@ const MANAGEMENT_NAV = [
   { label: "Menu & Modifiers", path: "/admin/menu", icon: UtensilsCrossed, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Inventory & Recipes", path: "/admin/inventory", icon: Boxes, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Feedback & Ratings", path: "/admin/feedback", icon: Star, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
+  { label: "Help & support", path: "/admin/support", icon: LifeBuoy, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
 ] as const
 
 const SUPPORT_WHATSAPP = "https://wa.me/919890000000?text=Hi%20Pangat%20team%2C%20I%20need%20help%20with%20my%20portal."
@@ -124,7 +126,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
     { label: "Plan & billing", icon: CreditCard, shortcut: "G B", onSelect: () => setBilling(true) },
     { label: "Keyboard shortcuts", icon: Keyboard, shortcut: "?", onSelect: () => setShortcuts(true), divider: true },
     { label: "What’s new", icon: Sparkles, onSelect: () => setChangelog(true) },
-    { label: "Help & support", icon: LifeBuoy, href: SUPPORT_WHATSAPP, divider: true },
+    { label: "Help & support", icon: LifeBuoy, onSelect: () => navigate("/admin/support"), divider: true },
     { label: "Send feedback", icon: MessageSquareText, href: FEEDBACK_MAILTO },
     { label: "Sign out", icon: LogOut, danger: true, divider: true, onSelect: () => { logout(); navigate("/") } },
   ]
@@ -520,7 +522,7 @@ export function AdminLayout() {
     { id: "add-outlet", label: "Add a new outlet", group: "Outlets", icon: Plus, keywords: "branch", run: () => setAddOutletOpen(true) },
     { id: "shortcuts", label: "Keyboard shortcuts", group: "Help", icon: Keyboard, shortcut: "?", run: () => useConsoleUi.getState().setShortcuts(true) },
     { id: "changelog", label: "What’s new", group: "Help", icon: Sparkles, keywords: "changelog updates", run: () => useConsoleUi.getState().setChangelog(true) },
-    { id: "support", label: "Help & support", group: "Help", icon: LifeBuoy, keywords: "whatsapp contact", run: () => window.open(SUPPORT_WHATSAPP, "_blank") },
+    { id: "support", label: "Help & support", group: "Help", icon: LifeBuoy, keywords: "ticket contact issue bug complaint", run: () => navigate("/admin/support") },
   ]
   const shortcutRows = [
     { keys: "Ctrl K", label: "Open the command palette" },
@@ -625,6 +627,7 @@ export function AdminLayout() {
             </button>
           </div>
         )}
+        <AnnouncementBanner />
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <Outlet />
         </div>

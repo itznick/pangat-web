@@ -23,6 +23,9 @@ export interface StaffUser {
   email: string
   role: UserRole
   isPlatformAdmin?: boolean
+  /** Platform administrators only: OWNER, ADMIN, FINANCE, SUPPORT or ANALYST, and the permissions the server granted */
+  platformRole?: string | null
+  platformPermissions?: string[]
   organizationId?: string
   organizationName?: string
   restaurantId?: string | null
