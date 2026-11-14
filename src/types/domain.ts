@@ -69,6 +69,8 @@ export interface Restaurant {
   upiVpa: string
   /** GST percentage applied at checkout, e.g. 5 */
   gstPercentage: number
+  /** Service charge % on subtotal (0 = none) */
+  serviceChargePercentage?: number
   isVegOnly: boolean
   isActive?: boolean
   gstin?: string | null
@@ -207,6 +209,7 @@ export interface Order {
   items: OrderItem[]
   totalAmount: number
   gstAmount: number
+  serviceChargeAmount?: number
   subtotal?: number
   paymentStatus: PaymentStatus
   paymentMethod?: PaymentMethod
@@ -377,6 +380,13 @@ export interface AdminOrganizationItem {
   totalGmv: number
   totalOrders: number
   status: 'ACTIVE' | 'INACTIVE'
+  subscription?: {
+    status: SubscriptionStatus
+    planCode: string
+    planName: string
+    periodEnd: string
+    cancelAtPeriodEnd: boolean
+  } | null
 }
 
 export interface AdminOutletItem {
@@ -558,6 +568,55 @@ export interface SubscriptionInvoice {
   paidAt?: string | null
   invoicePdfUrl?: string | null
   createdAt: string
+}
+
+export interface StaffMember {
+  id: string
+  name: string
+  email: string
+  phone?: string | null
+  role: 'STORE_MANAGER' | 'CHEF' | 'STEWARD' | 'CASHIER'
+  isActive: boolean
+  hasKitchenPin: boolean
+  lastLoginAt?: string | null
+  createdAt: string
+}
+
+export interface AuditLogEntry {
+  id: string
+  entityType: string
+  entityId: string
+  action: string
+  staffName?: string | null
+  staffRole?: string | null
+  reason?: string | null
+  metadata?: Record<string, unknown> | null
+  createdAt: string
+}
+
+export interface SalesReport {
+  restaurantSlug: string
+  range: { from: string; to: string; timezone: string }
+  totals: {
+    orders: number
+    paidOrders: number
+    pendingOrders: number
+    grossSales: number
+    refunds: number
+    netSales: number
+    subtotal: number
+    gstCollected: number
+    serviceCharge: number
+    outstanding: number
+    averageOrderValue: number
+    avgReadyMinutes: number
+  }
+  cancelled: { orders: number; refunded: number }
+  daily: { day: string; orders: number; sales: number }[]
+  byPaymentMethod: { method: string; orders: number; sales: number }[]
+  byOrderType: { type: string; orders: number; sales: number }[]
+  hourly: { hour: number; orders: number }[]
+  topItems: { name: string; quantity: number; revenue: number }[]
 }
 
 export interface SubscriptionDetailsResponse {

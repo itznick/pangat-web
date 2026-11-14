@@ -41,7 +41,17 @@ export function resolveWsBaseUrl(): string {
 export const WS_BASE_URL = resolveWsBaseUrl()
 export const WS_URL = WS_BASE_URL
 
+const authToken = (): string | undefined => {
+  try {
+    return localStorage.getItem('pangat_access_token') || undefined
+  } catch {
+    return undefined
+  }
+}
+
 export const socket: Socket = io(WS_BASE_URL, {
+  // Staff sockets prove who they are; diners connect anonymously and prove each order with its tracking token
+  auth: (cb) => cb({ token: authToken() }),
   transports: ['websocket', 'polling'], // Allow fallback if WebSockets encounter proxy lag
   autoConnect: true,
   withCredentials: true,
@@ -52,18 +62,37 @@ export const socket: Socket = io(WS_BASE_URL, {
 
 let currentKdsSlug: string | null = null
 let currentAdminSlug: string | null = null
-const activeOrderRooms = new Set<string>()
+/** orderId -> tracking token */
+const activeOrderRooms = new Map<string, string | undefined>()
+let connectedWithToken: string | undefined = authToken()
+
+/** Call after sign-in / sign-out: reconnect so the handshake carries the new identity. */
+export function refreshSocketAuth() {
+  const t = authToken()
+  if (t === connectedWithToken && socket.connected) return
+  connectedWithToken = t
+  if (socket.connected) socket.disconnect()
+  socket.connect()
+}
+
+type JoinAck = { data?: { status?: string }; status?: string } | undefined
+const denied = (ack: JoinAck) => (ack?.data?.status ?? ack?.status) === 'denied'
 
 socket.on('connect', () => {
   console.log('⚡ Connected to Pangat WebSocket gateway:', socket.id)
+  connectedWithToken = authToken()
   if (currentKdsSlug) {
-    socket.emit('join:kds', { restaurantSlug: currentKdsSlug })
+    socket.emit('join:kds', { restaurantSlug: currentKdsSlug }, (ack: JoinAck) => {
+      if (denied(ack)) console.warn('Kitchen feed denied: please sign in again')
+    })
   }
   if (currentAdminSlug) {
-    socket.emit('join:admin', { restaurantSlug: currentAdminSlug })
+    socket.emit('join:admin', { restaurantSlug: currentAdminSlug }, (ack: JoinAck) => {
+      if (denied(ack)) console.warn('Live feed denied: please sign in again')
+    })
   }
-  for (const orderId of activeOrderRooms) {
-    socket.emit('join:order', { orderId })
+  for (const [orderId, token] of activeOrderRooms) {
+    socket.emit('join:order', { orderId, token })
   }
 })
 
@@ -75,20 +104,24 @@ export function getSocket(): Socket {
   return socket
 }
 
-export function joinKdsRoom(restaurantSlug: string = 'pangat') {
-  const clean = (restaurantSlug || 'pangat').trim().toLowerCase()
+export function joinKdsRoom(restaurantSlug: string) {
+  const clean = (restaurantSlug || '').trim().toLowerCase()
+  if (!clean) return
   currentKdsSlug = clean
-  socket.emit('join:kds', { restaurantSlug: clean })
+  refreshSocketAuth()
+  if (socket.connected) socket.emit('join:kds', { restaurantSlug: clean })
 }
 
-export function joinAdminRoom(restaurantSlug: string = 'pangat') {
-  const clean = (restaurantSlug || 'pangat').trim().toLowerCase()
+export function joinAdminRoom(restaurantSlug: string) {
+  const clean = (restaurantSlug || '').trim().toLowerCase()
+  if (!clean) return
   currentAdminSlug = clean
-  socket.emit('join:admin', { restaurantSlug: clean })
+  refreshSocketAuth()
+  if (socket.connected) socket.emit('join:admin', { restaurantSlug: clean })
 }
 
-export function joinOrderRoom(orderId: string) {
+export function joinOrderRoom(orderId: string, trackingToken?: string) {
   if (!orderId) return
-  activeOrderRooms.add(orderId)
-  socket.emit('join:order', { orderId })
+  activeOrderRooms.set(orderId, trackingToken)
+  if (socket.connected) socket.emit('join:order', { orderId, token: trackingToken })
 }

@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react"
+import { toast } from "@/components/ui/toast"
+import { errMsg } from "@/lib/api"
 import { ScrollRow } from "@/components/ui/ScrollRow"
 import {
   Breadcrumb,
@@ -139,7 +141,7 @@ export function AdminOrdersPage() {
   const [refundOrder, setRefundOrder] = useState<Order | null>(null)
   const [refundAmount, setRefundAmount] = useState("")
   const [refundReason, setRefundReason] = useState("")
-  const [refundMethod, setRefundMethod] = useState<'COUNTER_CASH' | 'PROVIDER_CONFIRMED'>('COUNTER_CASH')
+  const [refundMethod, setRefundMethod] = useState<'COUNTER_CASH' | 'GATEWAY_VERIFIED'>('COUNTER_CASH')
 
   // Fetch Archived Orders from API
   const fetchArchivedOrders = async () => {
@@ -526,7 +528,7 @@ export function AdminOrdersPage() {
                                 await api.orders.updateStatus(order.id, "DISPATCHED")
                                 fetchArchivedOrders()
                               } catch (e: any) {
-                                alert(e?.response?.data?.message || "Failed to dispatch order")
+                                toast.error(errMsg(e, "Failed to dispatch order"))
                               }
                             }}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
@@ -545,7 +547,7 @@ export function AdminOrdersPage() {
                                 await api.orders.updateStatus(order.id, "COMPLETED")
                                 fetchArchivedOrders()
                               } catch (e: any) {
-                                alert(e?.response?.data?.message || "Failed to mark delivered")
+                                toast.error(errMsg(e, "Failed to mark delivered"))
                               }
                             }}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
@@ -778,7 +780,7 @@ export function AdminOrdersPage() {
                             await api.orders.updateStatus(order.id, "DISPATCHED")
                             fetchArchivedOrders()
                           } catch (e: any) {
-                            alert(e?.response?.data?.message || "Failed to dispatch order")
+                            toast.error(errMsg(e, "Failed to dispatch order"))
                           }
                         }}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-semibold min-h-[36px]"
@@ -796,7 +798,7 @@ export function AdminOrdersPage() {
                             await api.orders.updateStatus(order.id, "COMPLETED")
                             fetchArchivedOrders()
                           } catch (e: any) {
-                            alert(e?.response?.data?.message || "Failed to mark delivered")
+                            toast.error(errMsg(e, "Failed to mark delivered"))
                           }
                         }}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold min-h-[36px]"
@@ -986,22 +988,23 @@ export function AdminOrdersPage() {
 
                 {/* Subtotal & Taxes */}
                 <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums">
-                      ₹
-                      {(
-                        Number(selectedReceiptOrder.totalAmount) -
-                        Number(selectedReceiptOrder.gstAmount || 0)
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
-                    <span>GST (5%)</span>
-                    <span className="tabular-nums">
-                      ₹{Number(selectedReceiptOrder.gstAmount || 0).toFixed(2)}
-                    </span>
-                  </div>
+                  {(() => {
+                    const o = selectedReceiptOrder
+                    const sub = Number(o.subtotal ?? Number(o.totalAmount) - Number(o.gstAmount || 0))
+                    const gstRate = sub > 0 ? Math.round((Number(o.gstAmount || 0) / sub) * 1000) / 10 : 0
+                    const svc = Number(o.serviceChargeAmount || 0)
+                    const svcRate = sub > 0 ? Math.round((svc / sub) * 1000) / 10 : 0
+                    const fee = Number(o.deliveryFee || 0)
+                    const line = "flex justify-between text-zinc-500 dark:text-zinc-400"
+                    return (
+                      <>
+                        <div className={line}><span>Subtotal</span><span className="tabular-nums">₹{sub.toFixed(2)}</span></div>
+                        <div className={line}><span>GST ({gstRate}%)</span><span className="tabular-nums">₹{Number(o.gstAmount || 0).toFixed(2)}</span></div>
+                        {svc > 0 && <div className={line}><span>Service charge ({svcRate}%)</span><span className="tabular-nums">₹{svc.toFixed(2)}</span></div>}
+                        {fee > 0 && <div className={line}><span>Delivery fee</span><span className="tabular-nums">₹{fee.toFixed(2)}</span></div>}
+                      </>
+                    )
+                  })()}
                   <div className="flex justify-between text-sm font-bold text-zinc-900 dark:text-white pt-2 border-t border-zinc-200 dark:border-zinc-800">
                     <span>Grand Total Settled</span>
                     <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -1201,7 +1204,7 @@ export function AdminOrdersPage() {
                     await cancelOrder(cancellingOrder.id, cancelReason.trim())
                     setCancellingOrder(null)
                   } catch (e) {
-                    alert((e as any)?.response?.data?.message || 'Failed to cancel order')
+                    toast.error(errMsg(e, 'Failed to cancel order'))
                   }
                 }
               }}
@@ -1243,7 +1246,7 @@ export function AdminOrdersPage() {
                 className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="COUNTER_CASH">Counter Cash Refund</option>
-                <option value="PROVIDER_CONFIRMED">Verified Provider Gateway Refund</option>
+                <option value="GATEWAY_VERIFIED">Verified Provider Gateway Refund</option>
               </select>
             </div>
             <div>
@@ -1274,7 +1277,7 @@ export function AdminOrdersPage() {
                     })
                     setRefundOrder(null)
                   } catch (e) {
-                    alert((e as any)?.response?.data?.message || 'Failed to process refund')
+                    toast.error(errMsg(e, 'Failed to process refund'))
                   }
                 }
               }}

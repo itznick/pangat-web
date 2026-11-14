@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar"
 import {
   BarChart3,
+  LineChart,
   LayoutGrid,
   UtensilsCrossed,
   Receipt,
@@ -59,6 +60,7 @@ const OPERATIONS_NAV = [
   { label: "Dashboard", path: "/admin/dashboard", icon: BarChart3, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
   { label: "Floor & Tables", path: "/admin/tables", icon: LayoutGrid, roles: ["SUPER_OWNER", "STORE_MANAGER", "STEWARD", "CASHIER"] },
   { label: "Orders & Settlements", path: "/admin/orders", icon: Receipt, roles: ["SUPER_OWNER", "STORE_MANAGER", "CASHIER"] },
+  { label: "Reports", path: "/admin/reports", icon: LineChart, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
 ] as const
 
 const MANAGEMENT_NAV = [
@@ -75,6 +77,7 @@ const GO_KEYS: Record<string, string> = {
   d: "/admin/dashboard",
   t: "/admin/tables",
   o: "/admin/orders",
+  r: "/admin/reports",
   m: "/admin/menu",
   i: "/admin/inventory",
   b: "/admin/subscription",
@@ -85,6 +88,7 @@ const GO_LABEL: Record<string, string> = {
   "/admin/dashboard": "G D",
   "/admin/tables": "G T",
   "/admin/orders": "G O",
+  "/admin/reports": "G R",
   "/admin/menu": "G M",
   "/admin/inventory": "G I",
   "/admin/subscription": "G B",
@@ -383,6 +387,30 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   )
 }
 
+/** Persistent, honest status line when the trial/plan is ending or has lapsed. */
+function SubscriptionBanner({ onManage }: { onManage: () => void }) {
+  const b = useBilling()
+  const role = useAuthStore((s) => s.user?.role)
+  if (b.loading || !b.plan || role === "PLATFORM_SUPER_ADMIN") return null
+  const lapsed = b.status === "EXPIRED" || b.status === "HALTED" || (b.status === "CANCELLED" && (b.daysLeft ?? 0) <= 0)
+  const warn = b.status === "GRACE_PERIOD" || b.status === "PAST_DUE" || (b.status === "TRIAL" && b.daysLeft !== null && b.daysLeft <= 3 && b.daysLeft >= 0)
+  if (!lapsed && !warn) return null
+  return (
+    <div role="status" className={cn("flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-4 py-2.5 text-[13px]", lapsed ? "border-rose-500/30 bg-rose-500/10 text-rose-100" : "border-amber-300/25 bg-amber-300/10 text-amber-100")}>
+      <span>
+        {lapsed
+          ? "Your subscription has ended: guests can’t place new orders and editing is paused. Existing orders can still be settled."
+          : b.status === "TRIAL"
+            ? `Your free trial ends in ${b.daysLeft} day${b.daysLeft === 1 ? "" : "s"}.`
+            : "Your payment is overdue. Everything keeps working during the grace period."}
+      </span>
+      <button type="button" onClick={onManage} className="h-9 shrink-0 rounded-lg border border-current/30 px-3 font-medium hover:bg-white/10">
+        {lapsed ? "Renew now" : "View plans"}
+      </button>
+    </div>
+  )
+}
+
 export function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -613,6 +641,8 @@ export function AdminLayout() {
           feedbackHref={FEEDBACK_MAILTO}
           helpHref={SUPPORT_WHATSAPP}
         />
+
+        <SubscriptionBanner onManage={() => navigate("/admin/subscription")} />
 
         {/* Impersonation Error Alert */}
         {isPlatformSuperAdmin && impersonationError && (

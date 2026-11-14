@@ -39,7 +39,9 @@ interface CartStore {
   itemCount: () => number
   subtotal: () => number
   gstAmount: (gstPct: number) => number
-  total: (gstPct: number) => number
+  /** Service charge is a % of the food subtotal, shown as its own line */
+  serviceChargeAmount: (svcPct: number) => number
+  total: (gstPct: number, svcPct?: number) => number
 
   // ── Serialise for order placement ─────────────────────────────────────────
   toOrderItems: () => OrderItem[]
@@ -112,10 +114,16 @@ export const useCartStore = create<CartStore>()(
         return Math.round(sub * (gstPct / 100) * 100) / 100
       },
 
-      total: (gstPct) => {
+      serviceChargeAmount: (svcPct) => {
+        const sub = get().subtotal()
+        return Math.round(sub * ((svcPct || 0) / 100) * 100) / 100
+      },
+
+      total: (gstPct, svcPct = 0) => {
         const sub = get().subtotal()
         const gst = get().gstAmount(gstPct)
-        return Math.round((sub + gst) * 100) / 100
+        const svc = get().serviceChargeAmount(svcPct)
+        return Math.round((sub + gst + svc) * 100) / 100
       },
 
       // ── Serialise for order placement ─────────────────────────────────────────

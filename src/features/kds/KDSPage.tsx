@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
+import { playKitchenChime } from "@/lib/sound"
 import { ScrollRow } from "@/components/ui/ScrollRow"
 import { useParams } from "react-router"
 import { AlertTriangle, LayoutGrid, BellRing } from "lucide-react"
@@ -19,7 +20,6 @@ export function KDSPage() {
   const sendBackTicket = useKdsStore((s) => s.sendBackTicket)
   const archiveTicket = useKdsStore((s) => s.archiveTicket)
   const chimeCount = useKdsStore((s) => s.chimeCount)
-  const soundEnabled = useKdsStore((s) => s.soundEnabled)
 
   // Fetch initial live tickets from API & connect socket
   useEffect(() => {
@@ -28,14 +28,18 @@ export function KDSPage() {
     }
   }, [restaurantSlug])
 
-  // Listen for chime triggers
+  // Chime + banner when the store counts a new alert (the store already applied the sound and outlet preferences).
+  // Only a change of chimeCount counts: flipping the Sound switch must not replay the last alert.
+  const lastChime = useRef(chimeCount)
   useEffect(() => {
-    if (chimeCount > 0 && soundEnabled) {
-      setShowChimeToast(true)
-      const timer = setTimeout(() => setShowChimeToast(false), 2500)
-      return () => clearTimeout(timer)
-    }
-  }, [chimeCount, soundEnabled])
+    if (chimeCount === lastChime.current) return
+    lastChime.current = chimeCount
+    if (chimeCount === 0) return
+    playKitchenChime()
+    setShowChimeToast(true)
+    const timer = setTimeout(() => setShowChimeToast(false), 2500)
+    return () => clearTimeout(timer)
+  }, [chimeCount])
 
   const newTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "RECEIVED"), [tickets])
   const inPrepTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "PREPARING"), [tickets])

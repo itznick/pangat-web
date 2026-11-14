@@ -2,6 +2,8 @@ import * as React from "react"
 import { useSearchParams } from "react-router"
 import { Check, Download, FileText, Loader2, RefreshCw, ShieldCheck, Sparkles } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthStore"
+import { api, errMsg } from "@/lib/api"
+import { toast } from "@/components/ui/toast"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useConsoleUi } from "@/components/console/useConsoleUi"
 import { cn } from "@/lib/utils"
@@ -27,6 +29,27 @@ export function AdminSubscriptionPage() {
   const [interval, setInterval] = React.useState<"MONTHLY" | "YEARLY">("MONTHLY")
 
   const ask = (msg: string) => window.open(SUPPORT_WHATSAPP(`${msg} (${outlet?.name || "my outlet"})`), "_blank")
+  const isOwner = useAuthStore((s) => s.user?.role === "SUPER_OWNER")
+  const [busy, setBusy] = React.useState<string | null>(null)
+  const [confirmCancel, setConfirmCancel] = React.useState(false)
+  const cancelling = Boolean(b.details?.subscription?.cancelAtPeriodEnd)
+
+  const run = async (key: string, fn: () => Promise<unknown>, ok: string) => {
+    setBusy(key)
+    try {
+      await fn()
+      toast.success(ok)
+      setConfirmCancel(false)
+      b.refresh()
+    } catch (e) {
+      toast.error(errMsg(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+  /** Plan changes are confirmed by the Pangat team: the request lands in their queue and they contact the owner. */
+  const requestPlan = (p: SubscriptionPlan) =>
+    run(`plan-${p.id}`, () => api.subscriptions.requestChange(p.code, `Owner requested ${p.name}`), `Request sent. The Pangat team will contact you about ${p.name}.`)
   const plan = b.plan
   const gstin = restaurant.gstin || outlet?.gstin
 
@@ -129,13 +152,35 @@ export function AdminSubscriptionPage() {
                   )}
 
                   <p className={cn("mt-6 rounded-xl border px-4 py-3 text-[13px]", TONE_CLASS[STATUS_META[b.status].tone])}>{STATUS_META[b.status].note}</p>
+                  {cancelling && (
+                    <p role="status" className="mt-3 rounded-xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-[13px] text-amber-100">
+                      Renewal is off. You keep full access until {fmtDate(b.periodEnd)}, after which the outlet stops taking new orders.
+                    </p>
+                  )}
+                  {confirmCancel && (
+                    <div role="alertdialog" aria-label="Turn off renewal" className="mt-3 rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4">
+                      <p className="text-sm text-rose-100">Turn off renewal? You keep access until {fmtDate(b.periodEnd)}. You can switch it back on any time before then.</p>
+                      <div className="mt-3 flex gap-2">
+                        <button onClick={() => void run("cancel", () => api.subscriptions.cancel(), "Renewal turned off. You keep access until the end of the paid period.")} disabled={busy === "cancel"} className="h-10 rounded-lg bg-rose-500 px-4 text-sm font-medium text-white hover:bg-rose-400 disabled:opacity-60">
+                          {busy === "cancel" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, turn it off"}
+                        </button>
+                        <button onClick={() => setConfirmCancel(false)} className="h-10 rounded-lg px-4 text-sm text-zinc-300 hover:bg-white/[0.06]">Keep renewing</button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-6 flex flex-wrap gap-2">
                     <button onClick={() => setTab("plans")} className="lp-btn lp-btn-primary !h-10 !px-5 !text-sm">Compare plans</button>
                     <button onClick={() => ask(`I'd like to switch my Pangat plan to ${plan.billingInterval === "YEARLY" ? "monthly" : "yearly"} billing.`)} className="lp-btn lp-btn-ghost !h-10 !px-5 !text-sm">
                       Switch to {plan.billingInterval === "YEARLY" ? "monthly" : "yearly"}
                     </button>
-                    <button onClick={() => ask("I'd like to cancel my Pangat subscription.")} className="lp-btn lp-btn-ghost !h-10 !px-5 !text-sm">Cancel plan</button>
+                    {isOwner && b.status === "ACTIVE" && (cancelling ? (
+                      <button disabled={busy === "resume"} onClick={() => void run("resume", () => api.subscriptions.resume(), "Great, your plan will keep renewing.")} className="lp-btn lp-btn-ghost !h-10 !px-5 !text-sm">
+                        {busy === "resume" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Keep my plan"}
+                      </button>
+                    ) : (
+                      <button onClick={() => setConfirmCancel(true)} className="lp-btn lp-btn-ghost !h-10 !px-5 !text-sm">Turn off renewal</button>
+                    ))}
                   </div>
                 </section>
 
@@ -162,7 +207,7 @@ export function AdminSubscriptionPage() {
                 </section>
 
                 <section className="console-card rounded-2xl px-6 py-2">
-                  <Row label="Payment method"><span className="text-zinc-400">Not set up</span></Row>
+                  <Row label="Payment method"><span className="text-zinc-400">Invoice / UPI transfer</span></Row>
                   <Row label="GSTIN"><span className={gstin ? "font-mono text-[13px]" : "text-zinc-400"}>{gstin || "Not added"}</span></Row>
                   <Row label="Billing email"><span className="max-w-[170px] truncate text-[13px]">{restaurant.email || "—"}</span></Row>
                   <div className="py-3.5">
@@ -200,7 +245,7 @@ export function AdminSubscriptionPage() {
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {visiblePlans.map((p) => (
-                    <PlanCard key={p.id} p={p} current={p.id === plan.id} onChoose={() => ask(`I'd like to move to the ${p.name} plan (${inr(p.pricing?.totalPayable ?? p.basePrice, 2)} incl. GST).`)} />
+                    <PlanCard key={p.id} p={p} current={p.id === plan.id} busy={busy === `plan-${p.id}`} canChoose={isOwner} onChoose={() => void requestPlan(p)} />
                   ))}
                 </div>
               )}
@@ -290,7 +335,7 @@ export function AdminSubscriptionPage() {
   )
 }
 
-function PlanCard({ p, current, onChoose }: { p: SubscriptionPlan; current: boolean; onChoose: () => void }) {
+function PlanCard({ p, current, onChoose, busy, canChoose }: { p: SubscriptionPlan; current: boolean; onChoose: () => void; busy?: boolean; canChoose?: boolean }) {
   return (
     <div className={cn("console-card relative flex flex-col rounded-2xl p-6", current && "!border-emerald-400/40")}>
       {current && <span className="absolute right-5 top-5 flex items-center gap-1 rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300"><Sparkles className="h-3 w-3" /> Current</span>}
@@ -301,8 +346,8 @@ function PlanCard({ p, current, onChoose }: { p: SubscriptionPlan; current: bool
         <span className="text-sm font-normal text-zinc-500"> / {p.billingInterval === "YEARLY" ? "year" : "month"}</span>
       </p>
       <p className="mt-0.5 text-xs text-zinc-600">{inr(p.pricing?.totalPayable ?? p.basePrice, 2)} with {p.taxPercentage}% GST</p>
-      <button onClick={onChoose} disabled={current} className={cn("lp-btn mt-6 !h-11 w-full !text-sm", current ? "lp-btn-ghost opacity-60" : "lp-btn-primary")}>
-        {current ? "Your plan" : "Choose plan"}
+      <button onClick={onChoose} disabled={current || busy || !canChoose} title={!canChoose ? "Only the owner can request plan changes" : undefined} className={cn("lp-btn mt-6 !h-11 w-full !text-sm", current ? "lp-btn-ghost opacity-60" : "lp-btn-primary")}>
+        {current ? "Your plan" : busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Request this plan"}
       </button>
       <ul className="mt-6 space-y-2.5 border-t border-white/[0.07] pt-5 text-sm text-zinc-300">
         <li className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" strokeWidth={3} />{limitValue(p.maxOutlets)} outlet{p.maxOutlets === 1 ? "" : "s"}, {limitValue(p.maxTablesPerOutlet).toLowerCase()} tables each</li>

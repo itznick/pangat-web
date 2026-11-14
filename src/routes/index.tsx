@@ -1,6 +1,9 @@
 import { lazy, Suspense } from "react"
 import { createBrowserRouter, Navigate, useLocation } from "react-router"
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary"
+import { RoleGuard } from "@/components/RoleGuard"
+import { useAuthStore } from "@/stores/useAuthStore"
+import type { UserRole } from "@/types/domain"
 
 const PageLoadingFallback = () => (
   <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -18,6 +21,20 @@ const Lazy = (Component: React.ComponentType) => (
 )
 
 // Landing & Auth
+// Who may open which admin screen (mirrors the API's role checks; the API enforces them again on every call)
+const OWNER_MANAGER: UserRole[] = ["SUPER_OWNER", "STORE_MANAGER", "PLATFORM_SUPER_ADMIN"]
+const FLOOR_STAFF: UserRole[] = [...OWNER_MANAGER, "STEWARD", "CASHIER"]
+const ORDER_STAFF: UserRole[] = [...OWNER_MANAGER, "CASHIER"]
+const ANY_STAFF: UserRole[] = [...FLOOR_STAFF, "CHEF"]
+const guard = (roles: UserRole[], el: React.ReactNode) => <RoleGuard allowedRoles={roles}>{el}</RoleGuard>
+
+/** Each role lands on the first screen it is allowed to use. */
+function AdminHome() {
+  const role = useAuthStore((s) => s.user?.role)
+  const to = role === "CASHIER" ? "/admin/orders" : role === "STEWARD" ? "/admin/tables" : "/admin/dashboard"
+  return <Navigate to={to} replace />
+}
+
 const LandingPage = lazy(() => import("@/features/landing").then((m) => ({ default: m.LandingPage })))
 const LoginPage = lazy(() => import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage })))
 
@@ -46,6 +63,7 @@ const AdminDashboardPage = lazy(() => import("@/features/admin").then((m) => ({ 
 const AdminTablesPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminTablesPage })))
 const AdminMenuPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminMenuPage })))
 const AdminOrdersPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminOrdersPage })))
+const AdminReportsPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminReportsPage })))
 const AdminFeedbackPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminFeedbackPage })))
 const AdminSettingsPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminSettingsPage })))
 const AdminInventoryPage = lazy(() => import("@/features/inventory").then((m) => ({ default: m.AdminInventoryPage })))
@@ -125,46 +143,51 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/admin/dashboard" replace />,
+        element: <AdminHome />,
       },
       {
         path: "dashboard",
-        element: Lazy(AdminDashboardPage),
+        element: guard(OWNER_MANAGER, Lazy(AdminDashboardPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "tables",
-        element: Lazy(AdminTablesPage),
+        element: guard(FLOOR_STAFF, Lazy(AdminTablesPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "menu",
-        element: Lazy(AdminMenuPage),
+        element: guard(OWNER_MANAGER, Lazy(AdminMenuPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "orders",
-        element: Lazy(AdminOrdersPage),
+        element: guard(ORDER_STAFF, Lazy(AdminOrdersPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "inventory",
-        element: Lazy(AdminInventoryPage),
+        element: guard(OWNER_MANAGER, Lazy(AdminInventoryPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "subscription",
-        element: Lazy(AdminSubscriptionPage),
+        element: guard(OWNER_MANAGER, Lazy(AdminSubscriptionPage)),
+        errorElement: <RouteErrorBoundary />,
+      },
+      {
+        path: "reports",
+        element: guard(OWNER_MANAGER, Lazy(AdminReportsPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "feedback",
-        element: Lazy(AdminFeedbackPage),
+        element: guard(OWNER_MANAGER, Lazy(AdminFeedbackPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "settings",
-        element: Lazy(AdminSettingsPage),
+        element: guard(ANY_STAFF, Lazy(AdminSettingsPage)),
         errorElement: <RouteErrorBoundary />,
       },
     ],

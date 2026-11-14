@@ -22,7 +22,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useOrderTrackingStore } from "@/stores/useCartStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
+import { toast } from "@/components/ui/toast"
 import { getSocket, joinOrderRoom } from "@/lib/socket"
 import type { OrderStatus } from "@/types/domain"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -120,7 +121,7 @@ export function OrderTrackingView({
     window.addEventListener("focus", fetchLatestOrder)
     document.addEventListener("visibilitychange", handleVisibility)
 
-    joinOrderRoom(activeOrderId)
+    joinOrderRoom(activeOrderId, activeToken)
     const socket = getSocket()
 
     const onStatus = ({ orderId: incomingId, status }: { orderId: string; status: OrderStatus }) => {
@@ -332,29 +333,19 @@ export function OrderTrackingView({
       rating: selectedRating,
       tags: selectedTags,
     })
-    setFeedbackSubmitted(true)
     const payload = {
       rating: selectedRating,
       tags: selectedTags,
       comment: feedbackComment.trim() || undefined,
+      token: order?.trackingToken || trackingToken,
     }
-    if (order?.id) {
-      try {
-        await api.orders.submitFeedback(order.id, payload)
-      } catch (err) {
-        console.warn("Feedback API save error:", err)
-      }
-    }
-    if (restaurantSlug) {
-      try {
-        await api.restaurants.submitFeedback(restaurantSlug, {
-          orderId: order?.id,
-          tableNumber: tableId,
-          ...payload,
-        })
-      } catch (err) {
-        console.warn("Restaurant feedback save error:", err)
-      }
+    if (!order?.id) return
+    setFeedbackSubmitted(true) // optimistic; rolled back below if the server refuses
+    try {
+      await api.orders.submitFeedback(order.id, payload)
+    } catch (err) {
+      setFeedbackSubmitted(false)
+      toast.error(errMsg(err, "We couldn't save your feedback. Please try again."))
     }
   }
 

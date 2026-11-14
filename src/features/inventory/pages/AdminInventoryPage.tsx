@@ -2,7 +2,8 @@ import { useState, useEffect } from "react"
 import { ScrollRow } from "@/components/ui/ScrollRow"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
+import { UpgradeNotice, isPlanError } from "@/components/UpgradeNotice"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -67,9 +68,12 @@ export function AdminInventoryPage() {
 
   const restaurantId = currentOutlet?.id || ""
 
+  const [loadError, setLoadError] = useState<{ message: string; plan: boolean } | null>(null)
+
   const loadData = async () => {
     if (!restaurantId) return
     setLoading(true)
+    setLoadError(null)
     try {
       const [ings, recs, alts] = await Promise.all([
         api.inventory.listIngredients(restaurantId),
@@ -84,7 +88,7 @@ export function AdminInventoryPage() {
         fetchDashboardData(currentOutlet.slug)
       }
     } catch (err) {
-      console.error("Failed to load inventory data", err)
+      setLoadError({ message: errMsg(err, "Could not load inventory"), plan: isPlanError(err) })
     } finally {
       setLoading(false)
     }
@@ -93,6 +97,10 @@ export function AdminInventoryPage() {
   useEffect(() => {
     loadData()
   }, [restaurantId])
+
+  if (loadError?.plan) {
+    return <UpgradeNotice message={loadError.message} />
+  }
 
   // KPIs
   const totalItems = ingredients.length
@@ -178,6 +186,12 @@ export function AdminInventoryPage() {
       </div>
 
       <div className="flex-1 p-4 sm:p-6 space-y-6">
+        {loadError && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+            <span>{loadError.message}</span>
+            <button type="button" onClick={loadData} className="h-9 rounded-lg border border-rose-300/30 px-3 hover:bg-white/10">Try again</button>
+          </div>
+        )}
         {/* ── Metric KPI Cards ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 p-4 sm:p-5 flex flex-col gap-3 shadow-xs">

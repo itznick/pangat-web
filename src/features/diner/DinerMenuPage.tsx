@@ -406,11 +406,12 @@ export function DinerMenuPage() {
           errorMessage={orderError}
           operations={restaurant.operations}
           gstPercentage={restaurant.gstPercentage}
+          serviceChargePercentage={restaurant.serviceChargePercentage}
           onProceedToPay={handleProceedToPay}
         />
 
         {/* Floating Cart Pill */}
-        <FloatingCartPill gstPercentage={restaurant.gstPercentage} onViewOrder={() => {
+        <FloatingCartPill gstPercentage={restaurant.gstPercentage} serviceChargePercentage={restaurant.serviceChargePercentage} onViewOrder={() => {
           setOrderError(null)
           setShowCheckout(true)
         }} />

@@ -6,11 +6,12 @@ interface FloatingCartPillProps {
   onViewOrder: () => void
   /** Outlet GST so the pill total matches the checkout total */
   gstPercentage?: number
+  serviceChargePercentage?: number
 }
 
-export function FloatingCartPill({ onViewOrder, gstPercentage = 5 }: FloatingCartPillProps) {
+export function FloatingCartPill({ onViewOrder, gstPercentage = 5, serviceChargePercentage = 0 }: FloatingCartPillProps) {
   const itemCount = useCartStore((s) => s.itemCount())
-  const total = useCartStore((s) => s.total(gstPercentage))
+  const total = useCartStore((s) => s.total(gstPercentage, serviceChargePercentage))
 
   if (itemCount === 0) return null
 

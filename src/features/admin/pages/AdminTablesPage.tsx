@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { toast } from "@/components/ui/toast"
+import { errMsg } from "@/lib/api"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -171,7 +173,7 @@ export function AdminTablesPage() {
       await deleteTable(tableId)
       showNotification(`Table ${tableNumber} removed`)
     } catch (err: any) {
-      alert(err.message || "Failed to remove table")
+      toast.error(errMsg(err, "Failed to remove table"))
     } finally {
       setDeletingId(null)
     }

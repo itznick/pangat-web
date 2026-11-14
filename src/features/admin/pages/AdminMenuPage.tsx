@@ -1,3 +1,5 @@
+import { toast } from "@/components/ui/toast"
+import { errMsg } from "@/lib/api"
 import { useState, useMemo } from "react"
 import {
   Breadcrumb,
@@ -208,6 +210,12 @@ export function AdminMenuPage() {
   const addMenuItem = useAdminStore((s) => s.addMenuItem)
   const updateMenuItem = useAdminStore((s) => s.updateMenuItem)
   const addCategory = useAdminStore((s) => s.addCategory)
+  const renameCategory = useAdminStore((s) => s.renameCategory)
+  const deleteCategory = useAdminStore((s) => s.deleteCategory)
+  const deleteMenuItem = useAdminStore((s) => s.deleteMenuItem)
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
+  const [confirmDeleteDish, setConfirmDeleteDish] = useState(false)
+  const [busyAction, setBusyAction] = useState(false)
 
   const categoryOpts = useMemo(
     () => categories.map((c) => ({ value: c.id, label: c.name })),
@@ -270,7 +278,7 @@ export function AdminMenuPage() {
         setNewDish((d) => ({ ...d, categoryId: created.id }))
       }
     } catch (err) {
-      console.error("Failed to add category:", err)
+      toast.error(errMsg(err, "Could not add the category"))
     } finally {
       setIsSubmittingCategory(false)
     }
@@ -306,6 +314,48 @@ export function AdminMenuPage() {
     if (!editingDish || !editingDish.name.trim()) return
     updateMenuItem(editingDish)
     setEditingDish(null)
+    setConfirmDeleteDish(false)
+  }
+
+  const handleDeleteDish = async () => {
+    if (!editingDish) return
+    setBusyAction(true)
+    try {
+      await deleteMenuItem(editingDish.id)
+      toast.success(`${editingDish.name} deleted`)
+      setEditingDish(null)
+      setConfirmDeleteDish(false)
+    } catch (err) {
+      toast.error(errMsg(err, "Could not delete the dish"))
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleRenameCategory = async () => {
+    if (!renaming || !renaming.name.trim()) return
+    setBusyAction(true)
+    try {
+      await renameCategory(renaming.id, renaming.name.trim())
+      setRenaming(null)
+    } catch (err) {
+      toast.error(errMsg(err, "Could not rename the category"))
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    setBusyAction(true)
+    try {
+      await deleteCategory(id)
+      if (categoryFilter === id) setCategoryFilter("all")
+      toast.success(`Category “${name}” deleted`)
+    } catch (err) {
+      toast.error(errMsg(err, "Could not delete the category"))
+    } finally {
+      setBusyAction(false)
+    }
   }
 
   return (
@@ -627,11 +677,35 @@ export function AdminMenuPage() {
       <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full">
           <DialogHeader>
-            <DialogTitle>Add Menu Category</DialogTitle>
+            <DialogTitle>Menu categories</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {categories.length > 0 && (
+              <ul className="max-h-56 space-y-1.5 overflow-y-auto rounded-xl border border-zinc-800 p-2">
+                {categories.map((c) => {
+                  const count = menuItems.filter((m) => m.categoryId === c.id).length
+                  return (
+                    <li key={c.id} className="flex items-center gap-2">
+                      {renaming?.id === c.id ? (
+                        <>
+                          <Input value={renaming.name} onChange={(e) => setRenaming({ id: c.id, name: e.target.value })} onKeyDown={(e) => e.key === "Enter" && void handleRenameCategory()} autoFocus className="h-10" aria-label={`Rename ${c.name}`} />
+                          <Button size="sm" disabled={busyAction || !renaming.name.trim()} onClick={() => void handleRenameCategory()} className="h-10 bg-emerald-600 text-white hover:bg-emerald-500">Save</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setRenaming(null)} className="h-10 text-zinc-400">Cancel</Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="min-w-0 flex-1 truncate px-2 text-sm">{c.name} <span className="text-xs text-zinc-500">· {count} dish{count === 1 ? "" : "es"}</span></span>
+                          <Button size="sm" variant="ghost" onClick={() => setRenaming({ id: c.id, name: c.name })} className="h-10 text-zinc-400 hover:text-white">Rename</Button>
+                          <Button size="sm" variant="ghost" disabled={busyAction || count > 0} title={count > 0 ? "Move or delete its dishes first" : undefined} onClick={() => void handleDeleteCategory(c.id, c.name)} className="h-10 text-rose-400 hover:text-rose-300 disabled:opacity-30">Delete</Button>
+                        </>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
             <div>
-              <label className="text-xs font-semibold text-zinc-400 block mb-1.5">Category Name *</label>
+              <label className="text-xs font-semibold text-zinc-400 block mb-1.5">New category name</label>
               <Input
                 placeholder="e.g., Cold Beverages, Chai & Snacks, Desserts"
                 value={newCategoryName}
@@ -862,8 +936,17 @@ export function AdminMenuPage() {
               />
             </div>
 
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setEditingDish(null)} className="text-zinc-400">
+            <DialogFooter className="flex-wrap items-center">
+              {confirmDeleteDish ? (
+                <div className="mr-auto flex items-center gap-2 text-sm">
+                  <span className="text-rose-300">Delete this dish?</span>
+                  <Button size="sm" disabled={busyAction} onClick={() => void handleDeleteDish()} className="h-10 bg-rose-600 text-white hover:bg-rose-500">Yes, delete</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteDish(false)} className="h-10 text-zinc-400">No</Button>
+                </div>
+              ) : (
+                <Button variant="ghost" onClick={() => setConfirmDeleteDish(true)} className="mr-auto h-10 text-rose-400 hover:text-rose-300">Delete dish</Button>
+              )}
+              <Button variant="ghost" onClick={() => { setEditingDish(null); setConfirmDeleteDish(false) }} className="text-zinc-400">
                 Cancel
               </Button>
               <Button

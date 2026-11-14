@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link, Navigate, useSearchParams } from 'react-router'
 import { PangatLogo } from '@/components/ui/PangatLogo'
 import { Input } from '@/components/ui/input'
-import { api } from '@/lib/api'
+import { api, errMsg } from '@/lib/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useAdminStore } from '@/stores/useAdminStore'
 import { Lock, Mail, KeyRound, AlertCircle, Loader2, Store, ArrowLeft, ArrowRight, Check, Eye, EyeOff } from 'lucide-react'
@@ -15,10 +15,14 @@ export function LoginPage() {
   const setSession = useAuthStore((s) => s.setSession)
   const fetchDashboardData = useAdminStore((s) => s.fetchDashboardData)
 
+  const resetToken = searchParams.get('resetToken') || ''
   const initialTab = searchParams.get('tab') === 'pin' ? 'pin' : 'credentials'
   const initialSlug = searchParams.get('slug') || ''
 
-  const [mode, setMode] = useState<'credentials' | 'pin'>(initialTab)
+  const [mode, setMode] = useState<'credentials' | 'pin' | 'forgot' | 'reset'>(resetToken ? 'reset' : initialTab)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [notice, setNotice] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [pinCode, setPinCode] = useState('')
@@ -33,7 +37,7 @@ export function LoginPage() {
   // Already signed in: don't make people sign in again, send them where they work
   if (existingUser && existingToken && !isLoading) {
     const role = existingUser.role
-    const home = role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : role === 'CHEF' ? `/kds/${existingUser.restaurantSlug || 'pangat'}` : '/admin/dashboard'
+    const home = role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : role === 'CHEF' ? `/kds/${existingUser.restaurantSlug || 'pangat'}` : '/admin'
     return <Navigate to={home} replace />
   }
 
@@ -41,6 +45,45 @@ export function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     setErrorMsg(null)
+    setNotice(null)
+
+    if (mode === 'forgot') {
+      try {
+        const r = await api.auth.forgotPassword(email.trim())
+        setNotice(r.message || 'If that email is registered, a reset link is on its way.')
+      } catch (err) {
+        setErrorMsg(errMsg(err))
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
+
+    if (mode === 'reset') {
+      if (newPassword.length < 8) {
+        setErrorMsg('Use at least 8 characters for your new password')
+        setIsLoading(false)
+        return
+      }
+      if (newPassword !== confirmPassword) {
+        setErrorMsg('The two passwords do not match')
+        setIsLoading(false)
+        return
+      }
+      try {
+        await api.auth.resetPassword(resetToken, newPassword)
+        setNewPassword('')
+        setConfirmPassword('')
+        setNotice('Password updated. Sign in with your new password.')
+        setMode('credentials')
+        navigate('/login', { replace: true })
+      } catch (err) {
+        setErrorMsg(errMsg(err, 'This reset link is invalid or has expired. Request a new one.'))
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
 
     try {
       if (mode === 'pin') {
@@ -51,9 +94,14 @@ export function LoginPage() {
           return
         }
 
+        if (!outletSlug.trim()) {
+          setErrorMsg('Enter your outlet slug (it is in your kitchen display link)')
+          setIsLoading(false)
+          return
+        }
         const res = await api.auth.kdsPinLogin({
           pinCode: cleanPin,
-          outletSlug: outletSlug.trim() || undefined,
+          outletSlug: outletSlug.trim(),
         })
 
         const activeOutlet = res.outlet || res.outlets?.[0]
@@ -91,7 +139,7 @@ export function LoginPage() {
         await fetchDashboardData(activeSlug).catch(() => {})
       }
 
-      navigate('/admin/dashboard', { replace: true })
+      navigate('/admin', { replace: true })
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string | string[] } }; message?: string }
       const m = e.response?.data?.message
@@ -164,12 +212,19 @@ export function LoginPage() {
           </div>
 
           <div className="relative w-full max-w-[26rem]">
-            <h1 className="lp-display text-[2.2rem] text-white">Sign in</h1>
+            <h1 className="lp-display text-[2.2rem] text-white">{mode === 'forgot' ? 'Reset password' : mode === 'reset' ? 'New password' : 'Sign in'}</h1>
             <p className="mt-2 text-[0.95rem] text-zinc-400">
-              {mode === 'credentials' ? 'Access your floor, orders and settlements.' : 'Launch the kitchen display for your station.'}
+              {mode === 'credentials'
+                ? 'Access your floor, orders and settlements.'
+                : mode === 'pin'
+                  ? 'Launch the kitchen display for your station.'
+                  : mode === 'forgot'
+                    ? 'Enter your email and we will send a reset link.'
+                    : 'Choose a new password for your account.'}
             </p>
 
             {/* Mode switch */}
+            {(mode === 'credentials' || mode === 'pin') && (
             <div className="relative mt-7 grid grid-cols-2 rounded-full border border-white/10 bg-white/[0.04] p-1">
               <span
                 aria-hidden
@@ -191,9 +246,42 @@ export function LoginPage() {
                 </button>
               ))}
             </div>
+            )}
+
+            {notice && (
+              <div role="status" className="mt-5 flex items-start gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-3 text-[13px] text-emerald-200">
+                <Check className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{notice}</span>
+              </div>
+            )}
 
             <form onSubmit={handleLogin} className="mt-6 space-y-4">
-              {mode === 'credentials' ? (
+              {mode === 'forgot' ? (
+                <div>
+                  <label htmlFor="email" className="mb-1.5 block text-[13px] text-zinc-400">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@yourbrand.com" className={field} required autoFocus />
+                  </div>
+                </div>
+              ) : mode === 'reset' ? (
+                <>
+                  <div>
+                    <label htmlFor="new-password" className="mb-1.5 block text-[13px] text-zinc-400">New password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <Input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 8 characters" className={field} required autoFocus minLength={8} />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="confirm-password" className="mb-1.5 block text-[13px] text-zinc-400">Confirm password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <Input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={field} required />
+                    </div>
+                  </div>
+                </>
+              ) : mode === 'credentials' ? (
                 <>
                   <div>
                     <label htmlFor="email" className="mb-1.5 block text-[13px] text-zinc-400">Email</label>
@@ -236,11 +324,18 @@ export function LoginPage() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    <p className="mt-2 text-[12.5px] text-zinc-600">
-                      Forgot your password?{' '}
-                      <a href="mailto:hello@pangat.app?subject=Pangat%20password%20reset" className="text-zinc-400 underline-offset-4 hover:text-emerald-300 hover:underline">
-                        Ask the Pangat team to reset it
-                      </a>
+                    <p className="mt-2 text-[12.5px] text-zinc-500">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('forgot')
+                          setErrorMsg(null)
+                          setNotice(null)
+                        }}
+                        className="cursor-pointer text-zinc-400 underline-offset-4 hover:text-emerald-300 hover:underline"
+                      >
+                        Forgot your password?
+                      </button>
                     </p>
                   </div>
                 </>
@@ -248,7 +343,7 @@ export function LoginPage() {
                 <>
                   <div>
                     <label htmlFor="slug" className="mb-1.5 block text-[13px] text-zinc-400">
-                      Outlet slug <span className="text-zinc-600">(optional)</span>
+                      Outlet slug
                     </label>
                     <div className="relative">
                       <Store className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
@@ -262,6 +357,7 @@ export function LoginPage() {
                         onChange={(e) => setOutletSlug(e.target.value.trim().toLowerCase())}
                         placeholder="e.g. fc-road"
                         className={field}
+                        required
                       />
                     </div>
                   </div>
@@ -297,21 +393,41 @@ export function LoginPage() {
 
               <button
                 type="submit"
-                disabled={isLoading || (mode === 'credentials' ? !email || !password : !pinCode)}
+                disabled={
+                  isLoading ||
+                  (mode === 'credentials' ? !email || !password : mode === 'pin' ? !pinCode || !outletSlug : mode === 'forgot' ? !email : !newPassword || !confirmPassword)
+                }
                 className="lp-btn lp-btn-primary w-full !h-12 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Signing in…
+                    <Loader2 className="h-4 w-4 animate-spin" /> {mode === 'forgot' ? 'Sending…' : mode === 'reset' ? 'Saving…' : 'Signing in…'}
                   </>
                 ) : (
                   <>
-                    {mode === 'credentials' ? 'Sign in' : 'Open kitchen display'}
+                    {mode === 'credentials' ? 'Sign in' : mode === 'pin' ? 'Open kitchen display' : mode === 'forgot' ? 'Send reset link' : 'Update password'}
                     <ArrowRight className="lp-arrow h-4 w-4" />
                   </>
                 )}
               </button>
             </form>
+
+            {(mode === 'forgot' || mode === 'reset') && (
+              <p className="mt-6 text-center text-[13px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('credentials')
+                    setErrorMsg(null)
+                    setNotice(null)
+                    if (resetToken) navigate('/login', { replace: true })
+                  }}
+                  className="cursor-pointer text-zinc-400 underline-offset-4 hover:text-white hover:underline"
+                >
+                  Back to sign in
+                </button>
+              </p>
+            )}
 
             <p className="mt-8 border-t border-white/[0.07] pt-6 text-center text-[13px] text-zinc-500">
               New to Pangat?{' '}
