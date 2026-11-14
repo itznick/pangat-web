@@ -15,6 +15,9 @@ import type {
 } from '@/types/domain'
 import { api } from '@/lib/api'
 import { getSocket, joinKdsRoom, joinAdminRoom } from '@/lib/socket'
+import { toast } from '@/components/ui/toast'
+import { errMsg } from '@/lib/api'
+import { playKitchenChime } from '@/lib/sound'
 
 import { useAuthStore } from './useAuthStore'
 import { isSameTableNumber } from '@/lib/utils'
@@ -24,6 +27,16 @@ export interface SalesSummary {
   totalCovers: number
   avgPrepTimeMinutes: number
   activeKotCount: number
+}
+
+/**
+ * An optimistic change the server refused (permission, plan limit, network): tell the user why and reload the
+ * real state so the screen never shows something that was not saved.
+ */
+function undoFailed(err: unknown, what: string) {
+  toast.error(errMsg(err, `Could not ${what}. Please try again.`))
+  const slug = useAuthStore.getState().currentOutlet?.slug
+  if (slug) void useAdminStore.getState().fetchDashboardData(slug)
 }
 
 const DEFAULT_RESTAURANT: Restaurant = {
@@ -99,6 +112,8 @@ interface AdminStore {
   updateMenuItem: (item: MenuItem) => Promise<void>
   addCategory: (name: string) => Promise<MenuCategory>
   deleteCategory: (id: string) => Promise<void>
+  deleteMenuItem: (id: string) => Promise<void>
+  renameCategory: (id: string, name: string) => Promise<void>
 
   // ── Settings management ────────────────────────────────────────────────────
   updateSettings: (settings: Partial<Restaurant>, slug?: string) => Promise<void>
@@ -218,7 +233,19 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       })
     })
 
+    socket.on('menu:availability', (p: { id: string; name: string; isAvailable: boolean; auto: boolean }) => {
+      set((s) => ({ menuItems: s.menuItems.map((m) => (m.id === p.id ? { ...m, isAvailable: p.isAvailable } : m)) }))
+      if (get().restaurant.outOfStockNotification !== false) {
+        toast.info(p.isAvailable ? `${p.name} is available again` : `${p.name} is sold out${p.auto ? ' (an ingredient ran out)' : ''}`)
+      }
+    })
+
     socket.on('order:status', ({ orderId, status }: { orderId: string; status: any }) => {
+      if (status === 'READY' && get().restaurant.orderReadyChime !== false) {
+        const o = get().activeOrders.find((x) => x.id === orderId)
+        playKitchenChime()
+        toast.info(`Order ${orderId.slice(-3)} is ready${o?.tableNumber ? ` for table ${o.tableNumber}` : ''}`)
+      }
       set((s) => {
         const nextOrders = s.activeOrders.map((o) =>
           o.id === orderId ? { ...o, orderStatus: status } : o
@@ -313,7 +340,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     try {
       await api.tables.updateStatus(tableId, status)
     } catch (err) {
-      console.error('Failed to update table status via API:', err)
+      undoFailed(err, 'update the table status')
     }
   },
 
@@ -351,7 +378,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     try {
       await api.menu.updateAvailability(menuItemId, nextAvailability)
     } catch (err) {
-      console.error('Failed to toggle menu availability via API:', err)
+      undoFailed(err, 'change availability')
     }
   },
 
@@ -365,7 +392,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     try {
       await api.menu.updatePrice(menuItemId, price)
     } catch (err) {
-      console.error('Failed to update menu price via API:', err)
+      undoFailed(err, 'update the price')
     }
   },
 
@@ -395,7 +422,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         }))
       }
     } catch (err) {
-      console.error('Failed to create dish via API:', err)
+      undoFailed(err, 'save the new dish')
     }
   },
 
@@ -416,8 +443,21 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         modifiers: item.modifiers,
       })
     } catch (err) {
-      console.error('Failed to update dish via API:', err)
+      undoFailed(err, 'save the dish')
     }
+  },
+
+  deleteMenuItem: async (id: string) => {
+    await api.menu.deleteItem(id)
+    set((s) => ({ menuItems: s.menuItems.filter((m) => m.id !== id) }))
+  },
+
+  renameCategory: async (id: string, name: string) => {
+    const updated = await api.menu.updateCategory(id, { name })
+    set((s) => ({
+      categories: s.categories.map((c) => (c.id === id ? { ...c, name: updated.name } : c)),
+      categoryNameMap: { ...s.categoryNameMap, [id]: updated.name },
+    }))
   },
 
   addCategory: async (name: string) => {
@@ -443,6 +483,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
   },
 
   updateSettings: async (settings, slug = useAuthStore.getState().currentOutlet?.slug ?? 'pangat') => {
+    const previous = get().restaurant
     set((s) => ({
       restaurant: { ...s.restaurant, ...settings },
     }))
@@ -455,7 +496,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         }))
       }
     } catch (err) {
-      console.error('Failed to update settings via API:', err)
+      set({ restaurant: previous }) // the server refused: do not keep showing values that were not saved
       throw err
     }
   },
@@ -507,7 +548,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         await api.orders.markPaid(orderId)
       }
     } catch (err) {
-      console.error('Failed to settle order via API:', err)
+      undoFailed(err, 'mark the order as paid')
     }
   },
 
@@ -622,7 +663,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     try {
       await api.orders.updateStatus(orderId, 'COMPLETED')
     } catch (err) {
-      console.error('Failed to archive order via API:', err)
+      undoFailed(err, 'close the order')
     }
   },
 

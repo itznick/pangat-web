@@ -1,6 +1,8 @@
 import * as React from "react"
+import { Tooltip } from "@/components/ui/tooltip"
 import { ChevronsUpDown } from "lucide-react"
 import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useOutsidePress } from "@/hooks/useModal"
 import { cn } from "@/lib/utils"
 
 export interface MenuEntry {
@@ -28,14 +30,7 @@ export function UserMenu({ name, email, roleLabel, entries, collapsed }: UserMen
   const ref = React.useRef<HTMLDivElement>(null)
   useEscapeKey(open, () => setOpen(false))
 
-  React.useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener("mousedown", onDown)
-    return () => document.removeEventListener("mousedown", onDown)
-  }, [open])
+  useOutsidePress(open, ref, () => setOpen(false))
 
   const initial = (name || "U").trim().charAt(0).toUpperCase()
 
@@ -92,12 +87,12 @@ export function UserMenu({ name, email, roleLabel, entries, collapsed }: UserMen
         </div>
       )}
 
+      <Tooltip label={name} side="right" disabled={!collapsed || open} className="flex w-full">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        title={collapsed ? name : undefined}
         className={cn(
           "flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition-colors hover:bg-white/[0.06]",
           open && "bg-white/[0.06]",
@@ -117,6 +112,7 @@ export function UserMenu({ name, email, roleLabel, entries, collapsed }: UserMen
           </>
         )}
       </button>
+      </Tooltip>
     </div>
   )
 }

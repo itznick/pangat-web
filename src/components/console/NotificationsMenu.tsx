@@ -1,6 +1,8 @@
 import * as React from "react"
+import { Tooltip } from "@/components/ui/tooltip"
 import { Bell, CheckCheck } from "lucide-react"
 import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useOutsidePress } from "@/hooks/useModal"
 import { cn } from "@/lib/utils"
 
 export interface Notice {
@@ -38,14 +40,7 @@ export function NotificationsMenu({ items, loading }: { items: Notice[]; loading
   const ref = React.useRef<HTMLDivElement>(null)
   useEscapeKey(open, () => setOpen(false))
 
-  React.useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener("mousedown", onDown)
-    return () => document.removeEventListener("mousedown", onDown)
-  }, [open])
+  useOutsidePress(open, ref, () => setOpen(false))
 
   const persist = (next: Set<string>) => {
     setRead(next)
@@ -59,9 +54,11 @@ export function NotificationsMenu({ items, loading }: { items: Notice[]; loading
 
   return (
     <div ref={ref} className="relative">
+      <Tooltip label="Notifications" disabled={open}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-haspopup="dialog"
         aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
         aria-expanded={open}
         className={cn(
@@ -76,6 +73,7 @@ export function NotificationsMenu({ items, loading }: { items: Notice[]; loading
           </span>
         )}
       </button>
+      </Tooltip>
 
       {open && (
         <div

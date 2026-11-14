@@ -91,7 +91,7 @@ export function OnboardingPage() {
       email: '',
       password: '',
     },
-    kitchenPin: '1234',
+    kitchenPin: '',
   })
 
   const [isSlugManual, setIsSlugManual] = React.useState(false)
@@ -163,6 +163,10 @@ export function OnboardingPage() {
         setErrorMsg('Please fill in all required fields to continue.')
         return
       }
+      if (formData.password.length < 8) {
+        setErrorMsg('Choose a password of at least 8 characters.')
+        return
+      }
 
       const defaultOutletName = formData.outletName.trim() || `${formData.brandName.trim()} – Main Branch`
       const defaultBranchArea = formData.branchArea?.trim() || 'Hinjawadi Phase 1'
@@ -221,6 +225,17 @@ export function OnboardingPage() {
     try {
       const cleanManagerEmail = formData.storeManager?.email?.trim()
       const hasManager = formData.teamMode === 'with_team' && !!cleanManagerEmail
+      const pin = formData.kitchenPin?.trim() || ''
+      if (hasManager && (formData.storeManager?.password || '').length < 8) {
+        setErrorMsg('Give the store manager a password of at least 8 characters.')
+        setIsSubmitting(false)
+        return
+      }
+      if (pin && !/^\d{4,6}$/.test(pin)) {
+        setErrorMsg('The kitchen PIN must be 4 to 6 digits.')
+        setIsSubmitting(false)
+        return
+      }
 
       const payload: OnboardPayload = {
         brandName: formData.brandName.trim(),
@@ -242,13 +257,10 @@ export function OnboardingPage() {
           ? {
               name: formData.storeManager?.name?.trim() || 'Store Manager',
               email: cleanManagerEmail,
-              password: formData.storeManager?.password || 'pangat123',
+              password: formData.storeManager?.password || '',
             }
           : undefined,
-        kitchenPin:
-          formData.teamMode === 'with_team' && formData.kitchenPin?.trim()
-            ? formData.kitchenPin.trim()
-            : undefined,
+        kitchenPin: pin || undefined,
       }
 
       const onboardResult = await api.auth.onboard(payload)
@@ -978,11 +990,28 @@ export function OnboardingPage() {
                 </div>
               </div>
 
+              {/* Kitchen PIN works for solo owners too */}
+              <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-2">
+                <label className="block text-xs font-bold text-emerald-400 uppercase tracking-wider">Kitchen display PIN (optional)</label>
+                <div className="relative max-w-[220px]">
+                  <KeyRound className="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-500" />
+                  <Input
+                    placeholder="4 to 6 digits"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={formData.kitchenPin}
+                    onChange={(e) => setFormData({ ...formData, kitchenPin: e.target.value.replace(/\D/g, '') })}
+                    className="pl-8 bg-zinc-950 border-zinc-800 text-white font-mono text-xs font-bold tracking-widest"
+                  />
+                </div>
+                <span className="block text-[11px] text-zinc-500">Your kitchen opens its screen with this PIN and your outlet link. You can set or change it later in Settings.</span>
+              </div>
+
               {/* Sub-inputs if with_team is selected */}
               {formData.teamMode === 'with_team' && (
                 <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4 animate-in fade-in duration-200">
                   <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                    Store Manager Credentials & Kitchen PIN
+                    Store manager login
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1029,20 +1058,6 @@ export function OnboardingPage() {
                         }
                         className="bg-zinc-950 border-zinc-800 text-white text-xs"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-zinc-400 mb-1">Fast Station PIN (4-digit)</label>
-                      <div className="relative">
-                        <KeyRound className="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-500" />
-                        <Input
-                          placeholder="4421"
-                          maxLength={4}
-                          value={formData.kitchenPin}
-                          onChange={(e) => setFormData({ ...formData, kitchenPin: e.target.value })}
-                          className="pl-8 bg-zinc-950 border-zinc-800 text-white font-mono text-xs font-bold tracking-widest"
-                        />
-                      </div>
-                      <span className="text-[10px] text-zinc-500">Used by chefs to bypass keyboard logins</span>
                     </div>
                   </div>
                 </div>

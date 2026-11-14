@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Tooltip } from "@/components/ui/tooltip"
 import { ChevronRight, LifeBuoy, MessageSquareText, Search } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { NotificationsMenu, type Notice } from "./NotificationsMenu"
@@ -52,14 +53,16 @@ export function TopBar({ trail, mobileTitle, notices, noticesLoading, feedbackHr
       </button>
 
       <div className="ml-auto flex items-center gap-1 lg:ml-0">
-        <button
-          type="button"
-          onClick={() => setPalette(true)}
-          aria-label="Search"
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/[0.07] hover:text-white lg:hidden"
-        >
-          <Search className="h-[18px] w-[18px]" />
-        </button>
+        <Tooltip label="Search" hint={isMac ? "⌘ K" : "Ctrl K"}>
+          <button
+            type="button"
+            onClick={() => setPalette(true)}
+            aria-label="Search"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/[0.07] hover:text-white lg:hidden"
+          >
+            <Search className="h-[18px] w-[18px]" />
+          </button>
+        </Tooltip>
         {actions}
         <a
           href={feedbackHref}

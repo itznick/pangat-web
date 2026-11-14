@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
+import { toast } from "@/components/ui/toast"
+import { errMsg } from "@/lib/api"
+import { ScrollRow } from "@/components/ui/ScrollRow"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -138,7 +141,7 @@ export function AdminOrdersPage() {
   const [refundOrder, setRefundOrder] = useState<Order | null>(null)
   const [refundAmount, setRefundAmount] = useState("")
   const [refundReason, setRefundReason] = useState("")
-  const [refundMethod, setRefundMethod] = useState<'COUNTER_CASH' | 'PROVIDER_CONFIRMED'>('COUNTER_CASH')
+  const [refundMethod, setRefundMethod] = useState<'COUNTER_CASH' | 'GATEWAY_VERIFIED'>('COUNTER_CASH')
 
   // Fetch Archived Orders from API
   const fetchArchivedOrders = async () => {
@@ -211,7 +214,7 @@ export function AdminOrdersPage() {
   return (
     <div className="flex flex-col h-full overflow-auto bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* ── Page Header ───────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
         <div>
           <Breadcrumb>
             <BreadcrumbList>
@@ -239,7 +242,7 @@ export function AdminOrdersPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-5">
+      <div className="flex-1 p-4 sm:p-6 space-y-5">
         {/* ── Sub-Tab Navigation Header ────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-4">
           <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-fit">
@@ -254,7 +257,7 @@ export function AdminOrdersPage() {
               )}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Active Orders ({activeOrders.filter((o) => o.orderStatus !== "COMPLETED").length})</span>
+              <span>Active ({activeOrders.filter((o) => o.orderStatus !== "COMPLETED").length})</span>
             </button>
 
             <button
@@ -268,7 +271,7 @@ export function AdminOrdersPage() {
               )}
             >
               <Archive className="w-3.5 h-3.5" />
-              <span>Archived / Past Orders</span>
+              <span>Past orders</span>
             </button>
           </div>
 
@@ -326,14 +329,17 @@ export function AdminOrdersPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             {/* Order Type Filter */}
+            <ScrollRow aria-label="Filter by order type" className="-mx-4 flex items-center gap-2 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
             {(["all", "DINE_IN", "TAKEAWAY", "DELIVERY"] as const).map((t) => (
               <button
                 key={t}
+                type="button"
+                aria-pressed={typeFilter === t}
                 onClick={() => setTypeFilter(t)}
                 className={cn(
-                  "px-3 py-1.5 sm:py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 min-h-[36px] sm:min-h-0",
+                  "shrink-0 whitespace-nowrap px-3 py-1.5 sm:py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-0",
                   typeFilter === t
                     ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
                     : "bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -350,16 +356,20 @@ export function AdminOrdersPage() {
                 )}
               </button>
             ))}
+            </ScrollRow>
 
             <div className="hidden sm:block w-[1px] h-5 bg-zinc-200 dark:bg-zinc-800 mx-1" />
 
             {/* Payment Filter */}
+            <ScrollRow aria-label="Filter by payment status" className="-mx-4 flex items-center gap-2 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
             {(["all", "PAID", "PENDING", "FAILED"] as const).map((s) => (
               <button
                 key={s}
+                type="button"
+                aria-pressed={statusFilter === s}
                 onClick={() => setStatusFilter(s)}
                 className={cn(
-                  "px-3 py-1.5 sm:py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[36px] sm:min-h-0",
+                  "shrink-0 whitespace-nowrap px-3 py-1.5 sm:py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[40px] sm:min-h-0",
                   statusFilter === s
                     ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
                     : "bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -368,6 +378,7 @@ export function AdminOrdersPage() {
                 {s === "all" ? "All Payments" : s}
               </button>
             ))}
+            </ScrollRow>
           </div>
         </div>
 
@@ -517,7 +528,7 @@ export function AdminOrdersPage() {
                                 await api.orders.updateStatus(order.id, "DISPATCHED")
                                 fetchArchivedOrders()
                               } catch (e: any) {
-                                alert(e?.response?.data?.message || "Failed to dispatch order")
+                                toast.error(errMsg(e, "Failed to dispatch order"))
                               }
                             }}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
@@ -536,7 +547,7 @@ export function AdminOrdersPage() {
                                 await api.orders.updateStatus(order.id, "COMPLETED")
                                 fetchArchivedOrders()
                               } catch (e: any) {
-                                alert(e?.response?.data?.message || "Failed to mark delivered")
+                                toast.error(errMsg(e, "Failed to mark delivered"))
                               }
                             }}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
@@ -769,7 +780,7 @@ export function AdminOrdersPage() {
                             await api.orders.updateStatus(order.id, "DISPATCHED")
                             fetchArchivedOrders()
                           } catch (e: any) {
-                            alert(e?.response?.data?.message || "Failed to dispatch order")
+                            toast.error(errMsg(e, "Failed to dispatch order"))
                           }
                         }}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-semibold min-h-[36px]"
@@ -787,7 +798,7 @@ export function AdminOrdersPage() {
                             await api.orders.updateStatus(order.id, "COMPLETED")
                             fetchArchivedOrders()
                           } catch (e: any) {
-                            alert(e?.response?.data?.message || "Failed to mark delivered")
+                            toast.error(errMsg(e, "Failed to mark delivered"))
                           }
                         }}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold min-h-[36px]"
@@ -893,7 +904,7 @@ export function AdminOrdersPage() {
       >
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
           {selectedReceiptOrder && (
-            <div className="flex flex-col max-h-[85vh]">
+            <div className="flex flex-col max-h-[85dvh]">
               {/* Receipt Header */}
               <div className="p-6 bg-zinc-50 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 text-center relative">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 mb-2">
@@ -977,22 +988,23 @@ export function AdminOrdersPage() {
 
                 {/* Subtotal & Taxes */}
                 <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums">
-                      ₹
-                      {(
-                        Number(selectedReceiptOrder.totalAmount) -
-                        Number(selectedReceiptOrder.gstAmount || 0)
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
-                    <span>GST (5%)</span>
-                    <span className="tabular-nums">
-                      ₹{Number(selectedReceiptOrder.gstAmount || 0).toFixed(2)}
-                    </span>
-                  </div>
+                  {(() => {
+                    const o = selectedReceiptOrder
+                    const sub = Number(o.subtotal ?? Number(o.totalAmount) - Number(o.gstAmount || 0))
+                    const gstRate = sub > 0 ? Math.round((Number(o.gstAmount || 0) / sub) * 1000) / 10 : 0
+                    const svc = Number(o.serviceChargeAmount || 0)
+                    const svcRate = sub > 0 ? Math.round((svc / sub) * 1000) / 10 : 0
+                    const fee = Number(o.deliveryFee || 0)
+                    const line = "flex justify-between text-zinc-500 dark:text-zinc-400"
+                    return (
+                      <>
+                        <div className={line}><span>Subtotal</span><span className="tabular-nums">₹{sub.toFixed(2)}</span></div>
+                        <div className={line}><span>GST ({gstRate}%)</span><span className="tabular-nums">₹{Number(o.gstAmount || 0).toFixed(2)}</span></div>
+                        {svc > 0 && <div className={line}><span>Service charge ({svcRate}%)</span><span className="tabular-nums">₹{svc.toFixed(2)}</span></div>}
+                        {fee > 0 && <div className={line}><span>Delivery fee</span><span className="tabular-nums">₹{fee.toFixed(2)}</span></div>}
+                      </>
+                    )
+                  })()}
                   <div className="flex justify-between text-sm font-bold text-zinc-900 dark:text-white pt-2 border-t border-zinc-200 dark:border-zinc-800">
                     <span>Grand Total Settled</span>
                     <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -1043,7 +1055,7 @@ export function AdminOrdersPage() {
         open={Boolean(selectedFeedbackOrder)}
         onOpenChange={(open) => !open && setSelectedFeedbackOrder(null)}
       >
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
           {selectedFeedbackOrder && (
             <div className="flex flex-col">
               {/* Header */}
@@ -1162,7 +1174,7 @@ export function AdminOrdersPage() {
 
       {/* ── Cancel Order Dialog ────────────────────────────────────────────── */}
       <Dialog open={Boolean(cancellingOrder)} onOpenChange={(open) => !open && setCancellingOrder(null)}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
           <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-base">
             <XCircle className="w-5 h-5" />
             <span>Cancel Order #{cancellingOrder?.id.slice(-6).toUpperCase()}</span>
@@ -1192,7 +1204,7 @@ export function AdminOrdersPage() {
                     await cancelOrder(cancellingOrder.id, cancelReason.trim())
                     setCancellingOrder(null)
                   } catch (e) {
-                    alert((e as any)?.response?.data?.message || 'Failed to cancel order')
+                    toast.error(errMsg(e, 'Failed to cancel order'))
                   }
                 }
               }}
@@ -1206,7 +1218,7 @@ export function AdminOrdersPage() {
 
       {/* ── Process Refund Dialog ──────────────────────────────────────────── */}
       <Dialog open={Boolean(refundOrder)} onOpenChange={(open) => !open && setRefundOrder(null)}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 shadow-2xl space-y-4">
           <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-base">
             <RotateCcw className="w-5 h-5" />
             <span>Process Refund for Order #{refundOrder?.id.slice(-6).toUpperCase()}</span>
@@ -1234,7 +1246,7 @@ export function AdminOrdersPage() {
                 className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="COUNTER_CASH">Counter Cash Refund</option>
-                <option value="PROVIDER_CONFIRMED">Verified Provider Gateway Refund</option>
+                <option value="GATEWAY_VERIFIED">Verified Provider Gateway Refund</option>
               </select>
             </div>
             <div>
@@ -1265,7 +1277,7 @@ export function AdminOrdersPage() {
                     })
                     setRefundOrder(null)
                   } catch (e) {
-                    alert((e as any)?.response?.data?.message || 'Failed to process refund')
+                    toast.error(errMsg(e, 'Failed to process refund'))
                   }
                 }
               }}

@@ -263,8 +263,9 @@ export function DinerMenuPage() {
               </div>
             </div>
             <button
+              type="button"
               onClick={() => navigate(`/r/${restaurantSlug}/order/${activeOrder.id}`)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+              className="flex min-h-10 shrink-0 items-center gap-1 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
             >
               <span>Track</span>
               <ArrowRight className="h-3 w-3" />
@@ -291,15 +292,19 @@ export function DinerMenuPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search dishes (e.g. Misal, Dosa, Chai, Keema)..."
+              placeholder="Search dishes…"
+              aria-label="Search dishes"
+              enterKeyHint="search"
               className="w-full h-11 pl-10 pr-9 rounded-xl bg-zinc-900/90 border border-zinc-800 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/40 transition-all"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 p-1 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+                aria-label="Clear search"
+                className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -307,8 +312,9 @@ export function DinerMenuPage() {
             <div className="flex items-center justify-between text-xs text-zinc-400 px-1 pt-2">
               <span>Found {filteredItems.length} {filteredItems.length === 1 ? "dish" : "dishes"} for "{searchQuery}"</span>
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
-                className="text-emerald-400 hover:underline font-medium"
+                className="min-h-9 px-1 text-emerald-400 hover:underline font-medium"
               >
                 Clear search
               </button>
@@ -400,11 +406,12 @@ export function DinerMenuPage() {
           errorMessage={orderError}
           operations={restaurant.operations}
           gstPercentage={restaurant.gstPercentage}
+          serviceChargePercentage={restaurant.serviceChargePercentage}
           onProceedToPay={handleProceedToPay}
         />
 
         {/* Floating Cart Pill */}
-        <FloatingCartPill onViewOrder={() => {
+        <FloatingCartPill gstPercentage={restaurant.gstPercentage} serviceChargePercentage={restaurant.serviceChargePercentage} onViewOrder={() => {
           setOrderError(null)
           setShowCheckout(true)
         }} />

@@ -1,5 +1,5 @@
-import { useEscapeKey } from "@/hooks/useEscapeKey"
 import * as React from 'react'
+import { useModal } from "@/hooks/useModal"
 import { Button } from '@/components/ui/button'
 import { X, KeyRound, Copy, Check, Send } from 'lucide-react'
 
@@ -17,7 +17,7 @@ interface ResetPasswordModalProps {
 export function ResetPasswordModal({ isOpen, onClose, data }: ResetPasswordModalProps) {
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
 
-  useEscapeKey(isOpen, onClose)
+  const modalRef = useModal(isOpen, onClose)
 
   if (!isOpen || !data) return null
 
@@ -30,7 +30,7 @@ export function ResetPasswordModal({ isOpen, onClose, data }: ResetPasswordModal
   const waMessage = `Namaskar ${data.ownerName}! 🙏\nYour Pangat access credentials for *${data.organizationName}* have been reset by platform operations.\n\n🌐 Login: ${window.location.origin}/login\n✉️ Email: ${data.ownerEmail}\n🔑 New Access Code: ${data.temporaryPassword}\n\nPlease change your password upon signing in.`
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 font-sans">
+    <div ref={modalRef} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }} role="dialog" aria-modal="true" aria-label="Reset password" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 font-sans">
       <div className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 text-white p-6 shadow-2xl space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
           <div className="flex items-center gap-2">

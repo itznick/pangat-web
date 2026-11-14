@@ -1,4 +1,6 @@
 import * as React from 'react'
+import { toast } from "@/components/ui/toast"
+import { errMsg } from "@/lib/api"
 import { useSearchParams, useNavigate } from 'react-router'
 import { api } from '@/lib/api'
 import type {
@@ -13,6 +15,7 @@ import type {
 import { ProvisionRestaurantModal } from './components/ProvisionRestaurantModal'
 import { useProvisionStore } from './useProvisionStore'
 import { ResetPasswordModal } from './components/ResetPasswordModal'
+import { AssignPlanModal } from './components/AssignPlanModal'
 import { PrintableQrKitModal } from '@/features/onboarding/components/PrintableQrKitModal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -51,6 +54,7 @@ export function SuperAdminDashboardPage() {
   const [outlets, setOutlets] = React.useState<AdminOutletItem[]>([])
   const [systemHealth, setSystemHealth] = React.useState<DetailedSystemHealth | null>(null)
   const [subscriptionPlans, setSubscriptionPlans] = React.useState<SubscriptionPlan[]>([])
+  const [planOrg, setPlanOrg] = React.useState<AdminOrganizationItem | null>(null)
   const [loading, setLoading] = React.useState(true)
 
   // Filters
@@ -128,7 +132,7 @@ export function SuperAdminDashboardPage() {
       })
       setResetPwdModalOpen(true)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to reset password')
+      toast.error(errMsg(err, 'Failed to reset password'))
     } finally {
       setResettingId(null)
     }
@@ -1328,33 +1332,46 @@ export function SuperAdminDashboardPage() {
                     <th className="py-2.5 px-3">Plan Tier</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3 text-right">Outlets</th>
+                    <th className="py-2.5 px-3"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-900">
-                  {organizations.map((org) => (
-                    <tr key={org.id} className="hover:bg-zinc-900/40">
-                      <td className="py-2.5 px-3 font-medium text-white">{org.name}</td>
-                      <td className="py-2.5 px-3">
-                        <Badge variant="outline" className="text-[11px] bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
-                          GROWTH (Trial)
-                        </Badge>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <Badge variant="outline" className="text-[11px] bg-amber-500/10 text-amber-400 border-amber-500/30">
-                          TRIAL (14d)
-                        </Badge>
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
-                        {org.outlets?.length || 1}
-                      </td>
-                    </tr>
-                  ))}
+                  {organizations.map((org) => {
+                    const sub = org.subscription
+                    const tone = !sub ? 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
+                      : sub.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : sub.status === 'EXPIRED' || sub.status === 'HALTED' || sub.status === 'PAST_DUE' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                    return (
+                      <tr key={org.id} className="hover:bg-zinc-900/40">
+                        <td className="py-2.5 px-3 font-medium text-white">{org.name}</td>
+                        <td className="py-2.5 px-3">
+                          <Badge variant="outline" className="text-[11px] bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
+                            {sub ? sub.planName : 'No plan yet'}
+                          </Badge>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Badge variant="outline" className={`text-[11px] ${tone}`}>
+                            {sub ? `${sub.status.replace('_', ' ')} · ends ${new Date(sub.periodEnd).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}${sub.cancelAtPeriodEnd ? ' (not renewing)' : ''}` : 'Starts on first use'}
+                          </Badge>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-zinc-300">{org.outletsCount}</td>
+                        <td className="py-2.5 px-3 text-right">
+                          <Button size="sm" variant="outline" onClick={() => setPlanOrg(org)} className="h-8 border-zinc-700 text-zinc-200 hover:text-white bg-zinc-900 text-[11px]">
+                            Manage plan
+                          </Button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       )}
+
+      {planOrg && <AssignPlanModal org={planOrg} plans={subscriptionPlans} onClose={() => setPlanOrg(null)} onDone={() => { setPlanOrg(null); void fetchData() }} />}
 
       {/* ── Provisioning Modal ────────────────────────────────────────────── */}
       <ProvisionRestaurantModal

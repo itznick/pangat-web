@@ -10,9 +10,7 @@ import {
   Drumstick,
   Zap,
   Store,
-  ShieldCheck,
   AlertCircle,
-  CheckCircle2,
   Wallet,
   Sparkles,
   Utensils,
@@ -38,6 +36,7 @@ interface CheckoutDrawerProps {
   operations?: Partial<OutletOperations> | null
   /** The outlet's GST rate, so the bill shown matches what the server charges */
   gstPercentage?: number
+  serviceChargePercentage?: number
   onProceedToPay: (data: {
     mobile?: string
     paymentMethod: PaymentMethod
@@ -57,6 +56,7 @@ export function CheckoutDrawer({
   errorMessage = null,
   operations = null,
   gstPercentage = 5,
+  serviceChargePercentage = 0,
   onProceedToPay,
 }: CheckoutDrawerProps) {
   const ops = resolveOps(operations)
@@ -67,7 +67,6 @@ export function CheckoutDrawer({
   const [deliveryInstructions, setDeliveryInstructions] = useState("")
   const [mobile, setMobile] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI_INSTANT")
-  const [otp, setOtp] = useState("1234")
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
 
   useEffect(() => {
@@ -100,7 +99,8 @@ export function CheckoutDrawer({
   const entries = useCartStore((s) => s.entries)
   const subtotal = useCartStore((s) => s.subtotal())
   const gst = useCartStore((s) => s.gstAmount(gstPercentage))
-  const baseTotal = useCartStore((s) => s.total(gstPercentage))
+  const serviceCharge = useCartStore((s) => s.serviceChargeAmount(serviceChargePercentage))
+  const baseTotal = useCartStore((s) => s.total(gstPercentage, serviceChargePercentage))
   const incrementItem = useCartStore((s) => s.incrementItem)
   const decrementItem = useCartStore((s) => s.decrementItem)
 
@@ -117,16 +117,10 @@ export function CheckoutDrawer({
   const isTableValid = orderType !== "DINE_IN" || Boolean(tableId || tableNumber.trim())
   const isNameValid = orderType === "DINE_IN" || customerName.trim().length > 0
   const isAddressValid = orderType !== "DELIVERY" || deliveryAddress.trim().length > 0
-  const isOtpValid = otp === "1234" || otp.length === 0
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "").slice(0, 10)
     setMobile(val)
-  }
-
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, "").slice(0, 4)
-    setOtp(val)
   }
 
   const handleSubmit = () => {
@@ -158,8 +152,10 @@ export function CheckoutDrawer({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+            aria-label="Close checkout"
+            className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -356,8 +352,10 @@ export function CheckoutDrawer({
                   {/* Quantity controls */}
                   <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                     <button
+                      type="button"
+                      aria-label={`Remove one ${entry.name}`}
                       onClick={() => decrementItem(entry._localId)}
-                      className="w-7 h-7 min-w-[28px] min-h-[28px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
+                      className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
                     >
                       <Minus className="h-3 w-3 text-zinc-300" />
                     </button>
@@ -365,8 +363,10 @@ export function CheckoutDrawer({
                       {entry.quantity}
                     </span>
                     <button
+                      type="button"
+                      aria-label={`Add one more ${entry.name}`}
                       onClick={() => incrementItem(entry._localId)}
-                      className="w-7 h-7 min-w-[28px] min-h-[28px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
+                      className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
                     >
                       <Plus className="h-3 w-3 text-zinc-300" />
                     </button>
@@ -394,6 +394,12 @@ export function CheckoutDrawer({
             </span>
             <span className="text-zinc-200 font-medium">₹{Number(gst || 0).toFixed(2)}</span>
           </div>
+          {serviceChargePercentage > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-zinc-400">Service charge ({serviceChargePercentage}%)</span>
+              <span className="text-zinc-200 font-medium">₹{Number(serviceCharge || 0).toFixed(2)}</span>
+            </div>
+          )}
           {orderType === "DELIVERY" && (
             <div className="flex justify-between text-sm">
               <span className="text-purple-300 flex items-center gap-1">
@@ -610,60 +616,6 @@ export function CheckoutDrawer({
             <div>
               <p className="font-bold text-rose-200">Order Submission Failed</p>
               <p className="mt-0.5 text-rose-300/90">{errorMessage}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Pay at Counter 4-digit OTP Security Step */}
-        {paymentMethod === "PAY_AT_COUNTER" && (
-          <div className="p-4 rounded-2xl bg-zinc-900/90 border border-amber-500/40 space-y-3 shadow-lg">
-            <div className="flex items-start gap-2.5">
-              <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <ShieldCheck className="h-4 w-4 text-amber-400 flex-shrink-0" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-zinc-100">Anti-Prank Order Verification</p>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
-                  To protect our kitchen from fake fires, please enter the demo code below.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400 font-medium">Enter 4-Digit Code:</span>
-                <span className="text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30">
-                  Demo OTP: 1234
-                </span>
-              </div>
-              <div className="relative">
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  maxLength={4}
-                  placeholder="1234"
-                  value={otp}
-                  onChange={handleOtpChange}
-                  className={cn(
-                    "w-full h-12 px-4 rounded-xl bg-zinc-950 border text-center text-lg font-bold tracking-[0.4em] text-zinc-100 placeholder:text-zinc-700 placeholder:tracking-normal focus:outline-none transition-all",
-                    isOtpValid
-                      ? "border-emerald-500 text-emerald-400 bg-emerald-950/20 ring-1 ring-emerald-500/40"
-                      : hasAttemptedSubmit && !isOtpValid
-                      ? "border-rose-500/80 bg-rose-950/10"
-                      : "border-zinc-700 focus:border-amber-500/70"
-                  )}
-                />
-                {isOtpValid && (
-                  <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-400" />
-                )}
-              </div>
-
-              {hasAttemptedSubmit && !isOtpValid && (
-                <p className="flex items-center gap-1 text-xs text-rose-400 mt-1 px-1">
-                  <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                  Incorrect code. Please enter demo OTP "1234".
-                </p>
-              )}
             </div>
           </div>
         )}

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
+import { ScrollRow } from "@/components/ui/ScrollRow"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { useAdminStore } from "@/stores/useAdminStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
+import { UpgradeNotice, isPlanError } from "@/components/UpgradeNotice"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -66,9 +68,12 @@ export function AdminInventoryPage() {
 
   const restaurantId = currentOutlet?.id || ""
 
+  const [loadError, setLoadError] = useState<{ message: string; plan: boolean } | null>(null)
+
   const loadData = async () => {
     if (!restaurantId) return
     setLoading(true)
+    setLoadError(null)
     try {
       const [ings, recs, alts] = await Promise.all([
         api.inventory.listIngredients(restaurantId),
@@ -83,7 +88,7 @@ export function AdminInventoryPage() {
         fetchDashboardData(currentOutlet.slug)
       }
     } catch (err) {
-      console.error("Failed to load inventory data", err)
+      setLoadError({ message: errMsg(err, "Could not load inventory"), plan: isPlanError(err) })
     } finally {
       setLoading(false)
     }
@@ -92,6 +97,10 @@ export function AdminInventoryPage() {
   useEffect(() => {
     loadData()
   }, [restaurantId])
+
+  if (loadError?.plan) {
+    return <UpgradeNotice message={loadError.message} />
+  }
 
   // KPIs
   const totalItems = ingredients.length
@@ -141,13 +150,13 @@ export function AdminInventoryPage() {
         </div>
 
         {/* Header Quick Actions */}
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={loadData}
             disabled={loading}
-            className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold h-8 rounded-lg shadow-xs min-h-[36px] sm:min-h-0"
+            className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold h-8 rounded-lg shadow-xs min-h-[40px] sm:min-h-0"
           >
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -158,7 +167,7 @@ export function AdminInventoryPage() {
             size="sm"
             onClick={() => setShowReceiveModal(true)}
             disabled={!restaurantId || ingredients.length === 0}
-            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold h-8 rounded-lg shadow-xs cursor-pointer min-h-[36px] sm:min-h-0"
+            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold h-8 rounded-lg shadow-xs cursor-pointer min-h-[40px] sm:min-h-0"
           >
             <PackagePlus className="w-3.5 h-3.5 mr-1.5" />
             Receive Delivery
@@ -168,7 +177,7 @@ export function AdminInventoryPage() {
             size="sm"
             onClick={() => setShowAddModal(true)}
             disabled={!restaurantId}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold h-8 rounded-lg shadow-xs cursor-pointer min-h-[36px] sm:min-h-0"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold h-8 rounded-lg shadow-xs cursor-pointer min-h-[40px] sm:min-h-0"
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
             Add Ingredient
@@ -177,6 +186,12 @@ export function AdminInventoryPage() {
       </div>
 
       <div className="flex-1 p-4 sm:p-6 space-y-6">
+        {loadError && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+            <span>{loadError.message}</span>
+            <button type="button" onClick={loadData} className="h-9 rounded-lg border border-rose-300/30 px-3 hover:bg-white/10">Try again</button>
+          </div>
+        )}
         {/* ── Metric KPI Cards ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 p-4 sm:p-5 flex flex-col gap-3 shadow-xs">
@@ -265,12 +280,14 @@ export function AdminInventoryPage() {
         </div>
 
         {/* ── Sub-Tab Switcher ──────────────────────────────────────────────── */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-full sm:w-fit overflow-x-auto max-w-full">
+        <ScrollRow role="tablist" className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-full sm:w-fit max-w-full">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === "INGREDIENTS"}
             onClick={() => setActiveTab("INGREDIENTS")}
             className={cn(
-              "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
+              "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[40px] sm:min-h-0",
               activeTab === "INGREDIENTS"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -282,9 +299,11 @@ export function AdminInventoryPage() {
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === "RECIPES"}
             onClick={() => setActiveTab("RECIPES")}
             className={cn(
-              "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
+              "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[40px] sm:min-h-0",
               activeTab === "RECIPES"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -296,9 +315,11 @@ export function AdminInventoryPage() {
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === "LEDGER"}
             onClick={() => setActiveTab("LEDGER")}
             className={cn(
-              "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[36px] sm:min-h-0",
+              "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap min-h-[40px] sm:min-h-0",
               activeTab === "LEDGER"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -307,7 +328,7 @@ export function AdminInventoryPage() {
             <History className="w-3.5 h-3.5" />
             <span>Audited Movement Ledger</span>
           </button>
-        </div>
+        </ScrollRow>
 
         {/* ── Tab 1: Ingredients & Stock Levels ──────────────────────────────── */}
         {activeTab === "INGREDIENTS" && (

@@ -120,8 +120,10 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
             <p className="text-xs text-zinc-500 mt-0.5">Base ₹{item.price}</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+            aria-label="Close"
+            className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -165,15 +167,19 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
           <span className="text-sm font-medium text-zinc-300">Quantity</span>
           <div className="flex items-center gap-3">
             <button
+              type="button"
+              aria-label="Decrease quantity"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-9 h-9 min-w-[36px] min-h-[36px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 hover:bg-zinc-700 transition-colors border border-zinc-700 touch-manipulation"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-0 sm:min-h-0 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 hover:bg-zinc-700 transition-colors border border-zinc-700 touch-manipulation"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
             <span className="text-base font-bold text-zinc-100 w-6 text-center">{quantity}</span>
             <button
+              type="button"
+              aria-label="Increase quantity"
               onClick={() => setQuantity(quantity + 1)}
-              className="w-9 h-9 min-w-[36px] min-h-[36px] sm:w-8 sm:h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors touch-manipulation"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-0 sm:min-h-0 rounded-lg bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors touch-manipulation"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>

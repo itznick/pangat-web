@@ -1,8 +1,8 @@
 import * as React from 'react'
+import { useModal } from "@/hooks/useModal"
 import { createPortal } from 'react-dom'
 import '@/features/landing/landing.css'
 import { api } from '@/lib/api'
-import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { PangatLogo } from '@/components/ui/PangatLogo'
 import type { Lead, ProvisionPayload, ProvisionResult } from '@/types/domain'
 import {
@@ -247,7 +247,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
     if (!result && dirty) setConfirmDiscard(true)
     else onClose()
   }
-  useEscapeKey(isOpen && !confirmDiscard, requestClose)
+  const modalRef = useModal(isOpen && !confirmDiscard, requestClose)
 
   if (!isOpen) return null
 
@@ -258,7 +258,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
   const waHref = `https://wa.me/${waNumber.length === 10 ? '91' + waNumber : waNumber}?text=${encodeURIComponent(welcome)}`
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label="Provision a restaurant" className="lp dark fixed inset-0 z-[60] flex flex-col bg-[#050506] text-white animate-in fade-in duration-200 lg:flex-row">
+    <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Provision a restaurant" className="lp dark fixed inset-0 z-[60] flex flex-col bg-[#050506] text-white animate-in fade-in duration-200 lg:flex-row">
       {/* ── Rail ─────────────────────────────────────────────── */}
       <aside className="relative shrink-0 border-b border-white/[0.07] lg:w-[320px] lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between px-4 py-3 lg:flex-col lg:items-stretch lg:gap-8 lg:px-7 lg:py-7">

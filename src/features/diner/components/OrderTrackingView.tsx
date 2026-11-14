@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router"
 import {
+  ArrowLeft,
   CheckCircle2,
   ChefHat,
   Plus,
@@ -21,7 +22,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useOrderTrackingStore } from "@/stores/useCartStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
+import { toast } from "@/components/ui/toast"
 import { getSocket, joinOrderRoom } from "@/lib/socket"
 import type { OrderStatus } from "@/types/domain"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -119,7 +121,7 @@ export function OrderTrackingView({
     window.addEventListener("focus", fetchLatestOrder)
     document.addEventListener("visibilitychange", handleVisibility)
 
-    joinOrderRoom(activeOrderId)
+    joinOrderRoom(activeOrderId, activeToken)
     const socket = getSocket()
 
     const onStatus = ({ orderId: incomingId, status }: { orderId: string; status: OrderStatus }) => {
@@ -331,38 +333,38 @@ export function OrderTrackingView({
       rating: selectedRating,
       tags: selectedTags,
     })
-    setFeedbackSubmitted(true)
     const payload = {
       rating: selectedRating,
       tags: selectedTags,
       comment: feedbackComment.trim() || undefined,
+      token: order?.trackingToken || trackingToken,
     }
-    if (order?.id) {
-      try {
-        await api.orders.submitFeedback(order.id, payload)
-      } catch (err) {
-        console.warn("Feedback API save error:", err)
-      }
-    }
-    if (restaurantSlug) {
-      try {
-        await api.restaurants.submitFeedback(restaurantSlug, {
-          orderId: order?.id,
-          tableNumber: tableId,
-          ...payload,
-        })
-      } catch (err) {
-        console.warn("Restaurant feedback save error:", err)
-      }
+    if (!order?.id) return
+    setFeedbackSubmitted(true) // optimistic; rolled back below if the server refuses
+    try {
+      await api.orders.submitFeedback(order.id, payload)
+    } catch (err) {
+      setFeedbackSubmitted(false)
+      toast.error(errMsg(err, "We couldn't save your feedback. Please try again."))
     }
   }
 
   return (
     <div className="min-h-dvh bg-zinc-950 flex flex-col pb-12">
       {/* Top bar */}
-      <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3">
-        <h1 className="text-base font-bold text-zinc-100">Live Order Tracker</h1>
-        <p className="text-xs text-zinc-400 mt-0.5">Table {tableId}</p>
+      <div className="sticky top-0 z-30 flex items-center gap-1 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-2 py-2">
+        <button
+          type="button"
+          onClick={() => navigate(`/r/${restaurantSlug}/t/${tableId}`)}
+          aria-label="Back to menu"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-base font-bold text-zinc-100 leading-tight">Live Order Tracker</h1>
+          <p className="text-xs text-zinc-400">Table {tableId}</p>
+        </div>
       </div>
 
       <div className="flex-1 px-4 py-5 space-y-5 max-w-md mx-auto w-full">
@@ -559,8 +561,11 @@ export function OrderTrackingView({
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
+                      type="button"
+                      aria-label={`${star} ${star === 1 ? "star" : "stars"}`}
+                      aria-pressed={selectedRating >= star}
                       onClick={() => setSelectedRating(star)}
-                      className="p-1.5 rounded-lg transition-transform active:scale-90 hover:scale-110"
+                      className="p-2 rounded-lg transition-transform active:scale-90 hover:scale-110"
                     >
                       <Star
                         className={cn(
@@ -847,8 +852,10 @@ export function OrderTrackingView({
                 <p className="text-xs text-zinc-400 mt-0.5">Instant settlement to restaurant</p>
               </div>
               <button
+                type="button"
+                aria-label="Close"
                 onClick={() => setShowUpiModal(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>

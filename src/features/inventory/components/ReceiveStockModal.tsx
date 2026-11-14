@@ -228,6 +228,7 @@ export function ReceiveStockModal({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label="Remove this line"
                         onClick={() => handleRemoveRow(idx)}
                         disabled={rows.length === 1}
                         className="text-zinc-400 hover:text-rose-600 h-9 w-9 shrink-0"

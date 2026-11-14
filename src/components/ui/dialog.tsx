@@ -1,4 +1,5 @@
 import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useFocusTrap, useScrollLock } from "@/hooks/useModal"
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
@@ -11,16 +12,14 @@ interface DialogProps {
 
 const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   useEscapeKey(open, () => onOpenChange(false))
-  React.useEffect(() => {
-    if (open) document.body.style.overflow = "hidden"
-    else document.body.style.overflow = ""
-    return () => { document.body.style.overflow = "" }
-  }, [open])
+  const ref = React.useRef<HTMLDivElement>(null)
+  useScrollLock(open)
+  useFocusTrap(open, ref)
 
   if (!open) return null
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div ref={ref} role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}

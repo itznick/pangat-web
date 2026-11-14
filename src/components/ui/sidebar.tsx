@@ -1,7 +1,9 @@
 import * as React from "react"
+import { Tooltip } from "@/components/ui/tooltip"
 import { PanelLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useFocusTrap, useScrollLock } from "@/hooks/useModal"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar system
@@ -65,7 +67,8 @@ const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProvider
   const [collapsedRaw, setCollapsedRaw] = React.useState(() => {
     try {
       const v = localStorage.getItem(COLLAPSE_KEY)
-      return v === null ? defaultCollapsed : v === "1"
+      // No saved choice: tablets / small laptops start with the slim rail so content gets the room
+      return v === null ? defaultCollapsed || window.innerWidth < 1100 : v === "1"
     } catch {
       return defaultCollapsed
     }
@@ -87,14 +90,7 @@ const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProvider
   }, [isMobile])
 
   // Lock page scroll while the drawer is open
-  React.useEffect(() => {
-    if (!(isMobile && mobileOpen)) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [isMobile, mobileOpen])
+  useScrollLock(isMobile && mobileOpen)
 
   useEscapeKey(isMobile && mobileOpen, () => setMobileOpen(false))
 
@@ -137,6 +133,8 @@ const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProvider
 
 const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   const { collapsed, isMobile, mobileOpen, closeMobile } = useSidebar()
+  const mobileRef = React.useRef<HTMLElement>(null)
+  useFocusTrap(isMobile && mobileOpen, mobileRef)
 
   if (isMobile) {
     return (
@@ -150,6 +148,7 @@ const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDiv
           aria-hidden="true"
         />
         <aside
+          ref={mobileRef}
           aria-label="Navigation"
           aria-hidden={!mobileOpen}
           inert={!mobileOpen}
@@ -169,8 +168,9 @@ const Sidebar = ({ className, children, ...props }: React.HTMLAttributes<HTMLDiv
       aria-label="Navigation"
       data-state={collapsed ? "collapsed" : "expanded"}
       className={cn(
-        "flex h-full shrink-0 flex-col overflow-hidden border-r border-zinc-200 bg-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/[0.07] dark:bg-[#09090b]",
-        collapsed ? "w-[68px]" : "w-64",
+        "relative z-30 flex h-full shrink-0 flex-col border-r border-zinc-200 bg-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/[0.07] dark:bg-[#09090b]",
+        // collapsed rail must not clip popovers (account menu) that open beside it
+        collapsed ? "w-[68px] overflow-visible" : "w-64 overflow-hidden",
         className
       )}
       {...props}
@@ -229,32 +229,69 @@ const SidebarMenuItem = ({ className, ...props }: React.HTMLAttributes<HTMLLIEle
   <li className={cn("", className)} {...props} />
 )
 
-interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface SidebarMenuButtonProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "onClick"> {
   isActive?: boolean
   tooltip?: string
+  /** When set, renders a real link (right-click / middle-click / open in new tab all work) */
+  href?: string
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void
 }
 
-const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonProps>(
-  ({ className, isActive, children, tooltip, ...props }, ref) => {
+/** True for a plain left click, i.e. not "open in new tab/window" gestures. */
+const isPlainClick = (e: React.MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
+
+const SidebarMenuButton = React.forwardRef<HTMLElement, SidebarMenuButtonProps>(
+  ({ className, isActive, children, tooltip, href, onClick, target, ...props }, ref) => {
     const { collapsed } = useSidebar()
-    return (
-      <button
-        ref={ref}
-        title={collapsed ? tooltip : undefined}
-        aria-label={collapsed ? tooltip : undefined}
-        aria-current={isActive ? "page" : undefined}
-        data-active={isActive ? "true" : undefined}
-        className={cn(
-          "group/nav relative flex min-h-[44px] w-full cursor-pointer select-none items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
-          "hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/[0.05] dark:hover:text-white",
-          isActive
-            ? "bg-zinc-900/[0.06] font-semibold text-zinc-900 before:absolute before:bottom-2.5 before:left-0 before:top-2.5 before:w-[3px] before:rounded-full before:bg-emerald-400 before:content-[''] dark:bg-white/[0.08] dark:text-white [&_svg]:text-emerald-500 dark:[&_svg]:text-emerald-400"
-            : "text-zinc-600 dark:text-zinc-400",
-          collapsed && "justify-center px-0",
-          className
-        )}
-        {...props}
-      >
+    const cls = cn(
+      "group/nav relative flex min-h-[44px] w-full cursor-pointer select-none items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+      "hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/[0.05] dark:hover:text-white",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70",
+      isActive
+        ? "bg-zinc-900/[0.06] font-semibold text-zinc-900 before:absolute before:bottom-2.5 before:left-0 before:top-2.5 before:w-[3px] before:rounded-full before:bg-emerald-400 before:content-[''] dark:bg-white/[0.08] dark:text-white [&_svg]:text-emerald-500 dark:[&_svg]:text-emerald-400"
+        : "text-zinc-600 dark:text-zinc-400",
+      collapsed && "justify-center px-0",
+      className
+    )
+    const wrap = (node: React.ReactElement) =>
+      collapsed && tooltip ? (
+        <Tooltip label={tooltip} side="right" className="flex w-full">
+          {node}
+        </Tooltip>
+      ) : (
+        node
+      )
+    const common = {
+      "aria-label": collapsed ? tooltip : undefined,
+      "aria-current": isActive ? ("page" as const) : undefined,
+      "data-active": isActive ? "true" : undefined,
+      className: cls,
+    }
+    if (href) {
+      return wrap(
+        <a
+          ref={ref as React.Ref<HTMLAnchorElement>}
+          href={href}
+          target={target}
+          rel={target === "_blank" ? "noreferrer" : undefined}
+          {...common}
+          {...props}
+          onClick={(e) => {
+            if (target === "_blank") {
+              onClick?.(e)
+              return
+            }
+            if (!isPlainClick(e)) return
+            e.preventDefault()
+            onClick?.(e)
+          }}
+        >
+          {children}
+        </a>
+      )
+    }
+    return wrap(
+      <button ref={ref as React.Ref<HTMLButtonElement>} type="button" {...common} onClick={onClick}>
         {children}
       </button>
     )
@@ -267,12 +304,12 @@ const SidebarTrigger = ({ className, ...props }: React.ButtonHTMLAttributes<HTML
   const { toggle, collapsed, isMobile, mobileOpen } = useSidebar()
   const expanded = isMobile ? mobileOpen : !collapsed
   return (
+    <Tooltip label={expanded ? "Close sidebar" : "Open sidebar"} hint="Ctrl B" side="bottom">
     <button
       type="button"
       onClick={toggle}
       aria-label={expanded ? "Close sidebar" : "Open sidebar"}
       aria-expanded={expanded}
-      title={`${expanded ? "Close" : "Open"} sidebar (Ctrl B)`}
       className={cn(
         "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/[0.07] dark:hover:text-white",
         className
@@ -281,6 +318,7 @@ const SidebarTrigger = ({ className, ...props }: React.ButtonHTMLAttributes<HTML
     >
       <PanelLeft className="h-[18px] w-[18px]" />
     </button>
+    </Tooltip>
   )
 }
 

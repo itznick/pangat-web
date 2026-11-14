@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useModal } from "@/hooks/useModal"
 import { PangatLogo } from "@/components/ui/PangatLogo"
 import { playKitchenChime } from "@/lib/sound"
 import {
@@ -25,6 +26,8 @@ export function LiveDemoModal({ isOpen, onClose, onClaimPilot }: LiveDemoModalPr
   const [paid, setPaid] = React.useState(false)
   const [chimeActive, setChimeActive] = React.useState(false)
   const [kdsStatus, setKdsStatus] = React.useState<"new" | "preparing" | "ready">("new")
+
+  const modalRef = useModal(isOpen, onClose)
 
   if (!isOpen) return null
 
@@ -56,8 +59,8 @@ export function LiveDemoModal({ isOpen, onClose, onClaimPilot }: LiveDemoModalPr
   const price = 240 + (selectedMilk === "oat" ? 40 : selectedMilk === "almond" ? 50 : 0)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl rounded-3xl border border-white/[0.08] bg-zinc-950 text-white p-6 sm:p-9 shadow-2xl max-h-[92vh] overflow-y-auto space-y-6 ring-1 ring-white/[0.04]">
+    <div ref={modalRef} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }} role="dialog" aria-modal="true" aria-label="Live demo" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl rounded-3xl border border-white/[0.08] bg-zinc-950 text-white p-6 sm:p-9 shadow-2xl max-h-[92dvh] overflow-y-auto space-y-6 ring-1 ring-white/[0.04]">
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
           <div className="flex items-center gap-3">

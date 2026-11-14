@@ -30,6 +30,9 @@ import type {
   InventoryAlerts,
   SubscriptionPlan,
   SubscriptionDetailsResponse,
+  StaffMember,
+  AuditLogEntry,
+  SalesReport,
 } from '@/types/domain'
 
 export function resolveApiBaseUrl(): string {
@@ -72,6 +75,40 @@ export function resolveApiBaseUrl(): string {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
+/** Error thrown by every API call: carries the HTTP status and the server's machine-readable code. */
+export class ApiError extends Error {
+  status: number
+  code?: string
+  constructor(message: string, status = 0, code?: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+  }
+}
+
+/** Best human-readable message for anything thrown by an API call. */
+export function errMsg(e: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (e instanceof Error && e.message) return e.message
+  return fallback
+}
+
+/** Tiny event hubs so the HTTP layer can tell the UI about plan limits / expired sessions without importing it. */
+function hub<T = void>() {
+  const fns = new Set<(v: T) => void>()
+  return {
+    on: (fn: (v: T) => void) => {
+      fns.add(fn)
+      return () => {
+        fns.delete(fn)
+      }
+    },
+    emit: (v: T) => fns.forEach((f) => f(v)),
+  }
+}
+export const subscriptionGate = hub<ApiError>()
+export const sessionGate = hub()
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -99,12 +136,24 @@ apiClient.interceptors.response.use(
     return response.data
   },
   (error) => {
+    const data = error.response?.data
     const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
+      data?.message ||
+      data?.error ||
+      (error.code === 'ERR_NETWORK' ? 'Cannot reach the server. Check your connection and try again.' : error.message) ||
       'An unexpected error occurred'
-    return Promise.reject(new Error(Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg))
+    const apiError = new ApiError(
+      Array.isArray(errorMsg) ? errorMsg.join(', ') : String(errorMsg),
+      error.response?.status ?? 0,
+      data?.code,
+    )
+    // A lapsed subscription / plan limit is a global condition, not a per-form error
+    if (apiError.status === 402) subscriptionGate.emit(apiError)
+    // An expired or revoked session on a protected call: sign out cleanly
+    if (apiError.status === 401 && localStorage.getItem('pangat_access_token') && !/\/auth\//.test(error.config?.url || '')) {
+      sessionGate.emit()
+    }
+    return Promise.reject(apiError)
   }
 )
 
@@ -136,14 +185,14 @@ export interface CreateOrderPayload {
 export const api = {
   // Auth
   auth: {
-    login: (credentials: { email?: string; password?: string; pinCode?: string }): Promise<{
+    login: (credentials: { email: string; password: string }): Promise<{
       accessToken: string
       user: StaffUser
       organization?: Organization | null
       outlets?: Restaurant[]
     }> =>
       apiClient.post('/auth/login', credentials),
-    kdsPinLogin: (credentials: { pinCode: string; outletSlug?: string; station?: string }): Promise<{
+    kdsPinLogin: (credentials: { pinCode: string; outletSlug: string; station?: string }): Promise<{
       accessToken: string
       user: StaffUser
       organization?: Organization | null
@@ -151,6 +200,16 @@ export const api = {
       outlet?: Restaurant
     }> =>
       apiClient.post('/auth/kds-pin-login', credentials),
+    me: (): Promise<{ id: string; name: string; email: string; phone?: string | null; role: string; lastLoginAt?: string | null }> =>
+      apiClient.get('/auth/me'),
+    updateProfile: (data: { name?: string; phone?: string }): Promise<unknown> =>
+      apiClient.patch('/auth/me', data),
+    changePassword: (data: { currentPassword: string; newPassword: string }): Promise<{ accessToken: string; message: string }> =>
+      apiClient.post('/auth/change-password', data),
+    forgotPassword: (email: string): Promise<{ success: boolean; message: string }> =>
+      apiClient.post('/auth/forgot-password', { email }),
+    resetPassword: (token: string, newPassword: string): Promise<{ success: boolean; message: string }> =>
+      apiClient.post('/auth/reset-password', { token, newPassword }),
     onboard: (data: OnboardPayload): Promise<OnboardResponseData> =>
       apiClient.post('/auth/onboard', data),
     setupSuperAdmin: (data: { name: string; email: string; password: string; phone?: string }): Promise<{
@@ -180,19 +239,44 @@ export const api = {
       apiClient.post('/organizations/outlets', data),
   },
 
-  // Staff Management
+  // Staff Management (outlet owners)
   staff: {
+    list: (restaurantId: string): Promise<StaffMember[]> =>
+      apiClient.get(`/restaurants/${restaurantId}/staff`),
     create: (
       restaurantId: string,
-      data: {
-        name: string
-        email: string
-        password?: string
-        pinCode?: string
-        role: 'SUPER_OWNER' | 'STORE_MANAGER' | 'CHEF' | 'STEWARD' | 'CASHIER'
-      }
-    ): Promise<StaffUser> =>
+      data: { name: string; email: string; password: string; phone?: string; role: StaffMember['role'] }
+    ): Promise<StaffMember> =>
       apiClient.post(`/restaurants/${restaurantId}/staff`, data),
+    update: (
+      restaurantId: string,
+      staffId: string,
+      data: Partial<Pick<StaffMember, 'name' | 'phone' | 'role' | 'isActive'>>
+    ): Promise<StaffMember> =>
+      apiClient.patch(`/restaurants/${restaurantId}/staff/${staffId}`, data),
+    resetPassword: (restaurantId: string, staffId: string): Promise<{ staffId: string; email: string; temporaryPassword: string }> =>
+      apiClient.post(`/restaurants/${restaurantId}/staff/${staffId}/reset-password`),
+  },
+
+  // Kitchen station PIN
+  kitchenPin: {
+    status: (restaurantId: string): Promise<{ configured: boolean }> =>
+      apiClient.get(`/restaurants/${restaurantId}/kitchen-pin`),
+    set: (restaurantId: string, pin: string): Promise<{ configured: boolean }> =>
+      apiClient.post(`/restaurants/${restaurantId}/kitchen-pin`, { pin }),
+  },
+
+  // Audit trail & reports
+  audit: {
+    list: (
+      restaurantId: string,
+      params?: { entityType?: string; action?: string; page?: number; limit?: number }
+    ): Promise<{ items: AuditLogEntry[]; total: number; page: number; limit: number }> =>
+      apiClient.get(`/restaurants/${restaurantId}/audit-logs`, { params }),
+  },
+  reports: {
+    summary: (restaurantSlug: string, from?: string, to?: string): Promise<SalesReport> =>
+      apiClient.get('/reports/summary', { params: { restaurantSlug, from, to } }),
   },
 
   // Restaurants
@@ -205,7 +289,7 @@ export const api = {
       apiClient.get(`/restaurants/${slug}/feedback`),
     submitFeedback: (
       slug: string,
-      data: { orderId?: string; tableNumber?: string; rating: number; tags?: string[]; comment?: string }
+      data: { orderId: string; token?: string; tableNumber?: string; rating: number; tags?: string[]; comment?: string }
     ): Promise<unknown> =>
       apiClient.post(`/restaurants/${slug}/feedback`, data),
   },
@@ -240,6 +324,10 @@ export const api = {
       apiClient.patch(`/menu/items/${id}`, data),
     createCategory: (data: { name: string; restaurantId?: string; restaurantSlug?: string; sortOrder?: number }): Promise<MenuCategory> =>
       apiClient.post('/menu/categories', data),
+    deleteItem: (id: string): Promise<{ id: string }> =>
+      apiClient.delete(`/menu/items/${id}`),
+    updateCategory: (id: string, data: { name?: string; sortOrder?: number }): Promise<MenuCategory> =>
+      apiClient.patch(`/menu/categories/${id}`, data),
     deleteCategory: (id: string): Promise<{ id: string }> =>
       apiClient.delete(`/menu/categories/${id}`),
   },
@@ -274,7 +362,7 @@ export const api = {
     }): Promise<Order> =>
       apiClient.patch(`/orders/${id}/items`, data),
     processRefund: (id: string, data: {
-      refundMethod: 'COUNTER_CASH' | 'PROVIDER_CONFIRMED'
+      refundMethod: 'COUNTER_CASH' | 'GATEWAY_VERIFIED'
       amount?: number
       reason: string
       idempotencyKey: string
@@ -285,7 +373,7 @@ export const api = {
       apiClient.patch(`/orders/${id}/mark-paid`),
     submitFeedback: (
       id: string,
-      data: { rating: number; tags?: string[]; comment?: string }
+      data: { rating: number; tags?: string[]; comment?: string; token?: string }
     ): Promise<Order> =>
       apiClient.post(`/orders/${id}/feedback`, data),
   },
@@ -446,5 +534,13 @@ export const api = {
       apiClient.post('/subscriptions/admin/plans', data),
     updatePlan: (id: string, data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> =>
       apiClient.patch(`/subscriptions/admin/plans/${id}`, data),
+    cancel: (): Promise<unknown> => apiClient.post('/subscriptions/cancel'),
+    resume: (): Promise<unknown> => apiClient.post('/subscriptions/resume'),
+    requestChange: (planCode: string, message?: string): Promise<{ requested: boolean; plan: string }> =>
+      apiClient.post('/subscriptions/request-change', { planCode, message }),
+    adminOrganization: (orgId: string): Promise<SubscriptionDetailsResponse & { audit: { id: string; action: string; actor: string; reason: string; createdAt: string }[] }> =>
+      apiClient.get(`/subscriptions/admin/organizations/${orgId}`),
+    adminAssign: (orgId: string, data: { planCode: string; months: number; note?: string }): Promise<unknown> =>
+      apiClient.post(`/subscriptions/admin/organizations/${orgId}/assign`, data),
   },
 }

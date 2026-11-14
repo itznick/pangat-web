@@ -29,14 +29,14 @@ export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
   }
 
   return (
-    <div className="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.07] px-4 py-3 space-y-2.5">
+    <div id="diner-topbar" className="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.07] px-4 py-3 space-y-2.5">
       {/* Row 1: Cafe name + Table ID + Live connectivity */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <PangatLogo size="sm" className="shrink-0" />
           <div className="min-w-0">
             <h1 className="truncate font-heading text-base font-semibold text-zinc-100 tracking-tight">{cafeName}</h1>
-            <p className="text-xs text-zinc-400 font-medium">Table {tableId}</p>
+            <p className="text-xs text-zinc-400 font-medium">{/^takeaway$/i.test(tableId) ? "Takeaway" : `Table ${tableId}`}</p>
           </div>
         </div>
 
@@ -58,9 +58,11 @@ export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
       <div className="flex items-center gap-2">
         <span className="text-xs text-zinc-500 font-medium">Filter:</span>
         <button
+          type="button"
+          aria-pressed={dietaryFilter === "VEG"}
           onClick={() => handleDietaryToggle("VEG")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200",
+            "flex min-h-9 items-center gap-1.5 px-3.5 rounded-full text-xs font-semibold border transition-all duration-200",
             dietaryFilter === "VEG"
               ? "bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-600/40"
               : "bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-emerald-600/50 hover:text-emerald-400"
@@ -70,9 +72,11 @@ export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
           Veg
         </button>
         <button
+          type="button"
+          aria-pressed={dietaryFilter === "NON_VEG"}
           onClick={() => handleDietaryToggle("NON_VEG")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200",
+            "flex min-h-9 items-center gap-1.5 px-3.5 rounded-full text-xs font-semibold border transition-all duration-200",
             dietaryFilter === "NON_VEG"
               ? "bg-rose-600 border-rose-600 text-white shadow-sm shadow-rose-600/40"
               : "bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-rose-600/50 hover:text-rose-400"

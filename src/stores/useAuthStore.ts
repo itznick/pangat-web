@@ -4,6 +4,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { create } from 'zustand'
+import { refreshSocketAuth } from '@/lib/socket'
+import { useAdminStore } from '@/stores/useAdminStore'
+import { useKdsStore } from '@/stores/useKdsStore'
 import type { StaffUser, UserRole, Restaurant, Organization } from '@/types/domain'
 
 interface AuthState {
@@ -146,6 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       outlets: finalOutlets,
       currentOutlet: finalActive,
     })
+    refreshSocketAuth()
   },
 
   setCurrentOutlet: (outlet) => {
@@ -191,5 +195,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       outlets: [],
       currentOutlet: null,
     })
+    // Nothing from this account may linger in memory for the next person to sign in on this device
+    useAdminStore.setState(useAdminStore.getInitialState(), true)
+    useKdsStore.setState(useKdsStore.getInitialState(), true)
+    refreshSocketAuth()
   },
 }))

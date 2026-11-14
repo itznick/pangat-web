@@ -5,8 +5,10 @@
 
 import { create } from 'zustand'
 import type { Order, OrderStatus } from '@/types/domain'
-import { api } from '@/lib/api'
+import { api, errMsg } from '@/lib/api'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { getSocket, joinKdsRoom } from '@/lib/socket'
+import { toast } from '@/components/ui/toast'
 
 export type KdsTicketStatus = Extract<OrderStatus, 'RECEIVED' | 'PREPARING' | 'READY' | 'DISPATCHED'>
 
@@ -27,6 +29,10 @@ interface KdsStore {
   chimeCount: number
   outOfStockIds: Set<string>
   isLoading: boolean
+  /** Outlet alert preferences (Settings > Kitchen & stock) */
+  alertNewOrders: boolean
+  alertReady: boolean
+  alertStockOut: boolean
 
   // ── Async API sync ─────────────────────────────────────────────────────────
   fetchTickets: (slug?: string) => Promise<void>
@@ -47,6 +53,13 @@ interface KdsStore {
 
 let kdsSocketListening = false
 
+/** The kitchen's tap did not reach the server: say so and reload the real queue (never show a fake state). */
+function undoKds(err: unknown, what: string) {
+  toast.error(errMsg(err, `Could not ${what}. Please try again.`))
+  const slug = useAuthStore.getState().currentOutlet?.slug || useAuthStore.getState().user?.restaurantSlug
+  if (slug) void useKdsStore.getState().fetchTickets(slug)
+}
+
 export const useKdsStore = create<KdsStore>((set, get) => ({
   tickets: [],
   soundEnabled: true,
@@ -54,6 +67,9 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
   chimeCount: 0,
   outOfStockIds: new Set<string>(),
   isLoading: false,
+  alertNewOrders: true,
+  alertReady: true,
+  alertStockOut: true,
 
   fetchTickets: async (slug?: string) => {
     if (!slug) {
@@ -63,9 +79,10 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     if (get().isLoading) return
     set({ isLoading: true })
     try {
+      const outlet = await api.restaurants.get(slug).catch(() => null)
       const [orders, menuItems] = await Promise.all([
         api.orders.list(slug).catch(() => []),
-        api.menu.getItems().catch(() => []),
+        outlet?.id ? api.menu.getItems(outlet.id).catch(() => []) : Promise.resolve([]),
       ])
 
       const kdsTickets = Array.isArray(orders) ? orders.filter((o) => o && o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED') : []
@@ -77,6 +94,9 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         tickets: kdsTickets,
         outOfStockIds: outOfStock,
         isLoading: false,
+        alertNewOrders: outlet?.kdsNewOrderAlert ?? true,
+        alertReady: outlet?.orderReadyChime ?? true,
+        alertStockOut: outlet?.outOfStockNotification ?? true,
       })
 
       get().initSocketSync(slug)
@@ -97,8 +117,20 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     socket.on('order:new', (order: Order) => {
       set((s) => ({
         tickets: [order, ...s.tickets.filter((t) => t.id !== order.id)],
-        chimeCount: s.soundEnabled ? s.chimeCount + 1 : s.chimeCount,
+        chimeCount: s.soundEnabled && s.alertNewOrders ? s.chimeCount + 1 : s.chimeCount,
       }))
+    })
+
+    socket.on('menu:availability', (p: { id: string; name: string; isAvailable: boolean; auto: boolean }) => {
+      set((s) => {
+        const next = new Set(s.outOfStockIds)
+        if (p.isAvailable) next.delete(p.id)
+        else next.add(p.id)
+        return { outOfStockIds: next }
+      })
+      if (get().alertStockOut) {
+        toast.info(p.isAvailable ? `${p.name} is available again` : `${p.name} is sold out${p.auto ? ' (ingredient ran out)' : ''}`)
+      }
     })
 
     socket.on('order:status', ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
@@ -112,7 +144,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         const becameReady = status === 'READY'
         return {
           tickets: updated,
-          chimeCount: becameReady && s.soundEnabled ? s.chimeCount + 1 : s.chimeCount,
+          chimeCount: becameReady && s.soundEnabled && s.alertReady ? s.chimeCount + 1 : s.chimeCount,
         }
       })
     })
@@ -141,10 +173,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     try {
       await api.orders.regressStatus(orderId, { targetStatus, reason })
     } catch (err) {
-      console.error(`Failed to regress ticket ${orderId}:`, err)
-      // Re-fetch to rollback on failure
-      const slug = get().tickets[0]?.restaurantId
-      if (slug) get().fetchTickets(slug)
+      undoKds(err, 'send the ticket back')
     }
   },
 
@@ -171,7 +200,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     try {
       await api.orders.updateStatus(orderId, nextStatus)
     } catch (err) {
-      console.error(`Failed to advance ticket ${orderId} via API:`, err)
+      undoKds(err, 'move the ticket')
     }
   },
 
@@ -183,7 +212,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     try {
       await api.orders.updateStatus(orderId, 'COMPLETED')
     } catch (err) {
-      console.error(`Failed to archive ticket ${orderId} via API:`, err)
+      undoKds(err, 'close the ticket')
     }
   },
 
@@ -204,7 +233,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     try {
       await api.menu.updateAvailability(menuItemId, nextAvailability)
     } catch (err) {
-      console.error(`Failed to toggle out of stock for ${menuItemId}:`, err)
+      undoKds(err, 'change availability')
     }
   },
 
