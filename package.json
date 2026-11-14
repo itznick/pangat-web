@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "node --test test/ui-unit-tests.test.mjs test/inventory-ui.test.mjs test/overlay-stack.test.mjs",
+    "test": "node --test test/ui-unit-tests.test.mjs test/inventory-ui.test.mjs test/overlay-stack.test.mjs test/time.test.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:uat": "node --test --test-concurrency=1 test/e2e/uat.e2e.test.mjs"

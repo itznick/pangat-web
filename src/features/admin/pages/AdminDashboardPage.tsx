@@ -1,4 +1,5 @@
 import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { elapsedMs, minutesLabel, useNow } from "@/lib/time"
 import { useState, useCallback, useMemo } from "react"
 import {
   Breadcrumb,
@@ -449,10 +450,8 @@ export function AdminDashboardPage() {
     [activeOrders]
   )
 
-  const elapsedLabel = (createdAt: Date | string): string => {
-    const mins = Math.round((Date.now() - new Date(createdAt).getTime()) / 60_000)
-    return mins < 1 ? "<1m" : `${mins}m`
-  }
+  const now = useNow()
+  const elapsedLabel = (createdAt: Date | string): string => minutesLabel((elapsedMs(createdAt, undefined, now) ?? 0) / 60_000)
 
   const statusColors: Record<TableStatus, string> = {
     VACANT:   "bg-white dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 shadow-sm",

@@ -728,12 +728,13 @@ html.dark {
   border-radius: inherit;
 }
 
-/* The shared <Table> wrapper becomes a card so tables read as one object */
+/* The shared <Table> wrapper only scrolls: the page's own card supplies the single border, radius and fill
+   (a second border here drew a visible square outline inside the rounded card). */
 .console-glow div.relative.w-full.overflow-auto:has(> table) {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ScrollRow: fade the clipped edge(s) of a horizontally scrolling strip */

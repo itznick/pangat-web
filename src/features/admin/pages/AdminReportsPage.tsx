@@ -5,6 +5,8 @@ import { useAuthStore } from "@/stores/useAuthStore"
 import type { SalesReport } from "@/types/domain"
 import { UpgradeNotice, isPlanError } from "@/components/UpgradeNotice"
 import { cn } from "@/lib/utils"
+import { minutesLabel } from "@/lib/time"
+import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import "@/features/landing/landing.css"
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
@@ -59,18 +61,20 @@ export function AdminReportsPage() {
   const t = data?.totals
 
   return (
-    <div className="lp mx-auto w-full max-w-[1180px] !bg-transparent px-4 pb-16 pt-6 text-zinc-100 sm:px-8 sm:pt-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[1.75rem]">Reports</h1>
-          <p className="mt-1.5 text-sm text-zinc-500">Sales, tax and what sells, for the days you choose. Times are in India Standard Time.</p>
-        </div>
-        <button type="button" onClick={() => void load()} disabled={loading} className="flex h-10 items-center gap-2 rounded-xl border border-white/10 px-3.5 text-[13px] text-zinc-300 hover:bg-white/[0.06] disabled:opacity-50">
-          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        crumb="Reports"
+        title="Reports"
+        actions={
+          <button type="button" onClick={() => void load()} disabled={loading} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 hover:bg-white/[0.06] disabled:opacity-50">
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
+          </button>
+        }
+      />
+      <div className="lp !bg-transparent w-full flex-1 p-4 sm:p-6 pb-16 text-zinc-100">
+      <p className="mb-5 text-sm text-zinc-500">Sales, tax and what sells, for the days you choose. Times are in India Standard Time.</p>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {PRESETS.map((p) => (
           <button key={p.id} type="button" aria-pressed={preset === p.id} onClick={() => choose(p.id)} className={cn("h-10 rounded-full border px-4 text-[13px] font-medium transition-colors", preset === p.id ? "border-emerald-400/50 bg-emerald-400/15 text-emerald-200" : "border-white/10 text-zinc-400 hover:text-white")}>
             {p.label}
@@ -102,7 +106,7 @@ export function AdminReportsPage() {
             <Kpi label="Still to collect" value={inr(t.outstanding)} note={`${t.pendingOrders} unpaid order${t.pendingOrders === 1 ? "" : "s"}`} warn={t.outstanding > 0} />
             <Kpi label="GST collected" value={inr(t.gstCollected)} note="On paid orders" />
             <Kpi label="Service charge" value={inr(t.serviceCharge)} note="On paid orders" />
-            <Kpi label="Avg. time to ready" value={t.avgReadyMinutes ? `${t.avgReadyMinutes} min` : "–"} note="Order placed → ready" />
+            <Kpi label="Avg. kitchen time" value={t.avgKitchenMinutes ? minutesLabel(t.avgKitchenMinutes) : "–"} note={t.avgWaitMinutes ? `Cooking start → ready · ${minutesLabel(t.avgWaitMinutes)} wait before` : "Cooking start → ready"} />
             <Kpi label="Cancelled" value={String(data.cancelled.orders)} note={data.cancelled.refunded ? `${inr(data.cancelled.refunded)} refunded` : "No money returned"} />
           </div>
 
@@ -164,7 +168,8 @@ export function AdminReportsPage() {
           </Panel>
         </div>
       )}
-    </div>
+      </div>
+    </PageShell>
   )
 }
 

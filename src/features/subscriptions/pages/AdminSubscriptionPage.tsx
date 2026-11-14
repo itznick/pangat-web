@@ -1,4 +1,5 @@
 import * as React from "react"
+import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import { useSearchParams } from "react-router"
 import { Check, Download, FileText, Loader2, RefreshCw, ShieldCheck, Sparkles } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -61,19 +62,21 @@ export function AdminSubscriptionPage() {
   const hasYearly = b.plans.some((p) => p.billingInterval === "YEARLY")
 
   return (
-    <div className="lp mx-auto w-full max-w-[1120px] !bg-transparent px-4 pb-16 pt-8 sm:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[1.75rem]">Plan & billing</h1>
-          <p className="mt-1.5 text-sm text-zinc-500">Your subscription, usage and GST invoices for {outlet?.name || "your organisation"}.</p>
-        </div>
-        <button onClick={b.refresh} disabled={b.loading} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-50">
-          <RefreshCw className={cn("h-3.5 w-3.5", b.loading && "animate-spin")} /> Refresh
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        crumb="Plan & billing"
+        title="Plan & billing"
+        actions={
+          <button onClick={b.refresh} disabled={b.loading} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-50">
+            <RefreshCw className={cn("h-3.5 w-3.5", b.loading && "animate-spin")} /> Refresh
+          </button>
+        }
+      />
+      <div className="lp !bg-transparent w-full flex-1 p-4 sm:p-6 pb-16">
+      <p className="mb-5 text-sm text-zinc-500">Your subscription, usage and GST invoices for {outlet?.name || "your organisation"}.</p>
 
       {/* Tabs */}
-      <div role="tablist" className="mt-7 flex gap-1 border-b border-white/[0.07]">
+      <div role="tablist" className="flex gap-1 border-b border-white/[0.07]">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -331,7 +334,8 @@ export function AdminSubscriptionPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </PageShell>
   )
 }
 
