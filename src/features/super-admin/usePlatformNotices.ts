@@ -1,54 +1,40 @@
-import * as React from "react"
-import { Activity, Inbox } from "lucide-react"
-import { api } from "@/lib/api"
-import type { Notice } from "@/components/console/NotificationsMenu"
-import type { Lead, PlatformMetrics } from "@/types/domain"
+import * as React from 'react'
+import { AlertTriangle, Bell, Building2, CreditCard, LifeBuoy, Webhook } from 'lucide-react'
+import type { Notice } from '@/components/console/NotificationsMenu'
+import { sa, type Row } from './api'
 
-/** Live notifications for platform ops: fresh inbound leads and platform health. */
-export function usePlatformNotices(openTab: (tab: "leads" | "health") => void) {
-  const [leads, setLeads] = React.useState<Lead[] | null>(null)
-  const [metrics, setMetrics] = React.useState<PlatformMetrics | null>(null)
+const ICON: Record<string, React.ElementType> = { NEW_RESTAURANT: Building2, PAYMENT_FAILED: CreditCard, SUPPORT_TICKET: LifeBuoy, WEBHOOK_FAILURE: Webhook, JOB_FAILED: AlertTriangle }
+const ROUTE: Record<string, string> = {
+  NEW_RESTAURANT: '/super-admin/restaurants', PAYMENT_FAILED: '/super-admin/payments', SUBSCRIPTION_EXPIRED: '/super-admin/subscriptions',
+  SUPPORT_TICKET: '/super-admin/support', WEBHOOK_FAILURE: '/super-admin/monitoring', JOB_FAILED: '/super-admin/monitoring', ACCOUNT_STATUS: '/super-admin/restaurants', FEATURE_DISABLED: '/super-admin/settings',
+}
 
+/** Bell for platform operators: the unacknowledged event feed (new restaurants, failed payments, webhook trouble, tickets…). */
+export function usePlatformNotices(go: (to: string) => void, enabled: boolean) {
+  const [events, setEvents] = React.useState<Row[] | null>(null)
   React.useEffect(() => {
+    if (!enabled) return
     let alive = true
-    const load = () => {
-      api.admin.listLeads().then((l) => alive && setLeads(l)).catch(() => {})
-      api.admin.getMetrics().then((m) => alive && setMetrics(m)).catch(() => {})
-    }
+    const load = () => sa.events(20).then((e) => alive && setEvents(e)).catch(() => alive && setEvents((p) => p ?? []))
     load()
-    const t = window.setInterval(load, 90000)
+    const t = window.setInterval(load, 60000)
     return () => {
       alive = false
       clearInterval(t)
     }
-  }, [])
-
-  const items = React.useMemo<Notice[]>(() => {
-    const out: Notice[] = []
-    const fresh = (leads ?? []).filter((l) => l.status === "NEW")
-    if (fresh.length > 0)
-      out.push({
-        id: `leads-new-${fresh.map((l) => l.id).join(",")}`,
-        tone: "info",
-        icon: Inbox,
-        title: `${fresh.length} new inbound lead${fresh.length > 1 ? "s" : ""}`,
-        body: fresh.slice(0, 3).map((l) => l.restaurantName).join(", "),
-        actionLabel: "Open pipeline",
-        action: () => openTab("leads"),
-      })
-    const h = metrics?.systemHealth
-    if (h && (h.status !== "ok" || h.database !== "up" || h.gateway !== "up"))
-      out.push({
-        id: `health-${h.status}-${h.database}-${h.gateway}`,
-        tone: "bad",
-        icon: Activity,
-        title: "Platform health needs attention",
-        body: `Status ${h.status} · database ${h.database} · gateway ${h.gateway}`,
-        actionLabel: "Open system health",
-        action: () => openTab("health"),
-      })
-    return out
-  }, [leads, metrics, openTab])
-
-  return { items, loading: leads === null && metrics === null }
+  }, [enabled])
+  const items = React.useMemo<Notice[]>(
+    () =>
+      (events ?? []).slice(0, 12).map((e) => ({
+        id: `ev-${e.id}`,
+        tone: e.severity === 'CRITICAL' ? 'bad' : e.severity === 'WARNING' ? 'warn' : 'info',
+        icon: ICON[e.type] ?? Bell,
+        title: e.title,
+        body: [e.organization_name, e.detail].filter(Boolean).join(' · ') || undefined,
+        actionLabel: 'Open',
+        action: () => go(ROUTE[e.type] ?? '/super-admin'),
+      })),
+    [events, go],
+  )
+  return { items, loading: events === null }
 }

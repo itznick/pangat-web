@@ -108,6 +108,8 @@ function hub<T = void>() {
 }
 export const subscriptionGate = hub<ApiError>()
 export const sessionGate = hub()
+/** Suspended / deactivated restaurant account or platform maintenance mode (full-screen state) */
+export const platformGate = hub<ApiError>()
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -149,6 +151,9 @@ apiClient.interceptors.response.use(
     )
     // A lapsed subscription / plan limit is a global condition, not a per-form error
     if (apiError.status === 402) subscriptionGate.emit(apiError)
+    if ((apiError.code === 'ACCOUNT_SUSPENDED' || apiError.code === 'ACCOUNT_DEACTIVATED' || apiError.code === 'MAINTENANCE_MODE') && localStorage.getItem('pangat_access_token') && !/\/auth\/login/.test(error.config?.url || '')) {
+      platformGate.emit(apiError)
+    }
     // An expired or revoked session on a protected call: sign out cleanly
     if (apiError.status === 401 && localStorage.getItem('pangat_access_token') && !/\/auth\//.test(error.config?.url || '')) {
       sessionGate.emit()

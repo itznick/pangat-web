@@ -48,7 +48,26 @@ function KdsLoginRedirect() {
 
 // Super Admin
 const SuperAdminLayout = lazy(() => import("@/features/super-admin").then((m) => ({ default: m.SuperAdminLayout })))
-const SuperAdminDashboardPage = lazy(() => import("@/features/super-admin").then((m) => ({ default: m.SuperAdminDashboardPage })))
+const saPage = (name: string) => lazy(() => import("@/features/super-admin").then((m) => ({ default: (m as unknown as Record<string, React.ComponentType>)[name] })))
+const SaOverview = saPage("OverviewPage")
+const SaRestaurants = saPage("RestaurantsPage")
+const SaRestaurantProfile = saPage("RestaurantProfilePage")
+const SaOutlets = saPage("OutletsPage")
+const SaLeads = saPage("LeadsPage")
+const SaSubscriptions = saPage("SubscriptionsPage")
+const SaPayments = saPage("PaymentsPage")
+const SaUsers = saPage("UsersPage")
+const SaSupport = saPage("SupportPage")
+const SaCommunications = saPage("CommunicationsPage")
+const SaMonitoring = saPage("MonitoringPage")
+const SaAudit = saPage("AuditPage")
+const SaSettings = saPage("SettingsPage")
+const SaGate = lazy(() => import("@/features/super-admin/PermGate").then((m) => ({ default: m.PermGate })))
+const sa = (perm: string, C: React.ComponentType) => (
+  <Suspense fallback={<PageLoadingFallback />}>
+    <SaGate perm={perm}><C /></SaGate>
+  </Suspense>
+)
 
 // Diner Flow
 const DinerMenuPage = lazy(() => import("@/features/diner").then((m) => ({ default: m.DinerMenuPage })))
@@ -67,6 +86,7 @@ const AdminReportsPage = lazy(() => import("@/features/admin").then((m) => ({ de
 const AdminFeedbackPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminFeedbackPage })))
 const AdminSettingsPage = lazy(() => import("@/features/admin").then((m) => ({ default: m.AdminSettingsPage })))
 const AdminInventoryPage = lazy(() => import("@/features/inventory").then((m) => ({ default: m.AdminInventoryPage })))
+const AdminSupportPage = lazy(() => import("@/features/support").then((m) => ({ default: m.AdminSupportPage })))
 const AdminSubscriptionPage = lazy(() => import("@/features/subscriptions").then((m) => ({ default: m.AdminSubscriptionPage })))
 
 export const router = createBrowserRouter([
@@ -103,19 +123,21 @@ export const router = createBrowserRouter([
     element: Lazy(SuperAdminLayout),
     errorElement: <RouteErrorBoundary />,
     children: [
-      {
-        index: true,
-        element: Lazy(SuperAdminDashboardPage),
-        errorElement: <RouteErrorBoundary />,
-      },
+      { index: true, element: sa("dashboard.view", SaOverview) },
+      { path: "restaurants", element: sa("restaurants.view", SaRestaurants) },
+      { path: "restaurants/:id", element: sa("restaurants.view", SaRestaurantProfile) },
+      { path: "outlets", element: sa("restaurants.view", SaOutlets) },
+      { path: "leads", element: sa("leads.manage", SaLeads) },
+      { path: "subscriptions", element: sa("subscriptions.view", SaSubscriptions) },
+      { path: "payments", element: sa("payments.view", SaPayments) },
+      { path: "users", element: sa("users.view", SaUsers) },
+      { path: "support", element: sa("support.view", SaSupport) },
+      { path: "communications", element: sa("notifications.view", SaCommunications) },
+      { path: "monitoring", element: sa("monitoring.view", SaMonitoring) },
+      { path: "audit", element: sa("audit.view", SaAudit) },
+      { path: "settings", element: sa("settings.view", SaSettings) },
+      { path: "*", element: <Navigate to="/super-admin" replace /> },
     ],
-  },
-
-  // ─── Diner Flow ──────────────────────────────────────────────────────────
-  {
-    path: "/r/:restaurantSlug",
-    element: Lazy(DinerMenuPage),
-    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/r/:restaurantSlug/t/:tableId",
@@ -168,6 +190,11 @@ export const router = createBrowserRouter([
       {
         path: "inventory",
         element: guard(OWNER_MANAGER, Lazy(AdminInventoryPage)),
+        errorElement: <RouteErrorBoundary />,
+      },
+      {
+        path: "support",
+        element: guard(["SUPER_OWNER", "STORE_MANAGER"], Lazy(AdminSupportPage)),
         errorElement: <RouteErrorBoundary />,
       },
       {
