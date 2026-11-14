@@ -1,4 +1,6 @@
 import * as React from "react"
+import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useScrollLock } from "@/hooks/useModal"
 import { ArrowRight, Menu, X } from "lucide-react"
 import { PangatLogo } from "@/components/ui/PangatLogo"
 
@@ -73,19 +75,8 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
     return () => io.disconnect()
   }, [])
 
-  React.useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [open])
-
-  React.useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : ""
-    return () => {
-      document.body.style.overflow = ""
-    }
-  }, [open])
+  useEscapeKey(open, () => setOpen(false))
+  useScrollLock(open)
 
   const go = (e: React.MouseEvent, href: string) => {
     e.preventDefault()
@@ -153,7 +144,7 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
               <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/10 md:hidden"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/10 md:hidden"
                 aria-label={open ? "Close menu" : "Open menu"}
                 aria-expanded={open}
               >
@@ -180,7 +171,7 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
         onClick={() => setOpen(false)}
       >
         <nav
-          className="mx-auto flex h-full max-w-md flex-col justify-center gap-1 px-8 pb-10 pt-24"
+          className="mx-auto flex h-full max-w-md flex-col justify-center gap-1 overflow-y-auto px-8 pb-10 pt-24"
           onClick={(e) => e.stopPropagation()}
         >
           {LINKS.map((l, i) => (

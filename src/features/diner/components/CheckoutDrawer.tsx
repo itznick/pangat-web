@@ -158,8 +158,10 @@ export function CheckoutDrawer({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+            aria-label="Close checkout"
+            className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -356,8 +358,10 @@ export function CheckoutDrawer({
                   {/* Quantity controls */}
                   <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                     <button
+                      type="button"
+                      aria-label={`Remove one ${entry.name}`}
                       onClick={() => decrementItem(entry._localId)}
-                      className="w-7 h-7 min-w-[28px] min-h-[28px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
+                      className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
                     >
                       <Minus className="h-3 w-3 text-zinc-300" />
                     </button>
@@ -365,8 +369,10 @@ export function CheckoutDrawer({
                       {entry.quantity}
                     </span>
                     <button
+                      type="button"
+                      aria-label={`Add one more ${entry.name}`}
                       onClick={() => incrementItem(entry._localId)}
-                      className="w-7 h-7 min-w-[28px] min-h-[28px] sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
+                      className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
                     >
                       <Plus className="h-3 w-3 text-zinc-300" />
                     </button>

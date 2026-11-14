@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useModal } from "@/hooks/useModal"
 import {
   X,
   CheckCircle2,
@@ -32,6 +33,8 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
     phone: "",
     tableCount: "12 tables",
   })
+
+  const modalRef = useModal(isOpen, onClose)
 
   if (!isOpen) return null
 
@@ -68,7 +71,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
+    <div ref={modalRef} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }} role="dialog" aria-modal="true" aria-label="Book a free trial" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastVisible && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2.5 px-5 py-3 rounded-full bg-white text-zinc-950 shadow-2xl animate-in slide-in-from-top duration-300">
@@ -79,7 +82,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
         </div>
       )}
 
-      <div className="relative w-full max-w-lg rounded-3xl border border-white/[0.08] bg-zinc-950 text-white p-6 sm:p-9 shadow-2xl max-h-[92vh] overflow-y-auto ring-1 ring-white/[0.04]">
+      <div className="relative w-full max-w-lg rounded-3xl border border-white/[0.08] bg-zinc-950 text-white p-6 sm:p-9 shadow-2xl max-h-[92dvh] overflow-y-auto ring-1 ring-white/[0.04]">
         {/* Close Button */}
         <button
           onClick={onClose}

@@ -266,6 +266,7 @@ export function RecipeModal({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label="Remove this ingredient"
                         onClick={() => handleRemoveRow(idx)}
                         disabled={rows.length === 1}
                         className="text-zinc-400 hover:text-rose-600 h-9 w-9 shrink-0"

@@ -37,7 +37,9 @@ import {
 } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useOutsidePress } from "@/hooks/useModal"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { AddOutletModal } from "./components/AddOutletModal"
@@ -126,6 +128,9 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   ]
 
   const [showOutletMenu, setShowOutletMenu] = useState(false)
+  const outletMenuRef = useRef<HTMLDivElement>(null)
+  useEscapeKey(showOutletMenu, () => setShowOutletMenu(false))
+  useOutsidePress(showOutletMenu, outletMenuRef, () => setShowOutletMenu(false))
 
   const activeOutletName =
     currentOutlet?.name ||
@@ -133,7 +138,6 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
     user?.organizationName ||
     "Setup First Outlet"
   const sampleTable = tables[0]?.tableNumber || "01"
-  const displayTable = sampleTable.startsWith("T") ? sampleTable : `Table ${sampleTable}`
 
   const handleSelectOutlet = (outlet: Restaurant) => {
     setCurrentOutlet(outlet)
@@ -154,11 +158,14 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
         <div className="flex items-center gap-2.5 w-full min-w-0">
           <PangatLogo size="sm" className="shrink-0" />
           {!collapsed && (
-            <div className="flex-1 min-w-0 relative">
+            <div ref={outletMenuRef} className="flex-1 min-w-0 relative">
               <button
+                type="button"
                 onClick={() => setShowOutletMenu(!showOutletMenu)}
                 className="w-full flex items-center justify-between text-left group cursor-pointer p-1 -m-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
                 aria-expanded={showOutletMenu}
+                aria-haspopup="menu"
+                aria-label={`Switch outlet. Current: ${activeOutletName}`}
                 title="Switch dining outlet"
               >
                 <div className="min-w-0 pr-1">
@@ -180,10 +187,6 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
               {/* Dynamic Dropdown with [+ Add New Outlet] */}
               {showOutletMenu && (
                 <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowOutletMenu(false)}
-                  />
                   <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800/80 animate-in fade-in-0 zoom-in-95 duration-100">
                     <div className="max-h-56 overflow-y-auto py-1">
                       {outlets.length === 0 ? (
@@ -251,6 +254,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   <SidebarMenuButton
                     isActive={isActive}
                     tooltip={item.label}
+                    href={item.path}
                     onClick={() => {
                       navigate(item.path)
                       closeMobile()
@@ -285,6 +289,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                   <SidebarMenuButton
                     isActive={isActive}
                     tooltip={item.label}
+                    href={item.path}
                     onClick={() => {
                       navigate(item.path)
                       closeMobile()
@@ -315,10 +320,8 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
             <SidebarMenuItem>
               <SidebarMenuButton
                 tooltip="Kitchen Display (KDS)"
-                onClick={() => {
-                  const slug = currentOutlet?.slug || "main"
-                  window.open(`/kds/${slug}`, "_blank")
-                }}
+                href={`/kds/${currentOutlet?.slug || "main"}`}
+                target="_blank"
               >
                 <MonitorSpeaker className="h-4 w-4 flex-shrink-0 text-amber-500 dark:text-amber-400" />
                 {!collapsed && (
@@ -332,16 +335,14 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
 
             <SidebarMenuItem>
               <SidebarMenuButton
-                tooltip={`Sample Diner View (${displayTable})`}
-                onClick={() => {
-                  const slug = currentOutlet?.slug || "main"
-                  window.open(`/r/${slug}/t/${sampleTable}`, "_blank")
-                }}
+                tooltip="Guest menu preview"
+                href={`/r/${currentOutlet?.slug || "main"}/t/${sampleTable}`}
+                target="_blank"
               >
                 <Smartphone className="h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
                 {!collapsed && (
                   <span className="truncate flex items-center justify-between w-full">
-                    <span>Diner View ({displayTable})</span>
+                    <span>Guest menu preview</span>
                     <ExternalLink className="h-3 w-3 opacity-60 ml-1 text-zinc-400" />
                   </span>
                 )}
@@ -391,6 +392,12 @@ export function AdminLayout() {
   const user = useAuthStore((s) => s.user)
   const [addOutletOpen, setAddOutletOpen] = useState(false)
   const notices = useAdminNotices((to) => navigate(to))
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // The page scrolls inside this pane, so a route change must reset it (otherwise the next page opens half-way down)
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 })
+  }, [location.pathname])
 
   const isPlatformSuperAdmin = user?.role === "PLATFORM_SUPER_ADMIN"
 
@@ -667,7 +674,7 @@ export function AdminLayout() {
             </button>
           </div>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <Outlet />
         </div>
       </SidebarInset>

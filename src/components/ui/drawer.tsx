@@ -1,4 +1,5 @@
 import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useFocusTrap, useScrollLock } from "@/hooks/useModal"
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
@@ -12,14 +13,9 @@ interface DrawerProps {
 
 const Drawer = ({ open, onClose, children, className }: DrawerProps) => {
   useEscapeKey(open, onClose)
-  React.useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
-    return () => { document.body.style.overflow = "" }
-  }, [open])
+  const ref = React.useRef<HTMLDivElement>(null)
+  useScrollLock(open)
+  useFocusTrap(open, ref)
 
   return (
     <>
@@ -33,6 +29,7 @@ const Drawer = ({ open, onClose, children, className }: DrawerProps) => {
       />
       {/* Drawer panel */}
       <div
+        ref={ref}
         role="dialog"
         aria-modal={open}
         aria-hidden={!open}

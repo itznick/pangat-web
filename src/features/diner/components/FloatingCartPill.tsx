@@ -4,18 +4,22 @@ import { cn } from "@/lib/utils"
 
 interface FloatingCartPillProps {
   onViewOrder: () => void
+  /** Outlet GST so the pill total matches the checkout total */
+  gstPercentage?: number
 }
 
-export function FloatingCartPill({ onViewOrder }: FloatingCartPillProps) {
+export function FloatingCartPill({ onViewOrder, gstPercentage = 5 }: FloatingCartPillProps) {
   const itemCount = useCartStore((s) => s.itemCount())
-  const total = useCartStore((s) => s.total(5))
+  const total = useCartStore((s) => s.total(gstPercentage))
 
   if (itemCount === 0) return null
 
   return (
-    <div className="fixed bottom-6 pb-[env(safe-area-inset-bottom,0px)] left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4">
+    <div className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4">
       <button
+        type="button"
         onClick={onViewOrder}
+        aria-label={`Review order, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
         className={cn(
           "w-full flex items-center justify-between min-h-[48px]",
           "bg-emerald-600 rounded-2xl px-4 py-3.5",

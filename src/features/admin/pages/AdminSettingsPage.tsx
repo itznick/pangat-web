@@ -1,4 +1,5 @@
 import * as React from "react"
+import { ScrollRow } from "@/components/ui/ScrollRow"
 import { AlertCircle, Bell, Building2, CheckCircle2, Clock, Loader2, Lock, Receipt, Store } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -158,15 +159,17 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[210px_minmax(0,1fr)] md:gap-8">
         {/* Section nav */}
         <nav aria-label="Settings sections" className="md:sticky md:top-2 md:self-start">
-          <div className="lp-noscroll -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:flex-col md:overflow-visible md:pb-0">
+          <ScrollRow role="tablist" aria-label="Settings sections" className="-mx-1 flex gap-1 px-1 pb-1 md:flex-col md:overflow-visible md:pb-0">
             {SECTIONS.map((s) => {
               const Icon = s.icon
               const on = section === s.id
               return (
                 <button
                   key={s.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
                   onClick={() => setSection(s.id)}
-                  aria-current={on ? "page" : undefined}
                   className={cn(
                     "flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] transition-colors md:w-full",
                     on ? "bg-white/[0.08] font-medium text-white" : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200"
@@ -177,7 +180,7 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
                 </button>
               )
             })}
-          </div>
+          </ScrollRow>
         </nav>
 
         {/* Panel */}

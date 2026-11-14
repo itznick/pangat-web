@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router'
+import { useNavigate, Link, Navigate, useSearchParams } from 'react-router'
 import { PangatLogo } from '@/components/ui/PangatLogo'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useAdminStore } from '@/stores/useAdminStore'
-import { Lock, Mail, KeyRound, AlertCircle, Loader2, Store, ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { Lock, Mail, KeyRound, AlertCircle, Loader2, Store, ArrowLeft, ArrowRight, Check, Eye, EyeOff } from 'lucide-react'
 import { BookDemoModal } from '@/features/landing'
 import '@/features/landing/landing.css'
 
@@ -26,6 +26,16 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [bookDemoOpen, setBookDemoOpen] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const existingUser = useAuthStore((s) => s.user)
+  const existingToken = useAuthStore((s) => s.token)
+
+  // Already signed in: don't make people sign in again, send them where they work
+  if (existingUser && existingToken && !isLoading) {
+    const role = existingUser.role
+    const home = role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : role === 'CHEF' ? `/kds/${existingUser.restaurantSlug || 'pangat'}` : '/admin/dashboard'
+    return <Navigate to={home} replace />
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +46,7 @@ export function LoginPage() {
       if (mode === 'pin') {
         const cleanPin = pinCode.trim()
         if (!cleanPin || cleanPin.length < 4) {
-          setErrorMsg('Please enter a 4-digit numeric station PIN')
+          setErrorMsg('Enter your 4-digit station PIN')
           setIsLoading(false)
           return
         }
@@ -82,10 +92,10 @@ export function LoginPage() {
       }
 
       navigate('/admin/dashboard', { replace: true })
-    } catch (err: any) {
-      setErrorMsg(
-        err.response?.data?.message || err.message || 'Login failed. Please check your credentials.'
-      )
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string | string[] } }; message?: string }
+      const m = e.response?.data?.message
+      setErrorMsg((Array.isArray(m) ? m.join('. ') : m) || e.message || 'Login failed. Please check your credentials.')
     } finally {
       setIsLoading(false)
     }
@@ -170,11 +180,12 @@ export function LoginPage() {
                 <button
                   key={m}
                   type="button"
+                  aria-pressed={mode === m}
                   onClick={() => {
                     setMode(m)
                     setErrorMsg(null)
                   }}
-                  className={`relative z-10 cursor-pointer rounded-full py-2 text-[13px] font-medium transition-colors ${mode === m ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  className={`relative z-10 min-h-11 cursor-pointer rounded-full py-2 text-[13px] font-medium transition-colors ${mode === m ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
                   {label}
                 </button>
@@ -207,15 +218,30 @@ export function LoginPage() {
                       <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                       <Input
                         id="password"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className={field}
+                        className={`${field} pr-12`}
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        aria-pressed={showPassword}
+                        className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-zinc-500 transition-colors hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
+                    <p className="mt-2 text-[12.5px] text-zinc-600">
+                      Forgot your password?{' '}
+                      <a href="mailto:hello@pangat.app?subject=Pangat%20password%20reset" className="text-zinc-400 underline-offset-4 hover:text-emerald-300 hover:underline">
+                        Ask the Pangat team to reset it
+                      </a>
+                    </p>
                   </div>
                 </>
               ) : (
@@ -230,7 +256,10 @@ export function LoginPage() {
                         id="slug"
                         type="text"
                         value={outletSlug}
-                        onChange={(e) => setOutletSlug(e.target.value)}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        onChange={(e) => setOutletSlug(e.target.value.trim().toLowerCase())}
                         placeholder="e.g. fc-road"
                         className={field}
                       />
@@ -244,9 +273,10 @@ export function LoginPage() {
                         id="pin"
                         type="password"
                         inputMode="numeric"
+                        autoComplete="one-time-code"
                         maxLength={6}
                         value={pinCode}
-                        onChange={(e) => setPinCode(e.target.value)}
+                        onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
                         placeholder="••••"
                         className={`${field} text-center font-mono text-lg tracking-[0.5em]`}
                         required

@@ -192,7 +192,7 @@ export function AdminTablesPage() {
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">Floor & Table Management</h1>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
           {notification && (
             <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg animate-in fade-in">
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -204,7 +204,7 @@ export function AdminTablesPage() {
             size="sm"
             onClick={() => setBatchPrintOpen(true)}
             variant="outline"
-            className="flex-1 sm:flex-none gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer shadow-xs min-h-[36px] sm:min-h-0"
+            className="flex-1 sm:flex-none gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer shadow-xs min-h-[40px] sm:min-h-0"
           >
             <Printer className="h-3.5 w-3.5" />
             <span>Print All QRs</span>
@@ -213,7 +213,7 @@ export function AdminTablesPage() {
           <Button
             size="sm"
             onClick={handleOpenAddModal}
-            className="flex-1 sm:flex-none gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs min-h-[36px] sm:min-h-0"
+            className="flex-1 sm:flex-none gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs min-h-[40px] sm:min-h-0"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Add Table</span>
@@ -224,7 +224,7 @@ export function AdminTablesPage() {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs shadow-xs min-h-[36px] sm:min-h-0"
+            className="gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs shadow-xs min-h-[40px] sm:min-h-0"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
             <span>Refresh</span>
@@ -255,7 +255,7 @@ export function AdminTablesPage() {
         </div>
 
         {/* Table grid */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-3 sm:gap-4">
           {filtered.map((table) => {
             const config = STATUS_CONFIG[table.status]
             const displayName =
@@ -318,7 +318,7 @@ export function AdminTablesPage() {
                   title={`View, download and print QR code standee for ${displayName}`}
                 >
                   <QrCode className="h-4 w-4 shrink-0 text-emerald-400 transition-transform group-hover/qr:scale-110" />
-                  <span className="truncate">QR Code & Tent</span>
+                  <span className="truncate">QR code &amp; tent</span>
                 </button>
 
                 {/* Bottom: Quick status change selector */}
@@ -331,10 +331,10 @@ export function AdminTablesPage() {
                     value={table.status}
                     onChange={(e) => handleStatusChange(table.id, displayName, e.target.value as TableStatus)}
                   >
-                    <option value="VACANT">Vacant (Available)</option>
-                    <option value="OCCUPIED">Occupied (Unpaid Bill)</option>
-                    <option value="PREPPING">Prepping (In Kitchen)</option>
-                    <option value="SERVED">Served (Bill Settled)</option>
+                    <option value="VACANT">Vacant</option>
+                    <option value="OCCUPIED">Occupied · unpaid</option>
+                    <option value="PREPPING">Prepping</option>
+                    <option value="SERVED">Served · settled</option>
                   </select>
                 </div>
               </div>

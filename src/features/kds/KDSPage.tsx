@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
+import { ScrollRow } from "@/components/ui/ScrollRow"
 import { useParams } from "react-router"
 import { AlertTriangle, LayoutGrid, BellRing } from "lucide-react"
 import { KDSTopBar } from "./components/KDSTopBar"
@@ -44,9 +45,9 @@ export function KDSPage() {
   )
 
   const columns = useMemo(() => [
-    { id: "NEW" as const, label: "New Orders", count: newTickets.length, tickets: newTickets, color: "text-blue-400", dotColor: "bg-blue-500" },
-    { id: "PREP" as const, label: "In Prep", count: inPrepTickets.length, tickets: inPrepTickets, color: "text-amber-400", dotColor: "bg-amber-500" },
-    { id: "READY" as const, label: "Ready & Dispatched", count: readyTickets.length, tickets: readyTickets, color: "text-emerald-400", dotColor: "bg-emerald-500" },
+    { id: "NEW" as const, label: "New Orders", short: "New", count: newTickets.length, tickets: newTickets, color: "text-blue-400", dotColor: "bg-blue-500" },
+    { id: "PREP" as const, label: "In Prep", short: "Cooking", count: inPrepTickets.length, tickets: inPrepTickets, color: "text-amber-400", dotColor: "bg-amber-500" },
+    { id: "READY" as const, label: "Ready & Dispatched", short: "Ready", count: readyTickets.length, tickets: readyTickets, color: "text-emerald-400", dotColor: "bg-emerald-500" },
   ], [newTickets, inPrepTickets, readyTickets])
 
   const activeMobileColumn = columns.find((c) => c.id === mobileStage) || columns[0]
@@ -79,33 +80,36 @@ export function KDSPage() {
         </div>
 
         {/* Mobile stage-based switcher */}
-        <div className="flex md:hidden items-center gap-1 p-0.5 bg-zinc-900 rounded-xl border border-zinc-800 flex-1 overflow-x-auto">
+        <ScrollRow role="tablist" aria-label="Order stage" className="flex md:hidden items-center gap-1 p-0.5 bg-zinc-900 rounded-xl border border-zinc-800 flex-1">
           {columns.map((col) => (
             <button
               key={col.id}
+              type="button"
+              role="tab"
+              aria-selected={mobileStage === col.id}
               onClick={() => setMobileStage(col.id)}
-              className={`flex-1 min-w-[90px] py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+              className={`flex-1 min-w-0 min-h-10 py-1.5 px-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 mobileStage === col.id
                   ? "bg-zinc-800 text-white shadow-xs"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
               <div className={`w-1.5 h-1.5 rounded-full ${col.dotColor}`} />
-              <span>{col.label.split(" ")[0]}</span>
+              <span>{col.short}</span>
               <span className="text-[10px] font-mono opacity-80">({col.count})</span>
             </button>
           ))}
-        </div>
+        </ScrollRow>
 
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShowOutOfStock(true)}
-          className="gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50 text-xs font-medium shadow-xs shrink-0 h-8"
+          className="gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50 text-xs font-medium shadow-xs shrink-0 h-10 sm:h-8"
         >
           <AlertTriangle className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Out of Stock Items</span>
-          <span className="inline sm:hidden">86 Items</span>
+          <span className="inline sm:hidden">Stock</span>
         </Button>
       </div>
 

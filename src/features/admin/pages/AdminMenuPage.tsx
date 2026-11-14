@@ -323,7 +323,7 @@ export function AdminMenuPage() {
           <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">Menu Management</h1>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
           <Button
             onClick={() => setShowCategoryDialog(true)}
             variant="outline"
@@ -481,6 +481,7 @@ export function AdminMenuPage() {
                     {/* Availability toggle */}
                     <TableCell>
                       <Switch
+                        aria-label={`${item.name}: ${item.isAvailable ? "available, tap to hide" : "hidden, tap to make available"}`}
                         checked={item.isAvailable}
                         onCheckedChange={() => toggleMenuAvailability(item.id)}
                       />
@@ -588,6 +589,7 @@ export function AdminMenuPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] text-zinc-500">Live</span>
                         <Switch
+                          aria-label={`${item.name}: ${item.isAvailable ? "available, tap to hide" : "hidden, tap to make available"}`}
                           checked={item.isAvailable}
                           onCheckedChange={() => toggleMenuAvailability(item.id)}
                         />
@@ -658,7 +660,7 @@ export function AdminMenuPage() {
 
       {/* Add New Dish Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl w-full max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Dish</DialogTitle>
           </DialogHeader>
@@ -770,7 +772,7 @@ export function AdminMenuPage() {
       {/* Edit Dish Dialog */}
       {editingDish && (
         <Dialog open={Boolean(editingDish)} onOpenChange={(open) => !open && setEditingDish(null)}>
-          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl w-full max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl w-full max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Dish Details</DialogTitle>
             </DialogHeader>

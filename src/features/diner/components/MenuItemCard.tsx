@@ -77,9 +77,11 @@ export function MenuItemCard({ item, isOutOfStock = false, orderingClosed = fals
             <span className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-medium">Paused</span>
           ) : available ? (
             <button
+              type="button"
               onClick={handleAdd}
+              aria-label={`Add ${item.name} to order`}
               className={cn(
-                "flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold",
+                "flex min-h-10 min-w-[76px] touch-manipulation items-center justify-center gap-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold",
                 "transition-all duration-200 active:scale-95 hover:bg-emerald-500",
                 "shadow-md shadow-emerald-600/30",
                 pressed && "scale-95 bg-emerald-700"

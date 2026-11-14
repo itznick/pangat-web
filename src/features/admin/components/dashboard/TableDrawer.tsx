@@ -3,7 +3,7 @@
 // Shows items, payment status, and Settle / Clear actions.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useEscapeKey } from "@/hooks/useEscapeKey"
+import { useModal } from "@/hooks/useModal"
 import { X, CheckCircle2, Trash2, IndianRupee, Clock, Hash } from "lucide-react"
 import { cn, isSameTableNumber } from "@/lib/utils"
 import { useAdminStore } from "@/stores/useAdminStore"
@@ -16,7 +16,7 @@ interface TableDrawerProps {
 }
 
 export function TableDrawer({ table, onClose }: TableDrawerProps) {
-  useEscapeKey(Boolean(table), onClose)
+  const panelRef = useModal(Boolean(table), onClose)
   const activeOrders = useAdminStore((s) => s.activeOrders)
   const settleOrder = useAdminStore((s) => s.settleOrder)
   const updateTableStatus = useAdminStore((s) => s.updateTableStatus)
@@ -69,6 +69,12 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
 
       {/* Right-side panel */}
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal={isOpen}
+        aria-label={table ? `Table ${table.tableNumber}` : "Table details"}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
         className={cn(
           "fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[420px] max-w-full flex flex-col bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transition-transform duration-300 ease-out text-zinc-900 dark:text-zinc-100",
           isOpen ? "translate-x-0" : "translate-x-full"
@@ -104,8 +110,10 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+            aria-label="Close table details"
+            className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>

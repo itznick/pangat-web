@@ -337,10 +337,12 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
             <p className="text-[11px] text-zinc-500">Mark items in/out of stock instantly</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+            aria-label="Close stock panel"
+            className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         <div className="max-h-72 overflow-y-auto p-2 space-y-1">
@@ -538,7 +540,6 @@ export function AdminDashboardPage() {
             value={`₹${todaySales.totalRevenue.toLocaleString("en-IN")}`}
             subtitle="Gross volume today"
             icon={IndianRupee}
-            trend={12}
             accentClass="text-emerald-600 dark:text-emerald-400"
             bgClass="bg-white dark:bg-emerald-950/20 border-zinc-200 dark:border-zinc-800"
             iconBgClass="bg-emerald-500/15"
@@ -548,7 +549,6 @@ export function AdminDashboardPage() {
             value={todaySales.totalCovers}
             subtitle="Guests served today"
             icon={Users}
-            trend={8}
             accentClass="text-blue-600 dark:text-blue-400"
             bgClass="bg-white dark:bg-blue-950/20 border-zinc-200 dark:border-zinc-800"
             iconBgClass="bg-blue-500/15"
@@ -558,7 +558,6 @@ export function AdminDashboardPage() {
             value={todaySales.avgPrepTimeMinutes > 0 ? `${todaySales.avgPrepTimeMinutes}m` : "–"}
             subtitle="Per kitchen ticket"
             icon={Timer}
-            trend={todaySales.avgPrepTimeMinutes > 0 ? -5 : undefined}
             accentClass="text-amber-600 dark:text-amber-400"
             bgClass="bg-white dark:bg-amber-950/20 border-zinc-200 dark:border-zinc-800"
             iconBgClass="bg-amber-500/15"

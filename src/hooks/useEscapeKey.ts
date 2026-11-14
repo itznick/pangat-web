@@ -1,13 +1,26 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
+import { createEscapeStack } from "@/lib/overlayStack"
 
-/** Calls `onEscape` when the Escape key is pressed while `active` is true. */
+/** Shared by every overlay: only the most recently opened one reacts to Escape. */
+const stack = createEscapeStack()
+let listening = false
+
+function onKey(e: KeyboardEvent) {
+  if (e.key === "Escape" && !e.defaultPrevented) stack.escape()
+}
+
+/** Calls `onEscape` when Escape is pressed while `active` is true and this is the topmost overlay. */
 export function useEscapeKey(active: boolean, onEscape: () => void) {
+  const cb = useRef(onEscape)
+  useEffect(() => {
+    cb.current = onEscape
+  })
   useEffect(() => {
     if (!active) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onEscape()
+    if (!listening) {
+      window.addEventListener("keydown", onKey)
+      listening = true
     }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [active, onEscape])
+    return stack.push(() => cb.current())
+  }, [active])
 }
