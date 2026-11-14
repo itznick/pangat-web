@@ -1,3 +1,4 @@
+import { timeAgo } from "@/lib/time"
 import { useState, useEffect } from "react"
 import { Star, ThumbsUp, RefreshCw } from "lucide-react"
 import { api } from "@/lib/api"
@@ -9,18 +10,6 @@ interface CustomerFeedbackWidgetProps {
   className?: string
 }
 
-function timeAgo(dateInput: string | Date): string {
-  const time = new Date(dateInput).getTime()
-  if (isNaN(time)) return "Recently"
-  const diff = Date.now() - time
-  const mins = Math.floor(diff / (1000 * 60))
-  if (mins < 1) return "Just now"
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
 
 export function CustomerFeedbackWidget({
   restaurantSlug,

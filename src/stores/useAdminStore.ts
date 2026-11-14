@@ -16,6 +16,7 @@ import type {
 import { api } from '@/lib/api'
 import { getSocket, joinKdsRoom, joinAdminRoom } from '@/lib/socket'
 import { toast } from '@/components/ui/toast'
+import { elapsedMs, parseTime, startOfIstDay } from '@/lib/time'
 import { errMsg } from '@/lib/api'
 import { playKitchenChime } from '@/lib/sound'
 
@@ -55,28 +56,27 @@ const DEFAULT_SALES: SalesSummary = {
   activeKotCount: 0,
 }
 
+/**
+ * Today's numbers (India time), from the orders passed in:
+ *  - revenue / covers only count orders placed today and exclude cancelled ones,
+ *  - "prep time" is how long the kitchen took (preparing -> ready) for orders finished today,
+ *    not the age of every order ever placed.
+ */
 function computeSalesSummary(orders: Order[]): SalesSummary {
-  const paidOrders = orders.filter((o) => o.paymentStatus === 'PAID')
-  const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0)
-  const totalCovers = orders.length
-  const activeOrders = orders.filter((o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED')
-  const activeKotCount = activeOrders.length
+  const dayStart = startOfIstDay().getTime()
+  const today = orders.filter((o) => (parseTime(o.createdAt) ?? 0) >= dayStart && o.orderStatus !== 'CANCELLED')
+  const paidOrders = today.filter((o) => o.paymentStatus === 'PAID' || o.paymentStatus === 'PARTIALLY_REFUNDED')
+  const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0) - Number(o.refundAmount || 0), 0)
+  const totalCovers = today.length
+  const activeKotCount = orders.filter((o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED').length
 
-  let avgPrepTimeMinutes = 0
-  if (orders.length > 0) {
-    const totalElapsedMins = orders.reduce((sum, o) => {
-      const createdStr = typeof o.createdAt === 'string' && !o.createdAt.includes('Z') && !/[+-]\d{2}:\d{2}$/.test(o.createdAt)
-        ? `${o.createdAt}Z`
-        : o.createdAt
-      const createdMs = new Date(createdStr).getTime()
-      const endMs = o.orderStatus === 'COMPLETED' && o.settledAt
-        ? new Date(o.settledAt).getTime()
-        : Date.now()
-      const ms = Math.max(0, endMs - (isNaN(createdMs) ? Date.now() : createdMs))
-      return sum + Math.max(1, Math.round(ms / 60_000))
-    }, 0)
-    avgPrepTimeMinutes = Math.min(60, Math.round(totalElapsedMins / orders.length))
-  }
+  const kitchenMins = today
+    .map((o) => {
+      const ms = elapsedMs(o.preparingAt ?? o.createdAt, o.readyAt)
+      return o.readyAt && ms !== null ? ms / 60_000 : null
+    })
+    .filter((m): m is number => m !== null)
+  const avgPrepTimeMinutes = kitchenMins.length ? Math.max(1, Math.round(kitchenMins.reduce((a, b) => a + b, 0) / kitchenMins.length)) : 0
 
   return {
     totalRevenue,
@@ -171,7 +171,8 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       const [tablesData, publicMenuData, ordersData] = await Promise.all([
         api.tables.list(restId).catch(() => []),
         api.menu.getPublic(targetSlug).catch(() => ({ restaurant: DEFAULT_RESTAURANT, categories: [], items: [] })),
-        api.orders.list(targetSlug).catch(() => []),
+        // today's sales plus anything still open from the last few days (e.g. an unpaid tab from last night)
+        api.orders.list(targetSlug, { startDate: new Date(Date.now() - 3 * 86_400_000).toISOString(), limit: 100 }).catch(() => []),
       ])
 
       const sales = computeSalesSummary(ordersData)

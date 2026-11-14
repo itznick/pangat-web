@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react"
 import { toast } from "@/components/ui/toast"
+import { TimeAgo } from "@/components/TimeAgo"
 import { errMsg } from "@/lib/api"
 import { ScrollRow } from "@/components/ui/ScrollRow"
 import {
@@ -60,13 +61,6 @@ function formatDateTime(dateInput: Date | string | undefined): string {
   })
 }
 
-function formatElapsed(dateInput: Date | string): string {
-  const date = new Date(dateInput)
-  if (isNaN(date.getTime())) return "Recently"
-  const mins = Math.floor((Date.now() - date.getTime()) / 60000)
-  if (mins < 60) return `${Math.max(0, mins)}m ago`
-  return `${Math.floor(mins / 60)}h ${mins % 60}m ago`
-}
 
 const PAYMENT_CONFIG: Record<
   PaymentStatus,
@@ -427,7 +421,7 @@ export function AdminOrdersPage() {
                           {formatDateTime(order.createdAt)}
                         </p>
                         <p className="text-[10px] text-zinc-500">
-                          {formatElapsed(order.createdAt)}
+                          <TimeAgo value={order.createdAt} />
                         </p>
                       </div>
                     </TableCell>
@@ -710,7 +704,7 @@ export function AdminOrdersPage() {
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-500">
-                        {formatDateTime(order.createdAt)} • {formatElapsed(order.createdAt)}
+                        {formatDateTime(order.createdAt)} • <TimeAgo value={order.createdAt} />
                       </p>
                     </div>
 

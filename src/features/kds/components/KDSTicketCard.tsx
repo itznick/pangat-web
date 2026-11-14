@@ -3,6 +3,7 @@ import { ChefHat, AlertCircle, Clock, Undo2, Bike, ShoppingBag, Utensils, MapPin
 import { cn } from "@/lib/utils"
 import type { Order, OrderStatus } from "@/types/domain"
 import { useTicketTimer } from "@/hooks/useTicketTimer"
+import { useKdsStore } from "@/stores/useKdsStore"
 
 interface KDSTicketCardProps {
   ticket: Order
@@ -87,7 +88,9 @@ const STATUS_CONFIG: Record<
 }
 
 export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDSTicketCardProps) {
-  const timer = useTicketTimer(ticket.createdAt)
+  const prepTarget = useKdsStore((s) => s.prepTargetMinutes)
+  const done = ticket.orderStatus === "READY" || ticket.orderStatus === "DISPATCHED"
+  const timer = useTicketTimer(ticket.createdAt, { endAt: done ? ticket.readyAt ?? undefined : undefined, prepTargetMinutes: prepTarget })
   const config = STATUS_CONFIG[ticket.orderStatus] || STATUS_CONFIG.RECEIVED
   const [showSendBackModal, setShowSendBackModal] = useState(false)
   const [sendBackReason, setSendBackReason] = useState("")
@@ -204,7 +207,7 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
       >
         <div className="flex items-center gap-1.5">
           <Clock className={cn("h-3.5 w-3.5", timer.isOverdue ? "text-rose-400" : "text-zinc-500")} />
-          <span className="text-[11px] font-sans text-zinc-500 font-medium">Elapsed:</span>
+          <span className="text-[11px] font-sans text-zinc-500 font-medium">{timer.frozen ? "Ready in:" : "Waiting:"}</span>
           <span className={cn("tabular-nums transition-colors", timer.colorClass)}>
             {timer.formattedTime}
           </span>

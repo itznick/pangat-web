@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import type { DayKey, OutletOperations } from "@/types/domain"
 import { DAY_ORDER, HHMM, resolveOps } from "../settings/operations"
 import { Card, Field, Input, Switch } from "../settings/parts"
+import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import { TeamSection } from "../settings/TeamSection"
 import { AccountSection } from "../settings/AccountSection"
 import { ActivitySection } from "../settings/ActivitySection"
@@ -15,15 +16,15 @@ import "@/features/landing/landing.css"
 
 type SectionId = "profile" | "ordering" | "channels" | "tax" | "kitchen" | "team" | "account" | "activity"
 
-const SECTIONS: { id: SectionId; label: string; hint: string; icon: React.ElementType }[] = [
-  { id: "profile", label: "Outlet profile", hint: "Name and contact", icon: Building2 },
-  { id: "ordering", label: "Ordering & hours", hint: "Pause, open hours, prep time", icon: Clock },
-  { id: "channels", label: "Order types & payments", hint: "How guests order and pay", icon: Store },
-  { id: "tax", label: "Tax & receipts", hint: "GST, UPI and invoice text", icon: Receipt },
-  { id: "kitchen", label: "Kitchen & stock", hint: "Alerts, PIN and auto-deduction", icon: Bell },
-  { id: "team", label: "Team", hint: "Staff and roles", icon: Users },
-  { id: "account", label: "My account", hint: "Profile and password", icon: UserCircle },
-  { id: "activity", label: "Activity log", hint: "Who did what", icon: History },
+const SECTIONS: { id: SectionId; group: string; label: string; hint: string; icon: React.ElementType }[] = [
+  { id: "profile", group: "Outlet", label: "Outlet profile", hint: "Name and contact", icon: Building2 },
+  { id: "ordering", group: "Outlet", label: "Ordering & hours", hint: "Pause, open hours, prep time", icon: Clock },
+  { id: "channels", group: "Outlet", label: "Order types & payments", hint: "How guests order and pay", icon: Store },
+  { id: "tax", group: "Outlet", label: "Tax & receipts", hint: "GST, UPI and invoice text", icon: Receipt },
+  { id: "kitchen", group: "Outlet", label: "Kitchen & stock", hint: "Alerts, PIN and auto-deduction", icon: Bell },
+  { id: "team", group: "People", label: "Team", hint: "Staff and roles", icon: Users },
+  { id: "account", group: "People", label: "My account", hint: "Profile and password", icon: UserCircle },
+  { id: "activity", group: "People", label: "Activity log", hint: "Who did what", icon: History },
 ]
 
 interface Form {
@@ -162,36 +163,37 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
   const ops = form.ops
 
   return (
-    <div className={cn("lp text-zinc-100", embedded ? "" : "mx-auto w-full max-w-[1080px] !bg-transparent px-4 pt-8 sm:px-8")}>
+    <Shell embedded={embedded}>
       {!embedded && (
-        <div className="mb-7">
-          <h1 className="text-[1.75rem]">Settings</h1>
-          <p className="mt-1.5 text-sm text-zinc-500">How {form.name || "your outlet"} runs: hours, ordering, payments, tax and the kitchen.</p>
-        </div>
+        <p className="mb-5 text-sm text-zinc-500">How {form.name || "your outlet"} runs: hours, ordering, payments, tax and the kitchen.</p>
       )}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[210px_minmax(0,1fr)] md:gap-8">
-        {/* Section nav */}
-        <nav aria-label="Settings sections" className="md:sticky md:top-2 md:self-start">
-          <ScrollRow role="tablist" aria-label="Settings sections" className="-mx-1 flex gap-1 px-1 pb-1 md:flex-col md:overflow-visible md:pb-0">
-            {SECTIONS.filter((x) => (x.id === "team" || x.id === "activity" ? canManage : true)).map((s) => {
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-[224px_minmax(0,1fr)] md:gap-6">
+        {/* Section nav: a rounded panel on desktop, a scrolling tab strip on phones */}
+        <nav aria-label="Settings sections" className="md:sticky md:top-2 md:self-start md:rounded-2xl md:border md:border-white/[0.07] md:bg-white/[0.025] md:p-2.5">
+          <ScrollRow role="tablist" aria-label="Settings sections" className="-mx-1 flex gap-1 px-1 pb-1 md:mx-0 md:flex-col md:gap-0.5 md:overflow-visible md:px-0 md:pb-0">
+            {SECTIONS.filter((x) => (x.id === "team" || x.id === "activity" ? canManage : true)).map((s, i, arr) => {
               const Icon = s.icon
               const on = section === s.id
+              const startsGroup = i > 0 && s.group !== arr[i - 1].group
               return (
-                <button
-                  key={s.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={on}
-                  onClick={() => setSection(s.id)}
-                  className={cn(
-                    "flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] transition-colors md:w-full",
-                    on ? "bg-white/[0.08] font-medium text-white" : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200"
-                  )}
-                >
-                  <Icon className={cn("h-4 w-4 shrink-0", on ? "text-emerald-400" : "text-zinc-500")} />
-                  <span className="whitespace-nowrap">{s.label}</span>
-                </button>
+                <React.Fragment key={s.id}>
+                  {startsGroup && <span aria-hidden className="mx-2 my-1.5 hidden h-px bg-white/[0.07] md:block" />}
+                  {(i === 0 || startsGroup) && <span aria-hidden className="hidden px-3 pb-1 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-600 md:block">{s.group}</span>}
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => setSection(s.id)}
+                    className={cn(
+                      "flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] transition-colors md:w-full",
+                      on ? "bg-white/[0.09] font-medium text-white" : "text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200"
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4 shrink-0", on ? "text-emerald-400" : "text-zinc-500")} />
+                    <span className="whitespace-nowrap">{s.label}</span>
+                  </button>
+                </React.Fragment>
               )
             })}
           </ScrollRow>
@@ -354,7 +356,7 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
       <div
         className={cn(
           "z-20 flex items-center justify-between gap-3 border-t border-white/[0.07] bg-[#0c0c0f]/95 px-5 py-3.5 backdrop-blur-xl transition-all duration-300",
-          embedded ? "sticky -bottom-6 -mx-6 mt-6 -mb-6 sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8" : "sticky bottom-0 -mx-4 mt-8 sm:-mx-8 sm:px-8",
+          embedded ? "sticky -bottom-6 -mx-4 mt-6 -mb-6 rounded-b-[1.6rem] sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8" : "sticky bottom-0 -mx-4 mt-8 sm:-mx-6 sm:px-6",
           dirty || status !== "idle" ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-full opacity-0"
         )}
         role="status"
@@ -375,7 +377,18 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
           </button>
         </div>
       </div>
-    </div>
+    </Shell>
+  )
+}
+
+/** Embedded (modal): transparent, no own page chrome. Page: same header/padding as every other console screen. */
+function Shell({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
+  if (embedded) return <div className="lp !bg-transparent text-zinc-100">{children}</div>
+  return (
+    <PageShell>
+      <PageHeader crumb="Settings" title="Settings" />
+      <div className="lp !bg-transparent w-full flex-1 p-4 text-zinc-100 sm:p-6">{children}</div>
+    </PageShell>
   )
 }
 
@@ -408,18 +421,32 @@ function KitchenPinCard({ outletId }: { outletId?: string }) {
     }
   }
 
+  const valid = /^\d{4,6}$/.test(pin)
   return (
     <Card title="Kitchen display PIN" desc="Your kitchen signs in with this PIN and the outlet slug on the Kitchen PIN tab of the sign-in page. It can only open the kitchen screen.">
-      <div className="flex flex-wrap items-end gap-3">
-        <Field label={configured ? "Set a new PIN" : "Create a PIN"} hint="4 to 6 digits">
-          <Input value={pin} onChange={(v) => setPin(v.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="off" className="!w-40 text-center font-mono tracking-[0.4em]" placeholder="••••" />
-        </Field>
-        <button type="button" onClick={() => void save()} disabled={saving || !/^\d{4,6}$/.test(pin) || !outletId} className="lp-btn lp-btn-primary !h-11 !px-5 !text-sm disabled:opacity-50">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : configured ? "Change PIN" : "Save PIN"}
-        </button>
+      <div>
+        <label htmlFor="kitchen-pin" className="mb-1.5 block text-[13px] text-zinc-300">{configured ? "Set a new PIN" : "Create a PIN"}</label>
+        <div className="flex flex-col gap-2.5 sm:flex-row">
+          <input
+            id="kitchen-pin"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            onKeyDown={(e) => e.key === "Enter" && valid && void save()}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="4 to 6 digits"
+            className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 font-mono text-[15px] tracking-[0.3em] text-white outline-none transition-colors placeholder:font-sans placeholder:tracking-normal placeholder:text-zinc-600 focus:border-emerald-400/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-emerald-400/15 sm:max-w-[220px]"
+          />
+          <button type="button" onClick={() => void save()} disabled={saving || !valid || !outletId} className="lp-btn lp-btn-primary !h-11 !px-6 !text-sm disabled:opacity-50 sm:w-auto">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : configured ? "Change PIN" : "Save PIN"}
+          </button>
+        </div>
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500">
+          <span className={cn("h-1.5 w-1.5 rounded-full", configured ? "bg-emerald-400" : "bg-amber-300")} />
+          {configured === null ? "Checking…" : configured ? "A kitchen PIN is set. Choose a new one above to replace it." : "No kitchen PIN yet: the kitchen screen can't be opened with a PIN."}
+        </p>
+        {msg && <p role={msg.ok ? "status" : "alert"} className={cn("mt-2 text-xs", msg.ok ? "text-emerald-300" : "text-rose-300")}>{msg.text}</p>}
       </div>
-      <p className="text-xs text-zinc-500">{configured === null ? "" : configured ? "A kitchen PIN is set." : "No kitchen PIN yet: the kitchen screen cannot be opened with a PIN."}</p>
-      {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-xs", msg.ok ? "text-emerald-300" : "text-rose-300")}>{msg.text}</p>}
     </Card>
   )
 }

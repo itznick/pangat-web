@@ -33,6 +33,8 @@ interface KdsStore {
   alertNewOrders: boolean
   alertReady: boolean
   alertStockOut: boolean
+  /** Outlet's expected prep time (minutes) used for amber/red thresholds */
+  prepTargetMinutes: number
 
   // ── Async API sync ─────────────────────────────────────────────────────────
   fetchTickets: (slug?: string) => Promise<void>
@@ -50,6 +52,9 @@ interface KdsStore {
   // ── Selectors ──────────────────────────────────────────────────────────────
   ticketsByStatus: (status: KdsTicketStatus) => Order[]
 }
+
+/** Tickets still in flight from earlier days stay visible, but we never pull the whole history. */
+const recentWindowStart = () => new Date(Date.now() - 3 * 86_400_000).toISOString()
 
 let kdsSocketListening = false
 
@@ -70,6 +75,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
   alertNewOrders: true,
   alertReady: true,
   alertStockOut: true,
+  prepTargetMinutes: 10,
 
   fetchTickets: async (slug?: string) => {
     if (!slug) {
@@ -81,7 +87,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     try {
       const outlet = await api.restaurants.get(slug).catch(() => null)
       const [orders, menuItems] = await Promise.all([
-        api.orders.list(slug).catch(() => []),
+        api.orders.list(slug, { startDate: recentWindowStart(), limit: 100 }).catch(() => []),
         outlet?.id ? api.menu.getItems(outlet.id).catch(() => []) : Promise.resolve([]),
       ])
 
@@ -97,6 +103,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         alertNewOrders: outlet?.kdsNewOrderAlert ?? true,
         alertReady: outlet?.orderReadyChime ?? true,
         alertStockOut: outlet?.outOfStockNotification ?? true,
+        prepTargetMinutes: outlet?.operations?.avgPrepMinutes ?? 10,
       })
 
       get().initSocketSync(slug)

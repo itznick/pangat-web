@@ -224,6 +224,9 @@ export interface Order {
   version?: number
   feedback?: OrderFeedback
   settledAt?: Date | string
+  preparingAt?: Date | string | null
+  readyAt?: Date | string | null
+  completedAt?: Date | string | null
   createdAt: Date | string
 }
 
@@ -609,7 +612,8 @@ export interface SalesReport {
     serviceCharge: number
     outstanding: number
     averageOrderValue: number
-    avgReadyMinutes: number
+    avgKitchenMinutes: number
+    avgWaitMinutes: number
   }
   cancelled: { orders: number; refunded: number }
   daily: { day: string; orders: number; sales: number }[]

@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useModal } from "@/hooks/useModal"
+import { TimeAgo } from "@/components/TimeAgo"
 import { X, CheckCircle2, Trash2, IndianRupee, Clock, Hash } from "lucide-react"
 import { cn, isSameTableNumber } from "@/lib/utils"
 import { useAdminStore } from "@/stores/useAdminStore"
@@ -161,11 +162,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
                       <Clock className="h-3 w-3" />
-                      <span>
-                        {Math.round(
-                          (Date.now() - new Date(order.createdAt).getTime()) / 60000
-                        )}m ago
-                      </span>
+                      <TimeAgo value={order.createdAt} />
                     </div>
                   </div>
 

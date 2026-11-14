@@ -1,4 +1,6 @@
 import * as React from "react"
+import { timeAgo } from "@/lib/time"
+import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import { Check, Download, MessageSquareText, RefreshCw, Search, Star, X } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { api } from "@/lib/api"
@@ -10,17 +12,6 @@ type Sort = "newest" | "lowest" | "highest"
 const RANGE_MS: Record<Range, number> = { "7d": 7 * 864e5, "30d": 30 * 864e5, all: Infinity }
 const HANDLED_KEY = "pangat_feedback_handled"
 
-function timeAgo(d: string | Date | undefined) {
-  const t = d ? new Date(d).getTime() : NaN
-  if (isNaN(t)) return "Recently"
-  const m = Math.floor((Date.now() - t) / 60000)
-  if (m < 1) return "Just now"
-  if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  const days = Math.floor(h / 24)
-  return days < 30 ? `${days}d ago` : new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
-}
 
 function Stars({ value, size = 14 }: { value: number; size?: number }) {
   return (
@@ -143,13 +134,12 @@ export function AdminFeedbackPage() {
   const filtersOn = star !== null || tag !== null || q !== "" || attentionOnly
 
   return (
-    <div className="lp mx-auto w-full max-w-[1180px] !bg-transparent px-4 pb-16 pt-8 sm:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[1.75rem]">Feedback & ratings</h1>
-          <p className="mt-1.5 text-sm text-zinc-500">What guests say right after they pay, at {outlet?.name || "your outlet"}.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <PageShell>
+      <PageHeader
+        crumb="Feedback & Ratings"
+        title="Feedback & ratings"
+        actions={
+          <>
           <div className="flex rounded-full border border-white/10 bg-white/[0.04] p-1 text-[13px]" role="group" aria-label="Time range">
             {(["7d", "30d", "all"] as const).map((r) => (
               <button key={r} onClick={() => setRange(r)} aria-pressed={range === r} className={cn("rounded-full px-3.5 py-1.5 transition-colors", range === r ? "bg-white text-zinc-950" : "text-zinc-400 hover:text-white")}>
@@ -163,8 +153,11 @@ export function AdminFeedbackPage() {
           <button onClick={() => { setRefreshing(true); void load() }} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06]">
             <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} /> Refresh
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
+      <div className="lp !bg-transparent w-full flex-1 p-4 sm:p-6 pb-16">
+      <p className="mb-5 text-sm text-zinc-500">What guests say right after they pay, at {outlet?.name || "your outlet"}.</p>
 
       {error && !data ? (
         <div className="mx-auto mt-16 max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center">
@@ -327,7 +320,8 @@ export function AdminFeedbackPage() {
           </div>
         </>
       )}
-    </div>
+      </div>
+    </PageShell>
   )
 }
 
