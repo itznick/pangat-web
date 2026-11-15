@@ -4,6 +4,9 @@ import './index.css'
 import App from './App.tsx'
 import { API_BASE_URL } from '@/lib/api'
 import { WS_BASE_URL } from '@/lib/socket'
+import { initTheme } from '@/stores/useThemeStore'
+
+initTheme()
 
 // Startup environment logger for local development and debugging
 if (import.meta.env.DEV) {

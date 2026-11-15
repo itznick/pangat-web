@@ -11,9 +11,16 @@
     <meta name="description" content="Modern dining speed, rooted in timeless hospitality. Instant UPI payments, zero thermal printers, and live kitchen tracking for independent cafes and specialty coffee spots." />
     <meta name="theme-color" content="#050506" />
     <script>
-      // Pangat is a dark-only product: landing, login, dashboards, KDS and the diner menu.
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
+      // Apply the saved (or system) theme before first paint so there is no dark/light flash.
+      (function () {
+        var t = 'system';
+        try { t = localStorage.getItem('pangat_theme') || 'system'; } catch (e) {}
+        var dark = t === 'dark' || (t !== 'light' && !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches));
+        var r = document.documentElement;
+        r.classList.toggle('dark', dark);
+        r.style.colorScheme = dark ? 'dark' : 'light';
+        r.setAttribute('data-theme', dark ? 'dark' : 'light');
+      })();
     </script>
   </head>
   <body>

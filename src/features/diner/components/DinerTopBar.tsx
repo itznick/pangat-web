@@ -3,6 +3,7 @@ import { Wifi, WifiOff, Leaf, Drumstick } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PangatLogo } from "@/components/ui/PangatLogo"
 import { useCartStore, type DietaryFilter } from "@/stores/useCartStore"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 interface DinerTopBarProps {
   cafeName: string
@@ -41,6 +42,8 @@ export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
         </div>
 
         {/* Connectivity status pill */}
+        <div className="flex items-center gap-1.5">
+        <ThemeToggle className="!h-8 !w-8" />
         <div
           className={cn(
             "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors",
@@ -51,6 +54,7 @@ export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
         >
           {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
           {online ? "Live" : "Offline"}
+        </div>
         </div>
       </div>
 

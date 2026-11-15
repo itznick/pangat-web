@@ -34,7 +34,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
 const DialogContent = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "bg-zinc-900 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/60 p-6 max-h-[88dvh] overflow-y-auto animate-in fade-in-0 zoom-in-95",
+      "bg-[#ffffff] dark:bg-zinc-900 border border-slate-900/[0.08] dark:border-white/[0.08] rounded-2xl shadow-2xl shadow-black/60 p-6 max-h-[88dvh] overflow-y-auto animate-in fade-in-0 zoom-in-95",
       className
     )}
     {...props}
@@ -48,7 +48,7 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 )
 
 const DialogTitle = ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h2 className={cn("text-lg font-semibold text-zinc-100", className)} {...props} />
+  <h2 className={cn("text-lg font-semibold text-slate-900 dark:text-zinc-100", className)} {...props} />
 )
 
 const DialogDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (

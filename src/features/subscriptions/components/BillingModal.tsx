@@ -32,7 +32,7 @@ export function BillingModal() {
   const gstin = restaurant.gstin || outlet?.gstin
 
   return createPortal(
-    <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Plan and billing" className="lp dark fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-6">
+    <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Plan and billing" className="lp fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-6">
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={close} />
       <div className="relative my-auto w-full max-w-[640px] overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0c0c0f] shadow-[0_40px_120px_-20px_rgba(0,0,0,0.95)] animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200">
         <div className="flex items-start justify-between gap-4 p-6 pb-4 sm:p-8 sm:pb-5">

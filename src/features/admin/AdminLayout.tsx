@@ -37,16 +37,16 @@ import {
 } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
-import { useState, useEffect, useRef } from "react"
+import { lazy, Suspense, useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
-import { AddOutletModal } from "./components/AddOutletModal"
+const AddOutletModal = lazy(() => import("./components/AddOutletModal").then((m) => ({ default: m.AddOutletModal })))
 import { PangatLogo } from "@/components/ui/PangatLogo"
 import { UserMenu, type MenuEntry } from "@/components/console/UserMenu"
 import { TopBar } from "@/components/console/TopBar"
 import { OutletSwitcher } from "@/components/console/OutletSwitcher"
-import { SettingsModal } from "./components/SettingsModal"
-import { BillingModal } from "@/features/subscriptions/components/BillingModal"
+const SettingsModal = lazy(() => import("./components/SettingsModal").then((m) => ({ default: m.SettingsModal })))
+const BillingModal = lazy(() => import("@/features/subscriptions/components/BillingModal").then((m) => ({ default: m.BillingModal })))
 import { AnnouncementBanner } from "@/components/platform/AnnouncementBanner"
 import { useAdminNotices } from "./useAdminNotices"
 import { STATUS_META, useBilling } from "@/features/subscriptions/billing"
@@ -285,7 +285,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
           <button
             type="button"
             onClick={() => setBilling(true)}
-            className="group mb-2 flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-2.5 text-left transition-colors hover:border-white/15 hover:bg-white/[0.06]"
+            className="group mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-900/[0.07] dark:border-white/[0.07] bg-slate-900/[0.03] dark:bg-white/[0.03] p-2.5 text-left transition-colors hover:border-slate-900/15 dark:hover:border-white/15 hover:bg-slate-900/[0.06] dark:hover:bg-white/[0.06]"
           >
             <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_META[billing.status].tone === "good" ? "bg-emerald-400" : STATUS_META[billing.status].tone === "bad" ? "bg-rose-400" : "bg-amber-300")} />
             <span className="min-w-0 flex-1">
@@ -327,7 +327,7 @@ function SubscriptionBanner({ onManage }: { onManage: () => void }) {
             ? `Your free trial ends in ${b.daysLeft} day${b.daysLeft === 1 ? "" : "s"}.`
             : "Your payment is overdue. Everything keeps working during the grace period."}
       </span>
-      <button type="button" onClick={onManage} className="h-9 shrink-0 rounded-lg border border-current/30 px-3 font-medium hover:bg-white/10">
+      <button type="button" onClick={onManage} className="h-9 shrink-0 rounded-lg border border-current/30 px-3 font-medium hover:bg-slate-900/10 dark:hover:bg-white/10">
         {lapsed ? "Renew now" : "View plans"}
       </button>
     </div>
@@ -342,6 +342,8 @@ export function AdminLayout() {
   const setCurrentOutlet = useAuthStore((s) => s.setCurrentOutlet)
   const user = useAuthStore((s) => s.user)
   const [addOutletOpen, setAddOutletOpen] = useState(false)
+  const settingsOpen = useConsoleUi((s) => s.settings)
+  const billingOpen = useConsoleUi((s) => s.billing)
   const notices = useAdminNotices((to) => navigate(to))
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -541,7 +543,7 @@ export function AdminLayout() {
 
   if (isResolvingOutlets) {
     return (
-      <div className="min-h-dvh bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-dvh bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-white flex items-center justify-center">
         <div className="flex items-center gap-2.5 text-zinc-400 text-sm">
           <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
           <span>Synchronizing restaurant operations...</span>
@@ -577,7 +579,7 @@ export function AdminLayout() {
                 setImpersonationError(null)
                 navigate('/super-admin')
               }}
-              className="text-xs underline hover:text-white"
+              className="text-xs underline hover:text-slate-900 dark:hover:text-white"
             >
               Return to Super Admin
             </button>
@@ -634,14 +636,12 @@ export function AdminLayout() {
       </SidebarInset>
 
       <ConsoleOverlays items={commandItems} goTo={goTo} shortcutRows={shortcutRows} />
-      <SettingsModal />
-      <BillingModal />
-
-      {/* Global Add Outlet Modal */}
-      <AddOutletModal
-        open={addOutletOpen}
-        onClose={() => setAddOutletOpen(false)}
-      />
+      {/* Heavy dialogs load on first open instead of with the console */}
+      <Suspense fallback={null}>
+        {settingsOpen && <SettingsModal />}
+        {billingOpen && <BillingModal />}
+        {addOutletOpen && <AddOutletModal open onClose={() => setAddOutletOpen(false)} />}
+      </Suspense>
     </SidebarProvider>
   )
 }

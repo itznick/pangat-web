@@ -65,7 +65,7 @@ export function StewardFloorView() {
   })
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="df p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-xl">
         <div>

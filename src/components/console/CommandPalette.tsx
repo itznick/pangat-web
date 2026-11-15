@@ -67,7 +67,7 @@ export function CommandPalette({ open, onClose, items }: { open: boolean; onClos
 
   let lastGroup = ""
   return (
-    <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Command palette" className="fixed inset-0 z-[70] flex items-start justify-center px-3 pt-[12vh]">
+    <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Command palette" className="df fixed inset-0 z-[70] flex items-start justify-center px-3 pt-[12vh]">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" onClick={onClose} />
       <div className="relative w-full max-w-[560px] overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c0f] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
         <div className="flex items-center gap-3 border-b border-white/[0.07] px-4">

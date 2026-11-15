@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { memo, useState } from "react"
 import { ChefHat, AlertCircle, Clock, Undo2, Bike, ShoppingBag, Utensils, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Order, OrderStatus } from "@/types/domain"
@@ -87,7 +87,7 @@ const STATUS_CONFIG: Record<
   },
 }
 
-export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDSTicketCardProps) {
+function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTicketCardProps) {
   const prepTarget = useKdsStore((s) => s.prepTargetMinutes)
   const done = ticket.orderStatus === "READY" || ticket.orderStatus === "DISPATCHED"
   const timer = useTicketTimer(ticket.createdAt, { endAt: done ? ticket.readyAt ?? undefined : undefined, prepTargetMinutes: prepTarget })
@@ -339,3 +339,5 @@ export function KDSTicketCard({ ticket, onAdvance, onArchive, onSendBack }: KDST
     </div>
   )
 }
+
+export const KDSTicketCard = memo(KDSTicketCardBase)

@@ -2,6 +2,7 @@ import * as React from 'react'
 import { AlertTriangle, Megaphone, Wrench, X } from 'lucide-react'
 import { merchant } from '@/features/super-admin/api'
 import { cn } from '@/lib/utils'
+import { usePolling } from '@/hooks/usePolling'
 
 interface Ann { id: string; title: string; body: string; kind: string; severity: string; dismissible: boolean }
 const KEY = 'pangat_dismissed_announcements'
@@ -13,13 +14,7 @@ const load = (): string[] => {
 export function AnnouncementBanner() {
   const [items, setItems] = React.useState<Ann[]>([])
   const [dismissed, setDismissed] = React.useState<string[]>(load)
-  React.useEffect(() => {
-    let alive = true
-    const go = () => merchant.announcements().then((a) => alive && setItems(a as Ann[])).catch(() => {})
-    go()
-    const t = window.setInterval(go, 300000)
-    return () => { alive = false; clearInterval(t) }
-  }, [])
+  usePolling(() => { merchant.announcements().then((a) => setItems(a as Ann[])).catch(() => {}) }, 300000, { immediate: true })
   const visible = items.filter((a) => !(a.dismissible && dismissed.includes(a.id)))
   if (visible.length === 0) return null
   const dismiss = (id: string) => {

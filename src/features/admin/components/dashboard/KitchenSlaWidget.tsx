@@ -36,7 +36,7 @@ export function KitchenSlaWidget() {
     .sort((a, b) => b.ageMin - a.ageMin)
 
   return (
-    <div className="bg-zinc-900 rounded-2xl border border-zinc-800 flex flex-col">
+    <div className="df bg-zinc-900 rounded-2xl border border-zinc-800 flex flex-col">
       {/* Widget Header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-800">
         <div className="flex items-center gap-2.5">

@@ -8,8 +8,8 @@ import { Heritage } from "../components/Heritage"
 import { RoiCalculator } from "../components/RoiCalculator"
 import { Pricing } from "../components/Pricing"
 import { Footer } from "../components/Footer"
-import { PilotModal } from "../components/PilotModal"
-import { LiveDemoModal } from "../components/LiveDemoModal"
+const PilotModal = React.lazy(() => import("../components/PilotModal").then((m) => ({ default: m.PilotModal })))
+const LiveDemoModal = React.lazy(() => import("../components/LiveDemoModal").then((m) => ({ default: m.LiveDemoModal })))
 import "../landing.css"
 
 export function LandingPage() {
@@ -23,20 +23,17 @@ export function LandingPage() {
     }
   }, [])
 
-  // Pangat is dark-only; make sure the class is present even after client-side navigation
-  React.useEffect(() => {
-    document.documentElement.classList.add("dark")
-    document.documentElement.style.colorScheme = "dark"
-  }, [])
-
-  const openPilot = () => setPilotModalOpen(true)
+  const openPilot = React.useCallback(() => setPilotModalOpen(true), [])
+  const closePilot = React.useCallback(() => setPilotModalOpen(false), [])
+  const openDemo = React.useCallback(() => setDemoModalOpen(true), [])
+  const closeDemo = React.useCallback(() => setDemoModalOpen(false), [])
 
   return (
-    <div className="lp dark relative min-h-screen overflow-x-clip selection:bg-white selection:text-black">
+    <div className="lp relative min-h-screen overflow-x-clip selection:bg-white selection:text-black">
       <Navbar onOpenPilot={openPilot} />
 
       <main className="relative">
-        <Hero onOpenPilot={openPilot} onOpenDemo={() => setDemoModalOpen(true)} />
+        <Hero onOpenPilot={openPilot} onOpenDemo={openDemo} />
         <Statement />
         <Proof />
         <Journey onOpenPilot={openPilot} />
@@ -49,12 +46,10 @@ export function LandingPage() {
       <Footer onOpenPilot={openPilot} />
 
       {/* Conversion modals */}
-      <PilotModal isOpen={pilotModalOpen} onClose={() => setPilotModalOpen(false)} />
-      <LiveDemoModal
-        isOpen={demoModalOpen}
-        onClose={() => setDemoModalOpen(false)}
-        onClaimPilot={openPilot}
-      />
+      <React.Suspense fallback={null}>
+        {pilotModalOpen && <PilotModal isOpen onClose={closePilot} />}
+        {demoModalOpen && <LiveDemoModal isOpen onClose={closeDemo} onClaimPilot={openPilot} />}
+      </React.Suspense>
     </div>
   )
 }

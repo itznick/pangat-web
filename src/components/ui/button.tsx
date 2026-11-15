@@ -12,17 +12,17 @@ const buttonVariants = cva(
         destructive:
           "bg-rose-600 text-white shadow-sm hover:bg-rose-700 shadow-rose-600/20",
         outline:
-          "border border-zinc-200 bg-white text-zinc-800 shadow-xs hover:bg-zinc-50 hover:border-zinc-300 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-100 dark:hover:bg-white/[0.08]",
+          "border border-slate-200 bg-[#ffffff] text-slate-800 shadow-xs hover:bg-slate-50 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-100 dark:hover:bg-white/[0.08]",
         secondary:
-          "bg-zinc-100 text-zinc-900 shadow-xs hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700",
+          "bg-slate-100 text-slate-900 shadow-xs hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700",
         ghost:
-          "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50",
+          "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50",
         link:
           "text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400 p-0 h-auto",
         emerald:
           "bg-emerald-700 text-white shadow-md hover:bg-emerald-800 shadow-emerald-700/25",
         amber:
-          "bg-amber-500 text-zinc-950 font-semibold shadow-sm hover:bg-amber-600",
+          "bg-amber-500 text-slate-950 font-semibold shadow-sm hover:bg-amber-600",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -116,7 +116,7 @@ export function QrKitModal({ open, onClose, outletName, outletSlug, upiVpa, tabl
 
   return createPortal(
     <>
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Table QR cards" className="lp dark fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-6">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Table QR cards" className="lp fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-6">
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose} />
         <div className="relative my-auto w-full max-w-[880px] overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0c0c0f] shadow-[0_40px_120px_-20px_rgba(0,0,0,0.95)] animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200">
           <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] px-6 py-4 sm:px-8">

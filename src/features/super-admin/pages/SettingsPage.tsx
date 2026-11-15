@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react'
 import { KeyRound, Lock, Save, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,14 +8,15 @@ import { sa, type Row } from '../api'
 import { useFetch, usePerms } from '../hooks'
 import { dateTime } from '../format'
 import { ConfirmDialog, ErrorState, Notice, Page, Panel, Pill, Portal, Skeleton, Spinner, TextArea, TextInput, useAction } from '../ui/kit'
+import { FEATURE_LABEL } from '../shared'
 
 const toLocal = (iso?: string | null) => (iso ? new Date(new Date(iso).getTime() - new Date(iso).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '')
 
 export function SettingsPage() {
   const { can } = usePerms()
   const s = useFetch(() => sa.settings(), [])
-  const flags = useFetch(() => sa.flags(), [])
   const [group, setGroup] = React.useState('branding')
+  const flags = useFetch(() => sa.flags(), [], { enabled: group === 'features' })
   const [draft, setDraft] = React.useState<Record<string, unknown>>({})
   const [saving, setSaving] = React.useState(false)
   const [confirm, setConfirm] = React.useState(false)
@@ -115,7 +115,7 @@ export function SettingsPage() {
 function FeatureFlags({ flags, editable, reload }: { flags: Row[] | null; editable: boolean; reload: () => void }) {
   const { run } = useAction()
   const [pending, setPending] = React.useState<null | { key: string; enabled: boolean }>(null)
-  const label: Record<string, string> = { QR_ORDERING: 'QR ordering', KDS: 'Kitchen display', INVENTORY: 'Inventory & recipes', ANALYTICS: 'Analytics & reports', MULTI_OUTLET: 'Multi-outlet', ADVANCED_REPORTS: 'Advanced reports' }
+  const label = FEATURE_LABEL
   return (
     <Panel title="Feature availability" description="Global switches. Turning a feature off blocks it for every restaurant regardless of plan (use it during an incident). Per-restaurant overrides are set on the restaurant profile.">
       {!flags ? <Skeleton className="h-48" /> : (

@@ -110,15 +110,15 @@ export function OutletSwitcher({ outlets, current, fallbackName, onSelect, onAdd
         aria-expanded={open}
         aria-label={`Switch outlet. Current: ${name}`}
         className={cn(
-          "group -m-1 flex w-[calc(100%+0.5rem)] items-center gap-2 rounded-xl p-1 text-left transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60",
-          open && "bg-white/[0.06]"
+          "group -m-1 flex w-[calc(100%+0.5rem)] items-center gap-2 rounded-xl p-1 text-left transition-colors hover:bg-slate-900/[0.05] dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60",
+          open && "bg-slate-900/[0.05] dark:bg-white/[0.06]"
         )}
       >
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{name}</span>
           <span className="block truncate text-[11px] text-zinc-500">{area}</span>
         </span>
-        <ChevronsUpDown className={cn("h-4 w-4 shrink-0 text-zinc-500 transition-colors group-hover:text-zinc-300", open && "text-emerald-400")} />
+        <ChevronsUpDown className={cn("h-4 w-4 shrink-0 text-zinc-500 transition-colors group-hover:text-slate-700 dark:group-hover:text-zinc-300", open && "text-emerald-400")} />
       </button>
 
       {open &&
@@ -130,7 +130,7 @@ export function OutletSwitcher({ outlets, current, fallbackName, onSelect, onAdd
             aria-label="Choose outlet"
             style={{ left: pos.left, top: pos.top, width: pos.width }}
             onKeyDown={onKeyDown}
-            className="fixed z-[90] overflow-hidden rounded-2xl border border-white/10 bg-[#0e0e12] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150"
+            className="df fixed z-[90] overflow-hidden rounded-2xl border border-white/10 bg-[#0e0e12] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150"
           >
             <div className="flex items-center justify-between px-4 pb-1.5 pt-3.5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Your outlets</p>

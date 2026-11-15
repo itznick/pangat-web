@@ -525,7 +525,7 @@ export function AdminOrdersPage() {
                                 toast.error(errMsg(e, "Failed to dispatch order"))
                               }
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition-colors cursor-pointer"
                             title="Dispatch delivery order"
                           >
                             <Bike className="h-3 w-3" />
@@ -544,7 +544,7 @@ export function AdminOrdersPage() {
                                 toast.error(errMsg(e, "Failed to mark delivered"))
                               }
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition-colors cursor-pointer"
                             title="Mark delivery completed"
                           >
                             <CheckCircle2 className="h-3 w-3" />
@@ -640,7 +640,7 @@ export function AdminOrdersPage() {
                   <TableCell colSpan={9} className="h-48 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-500">
                       <Clock className="h-8 w-8 mb-2 text-zinc-600" />
-                      <p className="text-sm font-semibold text-zinc-300">
+                      <p className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
                         {loadingArchived
                           ? "Loading archived orders..."
                           : "No orders found in this view"}

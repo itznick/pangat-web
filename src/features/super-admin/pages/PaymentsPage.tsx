@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Info, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { toast } from '@/components/ui/toast'
-import { errMsg } from '@/lib/api'
 import { sa } from '../api'
+import { useCsvExport } from '../useCsvExport'
 import { useFetch, useListState, usePerms } from '../hooks'
-import { ago, dateOnly, dateTime, daysAgoDay, daysAgoIso, downloadText, inr, num, titleCase } from '../format'
-import { DataTable, Drawer, ErrorState, FilterSelect, KV, Notice, Page, Pager, Panel, Pill, SearchBox, Segmented, Skeleton, Spinner, Stat, StatusPill, Tabs, TextInput, Toolbar, useAction } from '../ui/kit'
+import { ago, dateOnly, dateTime, daysAgoDay, daysAgoIso, inr, num, titleCase } from '../format'
+import { DataTable, Drawer, ErrorState, FilterSelect, KV, Notice, Page, Pager, Panel, Pill, SearchBox, Segmented, Skeleton, Spinner, Stat, StatusPill, Tabs, TextInput, Toolbar } from '../ui/kit'
 import { BarChart, Donut, SERIES } from '../ui/charts'
 
 type Tab = 'transactions' | 'revenue' | 'reconciliation' | 'reports'
@@ -167,23 +166,8 @@ function Reconciliation() {
 function Reports() {
   const [from, setFrom] = React.useState(() => daysAgoDay(30))
   const [to, setTo] = React.useState(() => daysAgoDay(0))
-  const { busy, run } = useAction()
-  const [which, setWhich] = React.useState('')
-  const { can } = usePerms()
-  const history = useFetch(() => sa.exportsHistory(), [], { enabled: can('exports.manage') })
-  const go = async (kind: 'payments' | 'revenue-by-month' | 'subscriptions') => {
-    setWhich(kind)
-    await run(async () => {
-      try {
-        const r = await sa.report(kind, kind === 'payments' ? { from, to: `${to}T23:59:59` } : {})
-        downloadText(r.filename, r.content, 'text/csv')
-        toast.success(`${r.rows} rows exported`)
-        history.reload()
-      } catch (e) {
-        toast.error(errMsg(e))
-      }
-    })
-  }
+  const csv = useCsvExport()
+  const go = (kind: 'payments' | 'revenue-by-month' | 'subscriptions') => csv.run(kind, 'rows', kind === 'payments' ? { from, to: `${to}T23:59:59` } : {})
   const cards = [
     { kind: 'payments' as const, title: 'Payment transactions', desc: 'Every invoice with status, gateway references, GST split and refunds for the date range.' },
     { kind: 'revenue-by-month' as const, title: 'Revenue by month', desc: 'Collected revenue split into base amount and GST, by month.' },
@@ -200,22 +184,11 @@ function Reports() {
             <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400"><FileSpreadsheet className="h-[18px] w-[18px]" /></span>
             <h3 className="text-[14.5px] font-semibold text-zinc-900 dark:text-zinc-50">{c.title}</h3>
             <p className="mt-1 flex-1 text-[13px] text-zinc-500">{c.desc}</p>
-            <Button className="mt-4" variant="outline" onClick={() => go(c.kind)} disabled={busy}>{busy && which === c.kind ? <Spinner /> : <Download className="h-4 w-4" />} Download CSV</Button>
+            <Button className="mt-4" variant="outline" onClick={() => go(c.kind)} disabled={csv.exporting}>{csv.running === c.kind ? <Spinner /> : <Download className="h-4 w-4" />} Download CSV</Button>
           </section>
         ))}
       </div>
-      {can('exports.manage') && <Panel title="Recent exports" description="Every download is recorded with a checksum" flush>
-        <div className="mt-3">
-          <DataTable rows={history.data ?? undefined} loading={history.loading} rowKey={(x: any) => x.id} emptyTitle="No exports yet"
-            columns={[
-              { key: 'k', header: 'Report', primary: true, cell: (x: any) => <span className="font-medium">{titleCase(x.kind)}{x.organization_name ? ` · ${x.organization_name}` : ''}</span> },
-              { key: 'b', header: 'By', cell: (x: any) => x.requested_by_name ?? '—' },
-              { key: 'r', header: 'Rows', align: 'right', cell: (x: any) => num(Object.values(x.row_counts ?? {}).reduce((a: number, v: any) => a + Number(v), 0)) },
-              { key: 'c', header: 'Checksum', hideOnMobile: true, cell: (x: any) => <code className="text-[11.5px] text-zinc-500">{String(x.checksum).slice(0, 12)}…</code> },
-              { key: 'd', header: 'When', cell: (x: any) => <span className="text-zinc-500">{ago(x.created_at)}</span> },
-            ]} />
-        </div>
-      </Panel>}
+      <p className="text-[12.5px] text-zinc-500">Every download is recorded with a checksum. See the full list under <Link to="/super-admin/monitoring?tab=data" className="text-emerald-600 hover:underline dark:text-emerald-400">Monitoring → Data &amp; recovery</Link>.</p>
     </div>
   )
 }

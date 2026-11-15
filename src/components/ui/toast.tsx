@@ -49,7 +49,7 @@ export function Toaster() {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[200] flex flex-col items-center gap-2 px-3 sm:items-end sm:px-5"
+      className="df pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[200] flex flex-col items-center gap-2 px-3 sm:items-end sm:px-5"
     >
       {items.map((t) => {
         const Icon = ICON[t.kind]

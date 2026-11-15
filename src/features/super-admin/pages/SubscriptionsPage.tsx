@@ -3,14 +3,14 @@ import * as React from 'react'
 import { useNavigate } from 'react-router'
 import { Check, Download, Minus, Pencil, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { toast } from '@/components/ui/toast'
 import { errMsg } from '@/lib/api'
 import { sa } from '../api'
 import { useFetch, useListState, usePerms } from '../hooks'
-import { ago, dateOnly, downloadText, inr, num, titleCase } from '../format'
+import { ago, dateOnly, inr, num, titleCase } from '../format'
 import { DataTable, Field, FilterSelect, Modal, Notice, Page, Pager, Panel, Pill, SearchBox, SelectInput, Skeleton, Spinner, Stat, StatusPill, Tabs, TextArea, TextInput, Toolbar, useAction } from '../ui/kit'
+import { useCsvExport } from '../useCsvExport'
+import { FEATURE_LABEL, invalidatePlans, usePlans } from '../shared'
 
-const FEATURE_LABEL: Record<string, string> = { QR_ORDERING: 'QR ordering', KDS: 'Kitchen display', INVENTORY: 'Inventory', ANALYTICS: 'Analytics', MULTI_OUTLET: 'Multi-outlet', ADVANCED_REPORTS: 'Advanced reports' }
 const CHIPS = [['', 'All'], ['ACTIVE', 'Active'], ['TRIAL', 'Trial'], ['GRACE_PERIOD', 'Grace'], ['EXPIRED', 'Expired'], ['CANCELLED', 'Cancelled']]
 
 export function SubscriptionsPage() {
@@ -28,19 +28,12 @@ function SubsTab({ canExport }: { canExport: boolean }) {
   const navigate = useNavigate()
   const st = useListState({ status: '', plan: '', source: '' }, { sort: 'end', order: 'asc' })
   const list = useFetch(() => sa.subscriptions(st.params), [JSON.stringify(st.params)])
-  const plans = useFetch(() => sa.plans(), [])
+  const plans = usePlans()
   const sum = list.data?.summary
   const counts = sum?.counts ?? {}
 
-  const exportCsv = async () => {
-    try {
-      const r = await sa.report('subscriptions', { status: st.filters.status, plan: st.filters.plan, source: st.filters.source, q: st.q })
-      downloadText(r.filename, r.content, 'text/csv')
-      toast.success(`Exported ${r.rows} subscriptions`)
-    } catch (e) {
-      toast.error(errMsg(e))
-    }
-  }
+  const csv = useCsvExport()
+  const exportCsv = () => csv.run('subscriptions', 'subscriptions', { status: st.filters.status, plan: st.filters.plan, source: st.filters.source, q: st.q })
 
   return (
     <div className="space-y-4">
@@ -62,7 +55,7 @@ function SubsTab({ canExport }: { canExport: boolean }) {
             <SearchBox value={st.q} onChange={st.setQ} placeholder="Search restaurant or owner email…" className="w-full sm:w-[320px]" />
             <FilterSelect label="Plan" value={st.filters.plan} onChange={(v) => st.setFilter('plan', v)} options={(plans.data?.plans ?? []).map((p) => ({ value: p.code, label: p.name }))} className="w-[200px]" />
             <FilterSelect label="Source" value={st.filters.source} onChange={(v) => st.setFilter('source', v)} options={[{ value: 'GATEWAY', label: 'Paid (gateway)' }, { value: 'MANUAL', label: 'Manual grant' }, { value: 'TRIAL', label: 'Trial' }]} className="w-[170px]" />
-            {canExport && <Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4" /> Export</Button>}
+            {canExport && <Button variant="outline" onClick={exportCsv} disabled={csv.exporting}><Download className="h-4 w-4" /> Export</Button>}
           </Toolbar>
         </div>
         <div className="mt-3">
@@ -95,7 +88,7 @@ function SubsTab({ canExport }: { canExport: boolean }) {
 
 function PlansTab() {
   const { can } = usePerms()
-  const plans = useFetch(() => sa.plans(), [])
+  const plans = usePlans()
   const [editing, setEditing] = React.useState<any | 'new' | null>(null)
   const features = (plans.data?.features ?? []).map((f) => f.feature_key as string)
   return (
@@ -145,7 +138,7 @@ function PlansTab() {
           </div>
         </Panel>
       )}
-      {editing && <PlanEditor plan={editing === 'new' ? null : editing} features={features} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); plans.reload() }} />}
+      {editing && <PlanEditor plan={editing === 'new' ? null : editing} features={features} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); invalidatePlans() }} />}
     </div>
   )
 }

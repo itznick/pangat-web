@@ -15,7 +15,7 @@
  * IMPORTANT: Do NOT remove this block. It is load-bearing for every page
  * that uses bg-zinc-950 / text-zinc-100 etc. to work correctly in both modes.
  */
-html:not(.dark) {
+html:not(.dark) :is(.df, .lp) {
   --color-zinc-950: #f8fafc;
   --color-zinc-900: #ffffff;
   --color-zinc-850: #f1f5f9;
@@ -30,9 +30,72 @@ html:not(.dark) {
   --color-zinc-50: #020617;
 }
 
-html:not(.dark) .bg-zinc-900 {
+html:not(.dark) :is(.df, .lp) .bg-zinc-900 {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
 }
+
+/* ── Light mode, part 2: the rest of the dark-first palette ──────────────────
+ * The product was drawn dark-first, so beyond the zinc remap three more things need a light counterpart:
+ *  1. "white" tints (text-white, border-white/10, bg-white/[0.04] …) are ink on a light surface;
+ *  2. pale accent shades used as text on dark (emerald-300, amber-400 …) need a darker shade to stay legible;
+ *  3. a handful of hard-coded near-black surfaces.
+ * All of it only applies when <html> has no `.dark` class, so dark mode is untouched. */
+html:not(.dark) :is(.df, .lp) {
+  --color-white: #0f172a;
+  --color-black: #000000;
+
+  --color-emerald-200: #047857; --color-emerald-300: #047857; --color-emerald-400: #059669;
+  --color-green-200: #166534;   --color-green-300: #15803d;   --color-green-400: #16a34a;
+  --color-teal-200: #115e59;    --color-teal-300: #0f766e;    --color-teal-400: #0d9488;
+  --color-lime-300: #4d7c0f;    --color-lime-400: #65a30d;
+  --color-amber-200: #92400e;   --color-amber-300: #b45309;   --color-amber-400: #d97706;
+  --color-yellow-200: #854d0e;  --color-yellow-300: #a16207;  --color-yellow-400: #ca8a04;
+  --color-orange-200: #9a3412;  --color-orange-300: #c2410c;  --color-orange-400: #ea580c;
+  --color-rose-200: #9f1239;    --color-rose-300: #be123c;    --color-rose-400: #e11d48;
+  --color-red-200: #991b1b;     --color-red-300: #b91c1c;     --color-red-400: #dc2626;
+  --color-pink-300: #be185d;    --color-pink-400: #db2777;
+  --color-sky-200: #075985;     --color-sky-300: #0369a1;     --color-sky-400: #0284c7;
+  --color-cyan-300: #0e7490;    --color-cyan-400: #0891b2;
+  --color-blue-200: #1e40af;    --color-blue-300: #1d4ed8;    --color-blue-400: #2563eb;
+  --color-indigo-300: #4338ca;  --color-indigo-400: #4f46e5;
+  --color-violet-200: #5b21b6;  --color-violet-300: #6d28d9;  --color-violet-400: #7c3aed;
+  --color-purple-300: #7e22ce;  --color-purple-400: #9333ea;
+}
+
+/* Text that sits on a solid saturated fill (buttons, badges) stays white */
+html:not(.dark) :is(.df, .lp) :is(
+  [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"],
+  [class~="bg-green-500"], [class~="bg-green-600"], [class~="bg-teal-600"],
+  [class~="bg-rose-500"], [class~="bg-rose-600"], [class~="bg-rose-700"],
+  [class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-red-700"],
+  [class~="bg-amber-600"], [class~="bg-amber-700"], [class~="bg-orange-500"], [class~="bg-orange-600"],
+  [class~="bg-sky-600"], [class~="bg-sky-700"], [class~="bg-blue-500"], [class~="bg-blue-600"], [class~="bg-blue-700"],
+  [class~="bg-indigo-500"], [class~="bg-indigo-600"], [class~="bg-violet-500"], [class~="bg-violet-600"], [class~="bg-purple-600"],
+  [class~="bg-pink-600"], [class~="bg-zinc-900"][class*="bg-gradient"]
+).text-white,
+html:not(.dark) :is(.df, .lp) :is(
+  [class*="from-emerald-"], [class*="from-green-"], [class*="from-rose-"], [class*="from-red-"], [class*="from-amber-5"], [class*="from-amber-6"],
+  [class*="from-orange-"], [class*="from-sky-"], [class*="from-blue-"], [class*="from-indigo-"], [class*="from-violet-"], [class*="from-purple-"]
+)[class*="bg-gradient"].text-white,
+html:not(.dark) .text-on-fill {
+  color: #fff;
+}
+
+/* Hard-coded near-black surfaces -> light equivalents */
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#050506]"],
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#09090b]"] { background-color: #f8fafc; }
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#050506]/"],
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#09090b]/"] { background-color: rgb(248 250 252 / 0.82); }
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#0c0c0f]"],
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#0d0d10]"],
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#0e0e12]"],
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#101013]"] { background-color: #ffffff; }
+html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="ring-[#050506]"] { --tw-ring-color: #f8fafc; }
+html:not(.dark) body { background: #f8fafc; color: #0f172a; }
+html:not(.dark) ::selection { background: rgb(16 185 129 / 0.25); color: #0f172a; }
+/* heavy black drop shadows look muddy on light surfaces */
+html:not(.dark) [class*="shadow-[0_30px_80px"],
+html:not(.dark) [class*="shadow-[0_40px_100px"] { --tw-shadow-color: rgb(15 23 42 / 0.22); box-shadow: 0 24px 60px -24px rgb(15 23 42 / 0.28); }
 
 html.dark {
   /* Pangat Console dark palette — cooler, deeper neutrals shared with the marketing site */

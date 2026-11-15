@@ -237,7 +237,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
 
         {/* Footer Actions */}
         {tableOrders.length > 0 && (
-          <div className="flex-shrink-0 px-5 py-4 border-t border-zinc-800 space-y-2.5 bg-zinc-950/50">
+          <div className="flex-shrink-0 px-5 py-4 border-t border-slate-200 dark:border-zinc-800 space-y-2.5 bg-zinc-950/50">
             {totalUnbilled > 0 && (
               <div className="flex items-center justify-between p-3 rounded-xl bg-amber-950/30 border border-amber-500/30">
                 <span className="text-xs font-semibold text-amber-300">

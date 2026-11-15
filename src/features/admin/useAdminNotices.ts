@@ -1,6 +1,7 @@
 import * as React from "react"
 import { AlertTriangle, Bell, ChefHat, CreditCard, PackageX, Star } from "lucide-react"
 import { api } from "@/lib/api"
+import { usePolling } from "@/hooks/usePolling"
 import { merchant } from "@/features/super-admin/api"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -20,32 +21,20 @@ export function useAdminNotices(navigate: (to: string) => void) {
   const [feedback, setFeedback] = React.useState<CustomerFeedbackSummary | null>(null)
   const [inbox, setInbox] = React.useState<{ id: string; subject: string; body: string; read_at: string | null }[]>([])
 
-  React.useEffect(() => {
-    if (!outlet?.id || !outlet.slug) return
-    let alive = true
-    const load = () => {
-      api.inventory.getAlerts(outlet.id).then((a) => alive && setAlerts(a)).catch(() => {})
-      api.restaurants.getFeedback(outlet.slug).then((f) => alive && setFeedback(f)).catch(() => {})
-    }
-    load()
-    const t = window.setInterval(load, 120000)
-    return () => {
-      alive = false
-      clearInterval(t)
-    }
-  }, [outlet?.id, outlet?.slug])
+  const outletId = outlet?.id
+  const outletSlug = outlet?.slug
+  const loadOutletSignals = React.useCallback(() => {
+    if (!outletId || !outletSlug) return
+    api.inventory.getAlerts(outletId).then(setAlerts).catch(() => {})
+    api.restaurants.getFeedback(outletSlug).then(setFeedback).catch(() => {})
+  }, [outletId, outletSlug])
+  usePolling(loadOutletSignals, outletId && outletSlug ? 120000 : null, { immediate: true })
 
   // Messages from the Pangat team (sent from the platform control centre)
-  React.useEffect(() => {
-    let alive = true
-    const load = () => merchant.inbox().then((r) => alive && setInbox(r.items as typeof inbox)).catch(() => {})
-    load()
-    const t = window.setInterval(load, 120000)
-    return () => {
-      alive = false
-      clearInterval(t)
-    }
+  const loadInbox = React.useCallback(() => {
+    merchant.inbox().then((r) => setInbox((r.items ?? []) as typeof inbox)).catch(() => {})
   }, [])
+  usePolling(loadInbox, 120000, { immediate: true })
 
   const items = React.useMemo<Notice[]>(() => {
     const out: Notice[] = inbox

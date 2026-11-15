@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { lazy, Suspense, useState } from "react"
 import { toast } from "@/components/ui/toast"
 import { errMsg } from "@/lib/api"
 import {
@@ -24,7 +24,7 @@ import { cn, isSameTableNumber } from "@/lib/utils"
 import type { TableStatus } from "@/types/domain"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { QrKitModal } from "../components/qr/QrKitModal"
+const QrKitModal = lazy(() => import("../components/qr/QrKitModal").then((m) => ({ default: m.QrKitModal })))
 
 const STATUS_CONFIG: Record<TableStatus, { label: string; bg: string; border: string; text: string; badge: string }> = {
   VACANT: {
@@ -445,8 +445,10 @@ export function AdminTablesPage() {
       </Dialog>
 
       {/* Table QR cards: preview, download and print one table or the whole floor */}
+      {(Boolean(selectedQrTable) || batchPrintOpen) && (
+        <Suspense fallback={null}>
       <QrKitModal
-        open={Boolean(selectedQrTable) || batchPrintOpen}
+        open
         onClose={() => {
           setSelectedQrTable(null)
           setBatchPrintOpen(false)
@@ -457,6 +459,8 @@ export function AdminTablesPage() {
         tables={tables.map((t) => ({ label: t.tableNumber }))}
         initial={Math.max(0, tables.findIndex((t) => t.tableNumber === selectedQrTable))}
       />
+        </Suspense>
+      )}
     </div>
   )
 }

@@ -106,6 +106,7 @@ export function OrderTrackingView({
 
     // 2. Continuous 5s polling fallback while payment or order is pending
     const pollInterval = setInterval(() => {
+      if (document.hidden) return
       const current = useOrderTrackingStore.getState().order
       if (!current || current.paymentStatus === "PENDING" || current.orderStatus !== "COMPLETED") {
         fetchLatestOrder()

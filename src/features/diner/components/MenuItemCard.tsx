@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { memo, useState } from "react"
 import { Plus, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { MenuItem } from "@/types/domain"
@@ -11,7 +11,7 @@ interface MenuItemCardProps {
   onAdd: (item: MenuItem) => void
 }
 
-export function MenuItemCard({ item, isOutOfStock = false, orderingClosed = false, onAdd }: MenuItemCardProps) {
+function MenuItemCardBase({ item, isOutOfStock = false, orderingClosed = false, onAdd }: MenuItemCardProps) {
   const [pressed, setPressed] = useState(false)
   const available = item.isAvailable && !isOutOfStock
 
@@ -100,3 +100,9 @@ export function MenuItemCard({ item, isOutOfStock = false, orderingClosed = fals
     </div>
   )
 }
+
+// onAdd only closes over props already compared here, so a new function identity never needs a re-render
+export const MenuItemCard = memo(
+  MenuItemCardBase,
+  (a, b) => a.item === b.item && a.isOutOfStock === b.isOutOfStock && a.orderingClosed === b.orderingClosed,
+)
