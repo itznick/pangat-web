@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 function useLiveClock() {
   const [time, setTime] = useState(new Date())
@@ -113,6 +114,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
 
       {/* Right: controls */}
       <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 pt-1 sm:pt-0 border-t border-zinc-800/50 sm:border-t-0">
+        <ThemeToggle className="!h-8 !w-8" />
         {/* Sound toggle */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {soundEnabled ? (

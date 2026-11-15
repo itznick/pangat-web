@@ -3,6 +3,7 @@ import { useEscapeKey } from "@/hooks/useEscapeKey"
 import { useScrollLock } from "@/hooks/useModal"
 import { ArrowRight, Menu, X } from "lucide-react"
 import { PangatLogo } from "@/components/ui/PangatLogo"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 interface NavbarProps {
   onOpenPilot: () => void
@@ -91,7 +92,7 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
         <header
           className={`pointer-events-auto relative w-full overflow-hidden rounded-full transition-all duration-500 [transition-timing-function:var(--lp-ease)] ${
             scrolled
-              ? "max-w-[860px] border border-white/[0.1] bg-black/55 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl backdrop-saturate-150"
+              ? "max-w-[860px] border border-white/[0.1] bg-slate-50/80 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] dark:bg-black/55 dark:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl backdrop-saturate-150"
               : "max-w-[1120px] border border-transparent bg-transparent"
           }`}
         >
@@ -130,6 +131,7 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
             </nav>
 
             <div className="flex items-center gap-1.5">
+              <ThemeToggle />
               <a href="/login" className="hidden px-3 py-2 text-[13px] text-zinc-400 transition-colors hover:text-white sm:block">
                 Sign in
               </a>
@@ -165,7 +167,7 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
 
       {/* Mobile sheet */}
       <div
-        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-2xl transition-all duration-500 md:hidden ${
+        className={`fixed inset-0 z-40 bg-slate-50/95 dark:bg-black/70 backdrop-blur-2xl transition-all duration-500 md:hidden ${
           open ? "visible opacity-100" : "invisible opacity-0"
         }`}
         onClick={() => setOpen(false)}

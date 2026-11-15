@@ -28,7 +28,7 @@ const Switch = ({ checked, onCheckedChange, disabled, className, id, "aria-label
     >
       <span
         className={cn(
-          "inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+          "inline-block h-4 w-4 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200",
           checked ? "translate-x-6" : "translate-x-1"
         )}
       />

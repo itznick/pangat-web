@@ -91,10 +91,10 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
   }
 
   return (
-    <div className="space-y-3 pt-3 border-t border-zinc-800">
+    <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-zinc-800">
       <div className="flex items-center justify-between">
         <div>
-          <label className="text-xs font-semibold text-zinc-200">Customization & Modifiers</label>
+          <label className="text-xs font-semibold text-slate-800 dark:text-zinc-200">Customization & Modifiers</label>
           <p className="text-[11px] text-zinc-500">Configure size variants, add-on toppings, spice levels</p>
         </div>
         <Button
@@ -102,7 +102,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
           size="sm"
           variant="outline"
           onClick={addGroup}
-          className="text-xs h-7 border-zinc-700 hover:border-emerald-500 text-zinc-300 hover:text-emerald-400 gap-1"
+          className="text-xs h-7 border-slate-300 dark:border-zinc-700 hover:border-emerald-500 text-slate-700 dark:text-zinc-300 hover:text-emerald-400 gap-1"
         >
           <Plus className="h-3 w-3" />
           Add Modifier Group
@@ -110,13 +110,13 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
       </div>
 
       {modifiers.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-800 p-3 text-center text-xs text-zinc-500">
+        <div className="rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 p-3 text-center text-xs text-zinc-500">
           No modifiers added yet. Click above to add portion sizes, add-ons, or custom choices.
         </div>
       ) : (
         <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
           {modifiers.map((group, gIdx) => (
-            <div key={group.id || gIdx} className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800 space-y-2.5">
+            <div key={group.id || gIdx} className="p-3 rounded-xl bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 space-y-2.5">
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                 <Input
                   placeholder="Group Name (e.g. Size, Add-on Cheese, Spice)"
@@ -128,7 +128,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
                   <select
                     value={group.type}
                     onChange={(e) => updateGroup(gIdx, { type: e.target.value as 'SINGLE' | 'MULTIPLE' })}
-                    className="text-xs h-8 bg-zinc-900 border border-zinc-700 rounded-lg px-2 text-zinc-200"
+                    className="text-xs h-8 bg-[#ffffff] dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-lg px-2 text-slate-800 dark:text-zinc-200"
                   >
                     <option value="SINGLE">Single Choice</option>
                     <option value="MULTIPLE">Multi Choice</option>
@@ -140,7 +140,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
                       "px-2 py-1 rounded text-[11px] font-semibold border transition-colors min-h-[32px] sm:min-h-0",
                       group.isRequired
                         ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
-                        : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                        : "bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-zinc-500"
                     )}
                   >
                     {group.isRequired ? "Required" : "Optional"}
@@ -556,7 +556,7 @@ export function AdminMenuPage() {
                   <TableCell colSpan={7} className="h-48 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-500">
                       <UtensilsCrossed className="h-8 w-8 mb-2 text-zinc-600" />
-                      <p className="text-sm font-semibold text-zinc-300">No dishes found</p>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-zinc-300">No dishes found</p>
                       <p className="text-xs text-zinc-500 mt-1 max-w-sm">
                         No dishes match your active filter. Try resetting your search or add a new dish to your menu.
                       </p>
@@ -567,7 +567,7 @@ export function AdminMenuPage() {
                           setCategoryFilter("all")
                         }}
                         variant="outline"
-                        className="mt-3 text-xs border-zinc-700 text-zinc-300"
+                        className="mt-3 text-xs border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-zinc-300"
                       >
                         Clear Filters
                       </Button>
@@ -681,7 +681,7 @@ export function AdminMenuPage() {
           </DialogHeader>
           <div className="space-y-4">
             {categories.length > 0 && (
-              <ul className="max-h-56 space-y-1.5 overflow-y-auto rounded-xl border border-zinc-800 p-2">
+              <ul className="max-h-56 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200 dark:border-zinc-800 p-2">
                 {categories.map((c) => {
                   const count = menuItems.filter((m) => m.categoryId === c.id).length
                   return (
@@ -695,7 +695,7 @@ export function AdminMenuPage() {
                       ) : (
                         <>
                           <span className="min-w-0 flex-1 truncate px-2 text-sm">{c.name} <span className="text-xs text-zinc-500">· {count} dish{count === 1 ? "" : "es"}</span></span>
-                          <Button size="sm" variant="ghost" onClick={() => setRenaming({ id: c.id, name: c.name })} className="h-10 text-zinc-400 hover:text-white">Rename</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setRenaming({ id: c.id, name: c.name })} className="h-10 text-zinc-400 hover:text-slate-900 dark:hover:text-white">Rename</Button>
                           <Button size="sm" variant="ghost" disabled={busyAction || count > 0} title={count > 0 ? "Move or delete its dishes first" : undefined} onClick={() => void handleDeleteCategory(c.id, c.name)} className="h-10 text-rose-400 hover:text-rose-300 disabled:opacity-30">Delete</Button>
                         </>
                       )}
@@ -799,7 +799,7 @@ export function AdminMenuPage() {
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                     newDish.isVeg
                       ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
-                      : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                      : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                   )}
                 >
                   <Leaf className="h-3.5 w-3.5" />
@@ -812,7 +812,7 @@ export function AdminMenuPage() {
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                     !newDish.isVeg
                       ? "border-rose-500 bg-rose-500/15 text-rose-400"
-                      : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                      : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                   )}
                 >
                   <Drumstick className="h-3.5 w-3.5" />
@@ -907,7 +907,7 @@ export function AdminMenuPage() {
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                       editingDish.isVeg
                         ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
-                        : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                        : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                     )}
                   >
                     <Leaf className="h-3.5 w-3.5" />
@@ -920,7 +920,7 @@ export function AdminMenuPage() {
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                       !editingDish.isVeg
                         ? "border-rose-500 bg-rose-500/15 text-rose-400"
-                        : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                        : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                     )}
                   >
                     <Drumstick className="h-3.5 w-3.5" />

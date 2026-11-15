@@ -15,7 +15,7 @@ export function PlatformGateScreen() {
   const maintenance = gate.code === 'MAINTENANCE_MODE'
   const Icon = maintenance ? Wrench : Ban
   return (
-    <div role="alertdialog" aria-modal="true" aria-labelledby="pg-title" className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050506]/95 p-6 backdrop-blur-md">
+    <div role="alertdialog" aria-modal="true" aria-labelledby="pg-title" className="df fixed inset-0 z-[100] flex items-center justify-center bg-[#050506]/95 p-6 backdrop-blur-md">
       <div className="max-w-md text-center">
         <span className={`mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl ${maintenance ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400'}`}><Icon className="h-7 w-7" /></span>
         <h1 id="pg-title" className="font-heading text-2xl font-semibold text-white">{maintenance ? 'Pangat is under maintenance' : 'Account unavailable'}</h1>

@@ -1,6 +1,6 @@
 import { useEscapeKey } from "@/hooks/useEscapeKey"
 import { elapsedMs, minutesLabel, useNow } from "@/lib/time"
-import { useState, useCallback, useMemo } from "react"
+import { lazy, Suspense, useState, useCallback, useMemo } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,7 +22,7 @@ import { useAuthStore } from "@/stores/useAuthStore"
 import { useKdsStore } from "@/stores/useKdsStore"
 import { api } from "@/lib/api"
 import { ZeroStateCard } from "../components/ZeroStateCard"
-import { AddOutletModal } from "../components/AddOutletModal"
+const AddOutletModal = lazy(() => import("../components/AddOutletModal").then((m) => ({ default: m.AddOutletModal })))
 import {
   TrendingUp,
   Users,
@@ -166,14 +166,14 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg bg-zinc-900 border border-zinc-800">
+      <DialogContent className="max-w-lg bg-[#ffffff] dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
               <Plus className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-zinc-100">
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-zinc-100">
                 Quick Walk-in Order
               </DialogTitle>
               <DialogDescription className="text-xs text-zinc-400">
@@ -203,7 +203,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                       "h-10 rounded-xl border text-sm font-bold transition-all",
                       selectedTable === t.id
                         ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-900/40"
-                        : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-600"
+                        : "bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-zinc-600"
                     )}
                   >
                     {t.tableNumber}
@@ -230,7 +230,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                       className="flex items-center justify-between py-2 border-b border-zinc-800/60"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-zinc-200 leading-snug">{item.name}</p>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-zinc-200 leading-snug">{item.name}</p>
                         <p className="text-[11px] text-zinc-500">₹{item.price}</p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -238,11 +238,11 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                           <>
                             <button
                               onClick={() => adjustCart(item.id, -1)}
-                              className="w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300 hover:bg-zinc-700 transition-colors text-sm font-bold"
+                              className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 flex items-center justify-center text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors text-sm font-bold"
                             >
                               −
                             </button>
-                            <span className="text-sm font-bold text-zinc-100 w-4 text-center">{qty}</span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 w-4 text-center">{qty}</span>
                           </>
                         )}
                         <button
@@ -251,7 +251,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                             "w-6 h-6 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors",
                             qty > 0
                               ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30"
-                              : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700"
+                              : "bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700"
                           )}
                         >
                           +
@@ -277,7 +277,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
         <DialogFooter>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700 transition-colors"
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-700 transition-colors"
           >
             Cancel
           </button>
@@ -326,22 +326,22 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
       />
       <div
         className={cn(
-          "absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-[340px] bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-200",
+          "absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-[340px] bg-[#ffffff] dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-200",
           open
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 -translate-y-2 pointer-events-none"
         )}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-zinc-800">
           <div>
-            <p className="text-xs font-bold text-zinc-100">Stock Availability</p>
+            <p className="text-xs font-bold text-slate-900 dark:text-zinc-100">Stock Availability</p>
             <p className="text-[11px] text-zinc-500">Mark items in/out of stock instantly</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close stock panel"
-            className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+            className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
           >
             <X className="h-4 w-4" />
           </button>
@@ -357,11 +357,11 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
                   "w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-left transition-all",
                   isOutOfStock
                     ? "bg-rose-950/30 border-rose-500/40 hover:border-rose-500/60"
-                    : "bg-zinc-800/40 border-zinc-700/60 hover:border-zinc-600"
+                    : "bg-zinc-800/40 border-zinc-700/60 hover:border-slate-400 dark:hover:border-zinc-600"
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-zinc-200 truncate">{item.name}</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-zinc-200 truncate">{item.name}</p>
                   <p className="text-[10px] text-zinc-500">₹{item.price}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -525,10 +525,11 @@ export function AdminDashboardPage() {
         {!restaurant && (!outlets || outlets.length === 0) ? (
           <div className="py-6">
             <ZeroStateCard onAddOutlet={() => setAddOutletOpen(true)} />
-            <AddOutletModal
-              open={addOutletOpen}
-              onClose={() => setAddOutletOpen(false)}
-            />
+            {addOutletOpen && (
+              <Suspense fallback={null}>
+                <AddOutletModal open onClose={() => setAddOutletOpen(false)} />
+              </Suspense>
+            )}
           </div>
         ) : (
           <>

@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as React from 'react'
 import { useNavigate } from 'react-router'
 import { BadgeCheck, Download, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { toast } from '@/components/ui/toast'
-import { errMsg } from '@/lib/api'
 import { sa } from '../api'
 import { useFetch, useListState, usePerms } from '../hooks'
 import { useProvisionStore } from '../useProvisionStore'
-import { ago, dateOnly, downloadText, inr, num } from '../format'
+import { ago, dateOnly, inr, num } from '../format'
 import { DataTable, FilterSelect, Page, Pager, Panel, SearchBox, StatusPill, Toolbar } from '../ui/kit'
+import { usePlans } from '../shared'
+import { useCsvExport } from '../useCsvExport'
 
 const STATUS = ['ACTIVE', 'SUSPENDED', 'DEACTIVATED'].map((v) => ({ value: v, label: v.charAt(0) + v.slice(1).toLowerCase() }))
 const SUBS = [['TRIAL', 'Trial'], ['ACTIVE', 'Active'], ['GRACE_PERIOD', 'Grace period'], ['EXPIRED', 'Expired'], ['CANCELLED', 'Cancelled'], ['NONE', 'No subscription']].map(([value, label]) => ({ value, label }))
@@ -29,21 +28,11 @@ export function RestaurantsPage() {
   const provision = useProvisionStore()
   const st = useListState({ status: '', verification: '', subscription: '', plan: '', onboarding: '' }, { sort: 'created', order: 'desc' })
   const list = useFetch(() => sa.restaurants(st.params), [JSON.stringify(st.params), provision.version])
-  const plans = useFetch(() => sa.plans(), [], { enabled: can('subscriptions.view') })
-  const [exporting, setExporting] = React.useState(false)
-
-  const exportCsv = async () => {
-    setExporting(true)
-    try {
-      const { sort, order, q, status, verification, subscription, plan } = st.params as any
-      const r = await sa.report('restaurants', { sort, order, q, status, verification, subscription, plan })
-      downloadText(r.filename, r.content, 'text/csv')
-      toast.success(`Exported ${r.rows} restaurants`)
-    } catch (e) {
-      toast.error(errMsg(e))
-    } finally {
-      setExporting(false)
-    }
+  const plans = usePlans(can('subscriptions.view'))
+  const csv = useCsvExport()
+  const exportCsv = () => {
+    const { sort, order, q, status, verification, subscription, plan } = st.params
+    return csv.run('restaurants', 'restaurants', { sort, order, q, status, verification, subscription, plan } as Record<string, string | number>)
   }
 
   return (
@@ -52,7 +41,7 @@ export function RestaurantsPage() {
       description="Every brand registered on Pangat. Search, filter and open a profile to manage its account, team, subscription and billing."
       actions={
         <>
-          {can('exports.manage') && <Button variant="outline" onClick={exportCsv} disabled={exporting}><Download className="h-4 w-4" /> Export CSV</Button>}
+          {can('exports.manage') && <Button variant="outline" onClick={exportCsv} disabled={csv.exporting}><Download className="h-4 w-4" /> Export CSV</Button>}
           {can('restaurants.provision') && <Button onClick={provision.openNew}><Plus className="h-4 w-4" /> Provision restaurant</Button>}
         </>
       }

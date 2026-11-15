@@ -27,6 +27,8 @@ const FLOOR_STAFF: UserRole[] = [...OWNER_MANAGER, "STEWARD", "CASHIER"]
 const ORDER_STAFF: UserRole[] = [...OWNER_MANAGER, "CASHIER"]
 const ANY_STAFF: UserRole[] = [...FLOOR_STAFF, "CHEF"]
 const guard = (roles: UserRole[], el: React.ReactNode) => <RoleGuard allowedRoles={roles}>{el}</RoleGuard>
+/** Screens drawn dark-first: the `df` scope remaps their zinc/white colours for light mode (see index.css). */
+const df = (el: React.ReactNode) => <div className="df contents">{el}</div>
 
 /** Each role lands on the first screen it is allowed to use. */
 function AdminHome() {
@@ -103,7 +105,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: Lazy(LoginPage),
+    element: df(Lazy(LoginPage)),
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -141,19 +143,19 @@ export const router = createBrowserRouter([
   },
   {
     path: "/r/:restaurantSlug/t/:tableId",
-    element: Lazy(DinerMenuPage),
+    element: df(Lazy(DinerMenuPage)),
     errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/r/:restaurantSlug/order/:orderId",
-    element: Lazy(DinerOrderTrackingPage),
+    element: df(Lazy(DinerOrderTrackingPage)),
     errorElement: <RouteErrorBoundary />,
   },
 
   // ─── KDS (Kitchen Display System) ────────────────────────────────────────
   {
     path: "/kds/:restaurantSlug",
-    element: Lazy(KDSPage),
+    element: df(Lazy(KDSPage)),
     errorElement: <RouteErrorBoundary />,
   },
 
@@ -199,22 +201,22 @@ export const router = createBrowserRouter([
       },
       {
         path: "subscription",
-        element: guard(OWNER_MANAGER, Lazy(AdminSubscriptionPage)),
+        element: guard(OWNER_MANAGER, df(Lazy(AdminSubscriptionPage))),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "reports",
-        element: guard(OWNER_MANAGER, Lazy(AdminReportsPage)),
+        element: guard(OWNER_MANAGER, df(Lazy(AdminReportsPage))),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "feedback",
-        element: guard(OWNER_MANAGER, Lazy(AdminFeedbackPage)),
+        element: guard(OWNER_MANAGER, df(Lazy(AdminFeedbackPage))),
         errorElement: <RouteErrorBoundary />,
       },
       {
         path: "settings",
-        element: guard(ANY_STAFF, Lazy(AdminSettingsPage)),
+        element: guard(ANY_STAFF, df(Lazy(AdminSettingsPage))),
         errorElement: <RouteErrorBoundary />,
       },
     ],

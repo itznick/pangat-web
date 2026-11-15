@@ -122,7 +122,7 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-1.5rem)] overflow-hidden border-white/10 bg-[#0c0c0f] p-0 text-white sm:max-w-[34rem]">
+      <DialogContent className="df max-w-[calc(100vw-1.5rem)] overflow-hidden border-white/10 bg-[#0c0c0f] p-0 text-white sm:max-w-[34rem]">
         <form onSubmit={submit} noValidate className="flex max-h-[min(88dvh,46rem)] flex-col">
           {/* Header */}
           <div className="flex items-start gap-4 border-b border-white/[0.07] px-5 pb-4 pt-5 sm:px-7 sm:pt-6">

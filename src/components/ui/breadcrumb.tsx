@@ -8,7 +8,7 @@ const Breadcrumb = ({ className, ...props }: React.HTMLAttributes<HTMLElement>) 
 
 const BreadcrumbList = ({ className, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
   <ol
-    className={cn("flex flex-wrap items-center gap-1.5 text-sm text-zinc-400", className)}
+    className={cn("flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-zinc-400", className)}
     {...props}
   />
 )
@@ -19,7 +19,7 @@ const BreadcrumbItem = ({ className, ...props }: React.HTMLAttributes<HTMLLIElem
 
 const BreadcrumbLink = ({ className, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
   <a
-    className={cn("transition-colors hover:text-zinc-100 cursor-pointer", className)}
+    className={cn("transition-colors hover:text-slate-900 dark:hover:text-zinc-100 cursor-pointer", className)}
     {...props}
   />
 )
@@ -29,7 +29,7 @@ const BreadcrumbPage = ({ className, ...props }: React.HTMLAttributes<HTMLSpanEl
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-medium text-zinc-100", className)}
+    className={cn("font-medium text-slate-900 dark:text-zinc-100", className)}
     {...props}
   />
 )

@@ -4,14 +4,16 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ArrowLeft, CheckCircle2, Circle, Download, ExternalLink, KeyRound, Pin, QrCode, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
-import { PrintableQrKitModal } from '@/features/onboarding/components/PrintableQrKitModal'
+const PrintableQrKitModal = React.lazy(() => import('@/features/onboarding/components/PrintableQrKitModal').then((m) => ({ default: m.PrintableQrKitModal })))
 import { sa } from '../api'
 import { useFetch, usePerms } from '../hooks'
 import { ago, dateOnly, dateTime, daysUntil, downloadText, inr, num, titleCase } from '../format'
-import { ConfirmDialog, CredentialModal, DataTable, Empty, ErrorState, Field, KV, Modal, Notice, Page, Panel, Pill, SelectInput, Skeleton, Spinner, Stat, StatusPill, Tabs, TextArea, useAction } from '../ui/kit'
+import { ConfirmDialog, DataTable, Empty, ErrorState, Field, KV, Modal, Notice, Page, Panel, Pill, SelectInput, Skeleton, Spinner, Stat, StatusPill, Tabs, TextArea, useAction } from '../ui/kit'
 import { Meter, LineChart, StackedBar, SERIES } from '../ui/charts'
 import { SubscriptionActions } from '../components/SubscriptionActions'
 import { OnboardingBar } from './RestaurantsPage'
+import { FEATURE_LABEL } from '../shared'
+import { usePasswordReset } from '../components/usePasswordReset'
 
 type Tab = 'overview' | 'outlets' | 'team' | 'subscription' | 'billing' | 'activity' | 'notes'
 
@@ -25,8 +27,7 @@ export function RestaurantProfilePage() {
   const r = useFetch<any>(() => sa.restaurant(id), [id])
   const [statusAction, setStatusAction] = React.useState<null | 'SUSPEND' | 'DEACTIVATE' | 'RESTORE'>(null)
   const [verify, setVerify] = React.useState(false)
-  const [cred, setCred] = React.useState<null | { name: string; email: string; password: string }>(null)
-  const [resetOpen, setResetOpen] = React.useState(false)
+  const pw = usePasswordReset()
   const [qr, setQr] = React.useState<any>(null)
   const exportAction = useAction()
 
@@ -128,7 +129,7 @@ export function RestaurantProfilePage() {
                 { label: 'Verification', value: <span>{titleCase(org.verification_status)}{org.verified_by ? ` by ${org.verified_by}` : ''}{org.verification_note ? ` — ${org.verification_note}` : ''}</span> },
               ]} />
               <div className="mt-4 flex flex-wrap gap-2 border-t border-zinc-100 pt-4 dark:border-white/[0.06]">
-                {can('users.manage') && <Button variant="outline" size="sm" onClick={() => setResetOpen(true)}><KeyRound className="h-3.5 w-3.5" /> Reset owner password</Button>}
+                {can('users.manage') && <Button variant="outline" size="sm" onClick={() => pw.ask({ kind: 'owner', id, name: d.owner?.name })}><KeyRound className="h-3.5 w-3.5" /> Reset owner password</Button>}
                 {can('exports.manage') && <Button variant="outline" size="sm" onClick={doExport} disabled={exportAction.busy}>{exportAction.busy ? <Spinner /> : <Download className="h-3.5 w-3.5" />} Export data</Button>}
               </div>
             </Panel>
@@ -218,13 +219,8 @@ export function RestaurantProfilePage() {
         )}
       </ConfirmDialog>
       <VerifyModal open={verify} onClose={() => setVerify(false)} orgId={id} current={org.verification_status} onDone={r.reload} />
-      <ConfirmDialog open={resetOpen} onClose={() => setResetOpen(false)} title="Reset owner password" description={`Generates a one-time password for ${d.owner?.name ?? 'the owner'} and signs out their sessions.`} confirmLabel="Reset password" tone="danger"
-        onConfirm={async () => {
-          const x = await sa.resetOwnerPassword(id)
-          setCred({ name: x.ownerName, email: x.ownerEmail, password: x.temporaryPassword })
-        }} />
-      {cred && <CredentialModal open onClose={() => setCred(null)} title="Owner password reset" name={cred.name} email={cred.email} password={cred.password} />}
-      {qr && <PrintableQrKitModal open onClose={() => setQr(null)} {...qr} />}
+      {pw.dialogs}
+      {qr && <React.Suspense fallback={null}><PrintableQrKitModal open onClose={() => setQr(null)} {...qr} /></React.Suspense>}
     </Page>
   )
 }
@@ -258,7 +254,7 @@ function VerifyBody({ open, onClose, orgId, current, onDone }: { open: boolean; 
   )
 }
 
-const FEATURES: Record<string, string> = { QR_ORDERING: 'QR ordering', KDS: 'Kitchen display', INVENTORY: 'Inventory', ANALYTICS: 'Analytics', MULTI_OUTLET: 'Multi-outlet', ADVANCED_REPORTS: 'Advanced reports' }
+const FEATURES = FEATURE_LABEL
 function FeatureAccess({ orgId, sub, overrides, onDone }: { orgId: string; sub: any; overrides: any[]; onDone: () => void }) {
   const { can } = usePerms()
   const { busy, run } = useAction()

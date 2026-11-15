@@ -8,6 +8,7 @@ import { sa } from '../api'
 import { useDebounced, useFetch, usePerms } from '../hooks'
 import { ago, dateTime } from '../format'
 import { DataTable, Drawer, Field, Modal, Notice, Page, Pager, Panel, Pill, SearchBox, SelectInput, Segmented, Spinner, StatusPill, Tabs, TextArea, TextInput, useAction } from '../ui/kit'
+import { invalidateTemplates, useTemplates } from '../shared'
 
 type Tab = 'compose' | 'history' | 'templates' | 'announcements'
 
@@ -34,7 +35,7 @@ function useTargets(audience: string) {
 }
 
 function Compose({ onSent }: { onSent: () => void }) {
-  const tpl = useFetch(() => sa.templates(), [])
+  const tpl = useTemplates()
   const [audience, setAudience] = React.useState('ALL_OWNERS')
   const [channels, setChannels] = React.useState<string[]>(['IN_APP'])
   const [subject, setSubject] = React.useState('')
@@ -159,7 +160,7 @@ function History() {
 
 function Templates() {
   const { can } = usePerms()
-  const t = useFetch(() => sa.templates(), [])
+  const t = useTemplates()
   const [edit, setEdit] = React.useState<any | 'new' | null>(null)
   return (
     <div className="space-y-4">
@@ -177,7 +178,7 @@ function Templates() {
             ]} />
         </div>
       </Panel>
-      {edit && <TemplateEditor tpl={edit === 'new' ? null : edit} variables={t.data?.variables ?? []} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); t.reload() }} />}
+      {edit && <TemplateEditor tpl={edit === 'new' ? null : edit} variables={t.data?.variables ?? []} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); invalidateTemplates() }} />}
     </div>
   )
 }

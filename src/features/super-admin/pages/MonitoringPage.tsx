@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react'
+import { useSearchParams } from 'react-router'
 import { Activity, Database, HardDrive, Play, RefreshCw, Webhook } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
 import { errMsg } from '@/lib/api'
 import { sa } from '../api'
+import { ExportHistory } from '../components/ExportHistory'
 import { useFetch, useListState, usePerms } from '../hooks'
 import { ago, dateTime, num, titleCase } from '../format'
 import { DataTable, Drawer, ErrorState, FilterSelect, KV, Notice, Page, Pager, Panel, Pill, SearchBox, Skeleton, Spinner, Stat, StatusPill, Tabs, Toolbar, useAction } from '../ui/kit'
@@ -13,8 +15,10 @@ import { BarChart, LineChart, Meter } from '../ui/charts'
 type Tab = 'health' | 'integrations' | 'errors' | 'webhooks' | 'jobs' | 'data'
 
 export function MonitoringPage() {
-  const [tab, setTab] = React.useState<Tab>('health')
-  const health = useFetch<any>(() => sa.health(), [], { pollMs: 30000 })
+  const [params] = useSearchParams()
+  const [tab, setTab] = React.useState<Tab>(() => (['health', 'integrations', 'errors', 'webhooks', 'jobs', 'data'] as Tab[]).find((t) => t === params.get('tab')) ?? 'health')
+  const live = tab === 'health' || tab === 'integrations' || tab === 'jobs'
+  const health = useFetch<any>(() => sa.health(), [], { pollMs: live ? 30000 : undefined })
   return (
     <Page
       title="Monitoring & system health"
@@ -220,8 +224,6 @@ function Jobs({ h, reload }: { h: any; reload: () => void }) {
 }
 
 function DataRecovery({ h }: { h: any }) {
-  const { can } = usePerms()
-  const exportsList = useFetch(() => sa.exportsHistory(), [], { enabled: can('exports.manage') })
   if (!h) return <Skeleton className="h-64" />
   const b = h.backups
   return (
@@ -231,18 +233,7 @@ function DataRecovery({ h }: { h: any }) {
         <Panel title="Database"><KV items={[{ label: 'Current size', value: b.sizeMb != null ? `${b.sizeMb} MB` : '—' }, { label: 'Backup provider', value: b.managedBy }, { label: 'Pangat-side backups', value: 'None — per-restaurant exports below' }, { label: 'Server', value: `PostgreSQL ${h.database.version ?? ''}` }]} /></Panel>
         <Panel title="Schema migrations" description="Applied automatically on startup, in order"><ul className="max-h-56 space-y-1.5 overflow-y-auto text-[13px]">{b.migrations.map((m: any) => <li key={m.name} className="flex items-center justify-between gap-2"><span className="truncate font-mono text-[12.5px]">{m.name}</span><span className="shrink-0 text-zinc-500">{ago(m.applied_at)}</span></li>)}</ul></Panel>
       </div>
-      {can('exports.manage') && <Panel title="Data exports" description="Restaurant data exports are started from a restaurant’s profile (Overview → Export data). Each one is checksummed and audited." flush>
-        <div className="mt-3">
-          <DataTable rows={exportsList.data ?? undefined} loading={exportsList.loading} error={exportsList.error} rowKey={(x: any) => x.id} emptyTitle="No exports yet"
-            columns={[
-              { key: 'k', header: 'Export', primary: true, cell: (x: any) => <span className="font-medium">{titleCase(x.kind)}{x.organization_name ? ` · ${x.organization_name}` : ''}</span> },
-              { key: 'b', header: 'By', cell: (x: any) => x.requested_by_name ?? '—' },
-              { key: 'sz', header: 'Size', align: 'right', cell: (x: any) => `${Math.max(1, Math.round((x.bytes ?? 0) / 1024))} KB` },
-              { key: 'c', header: 'Checksum', hideOnMobile: true, cell: (x: any) => <code className="text-[11.5px] text-zinc-500">{String(x.checksum).slice(0, 14)}…</code> },
-              { key: 'd', header: 'When', cell: (x: any) => <span className="text-zinc-500">{ago(x.created_at)}</span> },
-            ]} />
-        </div>
-      </Panel>}
+      <ExportHistory />
     </div>
   )
 }

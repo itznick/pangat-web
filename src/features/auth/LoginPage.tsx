@@ -8,6 +8,7 @@ import { useAdminStore } from '@/stores/useAdminStore'
 import { Lock, Mail, KeyRound, AlertCircle, Loader2, Store, ArrowLeft, ArrowRight, Check, Eye, EyeOff } from 'lucide-react'
 import { BookDemoModal } from '@/features/landing'
 import '@/features/landing/landing.css'
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -153,7 +154,7 @@ export function LoginPage() {
     'h-12 rounded-xl border-white/10 bg-white/[0.04] pl-10 text-[15px] text-white placeholder:text-zinc-600 transition-colors focus-visible:border-emerald-400/60 focus-visible:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-emerald-400/20'
 
   return (
-    <div className="lp dark relative grid min-h-screen overflow-hidden lg:grid-cols-[1.05fr_1fr]">
+    <div className="lp relative grid min-h-screen overflow-hidden lg:grid-cols-[1.05fr_1fr]">
       {/* Brand side */}
       <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-white/[0.06] p-12 lg:flex">
         <div className="lp-aurora" aria-hidden>
@@ -199,9 +200,12 @@ export function LoginPage() {
             <PangatLogo size="sm" />
             <span className="font-heading text-lg font-semibold tracking-tight text-white">Pangat</span>
           </Link>
-          <Link to="/" className="inline-flex items-center gap-1.5 text-[13px] text-zinc-400 transition-colors hover:text-white">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to home
-          </Link>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Link to="/" className="inline-flex items-center gap-1.5 text-[13px] text-zinc-400 transition-colors hover:text-white">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to home
+            </Link>
+          </div>
         </header>
 
         <main className="relative flex flex-1 items-center justify-center px-5 pb-10 sm:px-8">

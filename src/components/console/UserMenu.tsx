@@ -35,7 +35,7 @@ export function UserMenu({ name, email, roleLabel, entries, collapsed }: UserMen
   const initial = (name || "U").trim().charAt(0).toUpperCase()
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="df relative">
       {open && (
         <div
           role="menu"

@@ -15,20 +15,21 @@ import { Keyboard, Layers, LogOut, MessageSquareText, Plus, Sparkles } from 'luc
 import { cn } from '@/lib/utils'
 import { ALL_NAV, LEGACY_TABS, NAV } from './nav'
 import { usePerms } from './hooks'
-import { ProvisionRestaurantModal } from './components/ProvisionRestaurantModal'
+const ProvisionRestaurantModal = React.lazy(() => import('./components/ProvisionRestaurantModal').then((m) => ({ default: m.ProvisionRestaurantModal })))
 import { Pill } from './ui/kit'
 
+const ROLE_LABEL: Record<string, string> = { OWNER: 'Platform owner', ADMIN: 'Administrator', FINANCE: 'Finance', SUPPORT: 'Support', ANALYST: 'Read-only analyst' }
 const FEEDBACK_MAIL = 'mailto:hello@pangat.app?subject=Pangat%20control%20centre%20feedback'
 const SUPPORT_LINK = 'https://wa.me/919890000000?text=Hi%20Pangat%20team%2C%20I%20need%20help%20with%20the%20control%20centre.'
 
-function SaSidebar({ menuEntries, name, email, roleLabel }: { menuEntries: MenuEntry[]; name: string; email?: string; roleLabel: string }) {
+const SaSidebar = React.memo(function SaSidebar({ menuEntries, name, email, roleLabel }: { menuEntries: MenuEntry[]; name: string; email?: string; roleLabel: string }) {
   const { collapsed, closeMobile } = useSidebar()
   const navigate = useNavigate()
   const { can } = usePerms()
   return (
     <>
       <SidebarHeader>
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="df flex min-w-0 items-center gap-2.5">
           <PangatLogo size="sm" className="shrink-0" />
           {!collapsed && (
             <div className="min-w-0">
@@ -60,7 +61,7 @@ function SaSidebar({ menuEntries, name, email, roleLabel }: { menuEntries: MenuE
                         title={collapsed ? item.label : undefined}
                         className={({ isActive }) =>
                           cn(
-                            'group flex h-10 w-full items-center gap-2.5 rounded-xl px-2.5 text-[13.5px] font-medium outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-500',
+                            'df group flex h-10 w-full items-center gap-2.5 rounded-xl px-2.5 text-[13.5px] font-medium outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-500',
                             collapsed && 'justify-center px-0',
                             isActive ? 'bg-emerald-500/12 text-emerald-300 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.22)]' : 'text-zinc-400 hover:bg-white/[0.06] hover:text-white',
                           )
@@ -85,7 +86,7 @@ function SaSidebar({ menuEntries, name, email, roleLabel }: { menuEntries: MenuE
                   closeMobile()
                   navigate('/admin/dashboard')
                 }}
-                className={cn('flex h-10 w-full items-center gap-2.5 rounded-xl px-2.5 text-[13.5px] font-medium text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white', collapsed && 'justify-center px-0')}
+                className={cn('df flex h-10 w-full items-center gap-2.5 rounded-xl px-2.5 text-[13.5px] font-medium text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white', collapsed && 'justify-center px-0')}
               >
                 <Layers className="h-[17px] w-[17px] shrink-0" />
                 {!collapsed && <span>Merchant portal</span>}
@@ -99,7 +100,7 @@ function SaSidebar({ menuEntries, name, email, roleLabel }: { menuEntries: MenuE
       </SidebarFooter>
     </>
   )
-}
+})
 
 export function SuperAdminLayout() {
   const navigate = useNavigate()
@@ -121,41 +122,56 @@ export function SuperAdminLayout() {
     return m
   }, [permKey, navigate])
 
+  const handleLogout = React.useCallback(() => {
+    logout()
+    navigate('/login')
+  }, [logout, navigate])
+  const openMerchant = React.useCallback(() => navigate('/admin/dashboard'), [navigate])
+  const openShortcuts = React.useCallback(() => setShortcuts(true), [setShortcuts])
+  const openChangelog = React.useCallback(() => setChangelog(true), [setChangelog])
+  const roleLabel = ROLE_LABEL[role] ?? 'Platform admin'
+  const canProvision = can('restaurants.provision')
+  const openNew = provision.openNew
+
+  const visible = React.useMemo(() => ALL_NAV.filter((n) => permKey === '*' || permKey.split('|').includes(n.perm)), [permKey])
+  const menuEntries = React.useMemo<MenuEntry[]>(
+    () => [
+      { label: 'Keyboard shortcuts', icon: Keyboard, shortcut: '?', onSelect: openShortcuts, divider: true },
+      { label: 'What’s new', icon: Sparkles, onSelect: openChangelog },
+      { label: 'Send feedback', icon: MessageSquareText, href: FEEDBACK_MAIL, divider: true },
+      { label: 'Sign out', icon: LogOut, danger: true, divider: true, onSelect: handleLogout },
+    ],
+    [openShortcuts, openChangelog, handleLogout],
+  )
+  const commandItems = React.useMemo<CommandItem[]>(
+    () => [
+      ...(canProvision ? [{ id: 'provision', label: 'Provision a restaurant', group: 'Actions', icon: Plus, keywords: 'new onboard create brand', run: openNew }] : []),
+      ...visible.map((n) => ({ id: n.id, label: n.label, group: 'Go to', icon: n.icon, shortcut: `G ${n.key.toUpperCase()}`, run: () => navigate(n.to) })),
+      { id: 'merchant', label: 'Open merchant portal', group: 'Go to', icon: Layers, keywords: 'admin dashboard', run: openMerchant },
+      { id: 'shortcuts', label: 'Keyboard shortcuts', group: 'Help', icon: Keyboard, shortcut: '?', run: openShortcuts },
+      { id: 'signout', label: 'Sign out', group: 'Account', icon: LogOut, run: handleLogout },
+    ],
+    [canProvision, openNew, visible, navigate, openMerchant, openShortcuts, handleLogout],
+  )
+  const shortcutRows = React.useMemo(
+    () => [
+      { keys: 'Ctrl K', label: 'Open the command palette' },
+      { keys: '?', label: 'Show keyboard shortcuts' },
+      ...visible.map((n) => ({ keys: `G ${n.key.toUpperCase()}`, label: `Go to ${n.label}` })),
+      { keys: 'Ctrl B', label: 'Show or hide the sidebar' },
+    ],
+    [visible],
+  )
+  const current = React.useMemo(
+    () => ALL_NAV.filter((n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to))).sort((a, b) => b.to.length - a.to.length)[0],
+    [location.pathname],
+  )
+
   if (!user || !isAdmin) return <Navigate to="/login" replace />
 
   // Keep old /super-admin?tab=… bookmarks working
   const legacy = location.pathname === '/super-admin' ? searchParams.get('tab') : null
   if (legacy && LEGACY_TABS[legacy] && LEGACY_TABS[legacy] !== '/super-admin') return <Navigate to={LEGACY_TABS[legacy]} replace />
-
-  const current = ALL_NAV.filter((n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to))).sort((a, b) => b.to.length - a.to.length)[0]
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
-  const visible = ALL_NAV.filter((n) => can(n.perm))
-  const roleLabel = ({ OWNER: 'Platform owner', ADMIN: 'Administrator', FINANCE: 'Finance', SUPPORT: 'Support', ANALYST: 'Read-only analyst' } as Record<string, string>)[role] ?? 'Platform admin'
-
-  const menuEntries: MenuEntry[] = [
-    { label: 'Merchant portal', icon: Layers, onSelect: () => navigate('/admin/dashboard') },
-    { label: 'Keyboard shortcuts', icon: Keyboard, shortcut: '?', onSelect: () => setShortcuts(true), divider: true },
-    { label: 'What’s new', icon: Sparkles, onSelect: () => setChangelog(true) },
-    { label: 'Send feedback', icon: MessageSquareText, href: FEEDBACK_MAIL, divider: true },
-    { label: 'Sign out', icon: LogOut, danger: true, divider: true, onSelect: handleLogout },
-  ]
-  const commandItems: CommandItem[] = [
-    ...(can('restaurants.provision') ? [{ id: 'provision', label: 'Provision a restaurant', group: 'Actions', icon: Plus, keywords: 'new onboard create brand', run: provision.openNew }] : []),
-    ...visible.map((n) => ({ id: n.id, label: n.label, group: 'Go to', icon: n.icon, shortcut: `G ${n.key.toUpperCase()}`, run: () => navigate(n.to) })),
-    { id: 'merchant', label: 'Open merchant portal', group: 'Go to', icon: Layers, keywords: 'admin dashboard', run: () => navigate('/admin/dashboard') },
-    { id: 'shortcuts', label: 'Keyboard shortcuts', group: 'Help', icon: Keyboard, shortcut: '?', run: () => setShortcuts(true) },
-    { id: 'signout', label: 'Sign out', group: 'Account', icon: LogOut, run: handleLogout },
-  ]
-  const shortcutRows = [
-    { keys: 'Ctrl K', label: 'Open the command palette' },
-    { keys: '?', label: 'Show keyboard shortcuts' },
-    ...visible.map((n) => ({ keys: `G ${n.key.toUpperCase()}`, label: `Go to ${n.label}` })),
-    { keys: 'Ctrl B', label: 'Show or hide the sidebar' },
-  ]
 
   return (
     <SidebarProvider>
@@ -192,7 +208,11 @@ export function SuperAdminLayout() {
         </main>
       </SidebarInset>
       <ConsoleOverlays items={commandItems} goTo={goTo} shortcutRows={shortcutRows} />
-      <ProvisionRestaurantModal isOpen={provision.isOpen} onClose={provision.close} initialLead={provision.lead} onSuccess={() => provision.notifyProvisioned()} />
+      {provision.isOpen && (
+        <React.Suspense fallback={null}>
+          <ProvisionRestaurantModal isOpen onClose={provision.close} initialLead={provision.lead} onSuccess={provision.notifyProvisioned} />
+        </React.Suspense>
+      )}
     </SidebarProvider>
   )
 }

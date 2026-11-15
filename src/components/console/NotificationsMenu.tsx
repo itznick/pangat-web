@@ -53,7 +53,7 @@ export function NotificationsMenu({ items, loading }: { items: Notice[]; loading
   const unread = items.filter((i) => !read.has(i.id)).length
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="df relative">
       <Tooltip label="Notifications" disabled={open}>
       <button
         type="button"

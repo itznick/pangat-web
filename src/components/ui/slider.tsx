@@ -53,7 +53,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
           className
         )}
       >
-        <div className="relative h-2 w-full grow overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+        <div className="relative h-2 w-full grow overflow-hidden rounded-full bg-slate-200 dark:bg-zinc-800">
           <div
             className="h-full bg-emerald-600 rounded-full transition-all duration-75"
             style={{ width: `${percentage}%` }}
@@ -71,7 +71,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
           {...props}
         />
         <div
-          className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-emerald-600 bg-white shadow-md ring-offset-background transition-transform duration-100 group-hover:scale-110 group-active:scale-95 dark:bg-zinc-950 dark:border-emerald-500"
+          className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-emerald-600 bg-[#ffffff] shadow-md ring-offset-background transition-transform duration-100 group-hover:scale-110 group-active:scale-95 dark:bg-zinc-950 dark:border-emerald-500"
           style={{ left: `${percentage}%` }}
         />
       </div>

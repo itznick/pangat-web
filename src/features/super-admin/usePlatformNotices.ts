@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { AlertTriangle, Bell, Building2, CreditCard, LifeBuoy, Webhook } from 'lucide-react'
 import type { Notice } from '@/components/console/NotificationsMenu'
+import { usePolling } from '@/hooks/usePolling'
 import { sa, type Row } from './api'
 
 const ICON: Record<string, React.ElementType> = { NEW_RESTAURANT: Building2, PAYMENT_FAILED: CreditCard, SUPPORT_TICKET: LifeBuoy, WEBHOOK_FAILURE: Webhook, JOB_FAILED: AlertTriangle }
@@ -12,17 +13,10 @@ const ROUTE: Record<string, string> = {
 /** Bell for platform operators: the unacknowledged event feed (new restaurants, failed payments, webhook trouble, tickets…). */
 export function usePlatformNotices(go: (to: string) => void, enabled: boolean) {
   const [events, setEvents] = React.useState<Row[] | null>(null)
-  React.useEffect(() => {
-    if (!enabled) return
-    let alive = true
-    const load = () => sa.events(20).then((e) => alive && setEvents(e)).catch(() => alive && setEvents((p) => p ?? []))
-    load()
-    const t = window.setInterval(load, 60000)
-    return () => {
-      alive = false
-      clearInterval(t)
-    }
-  }, [enabled])
+  const load = React.useCallback(() => {
+    sa.events(20).then(setEvents).catch(() => setEvents((p) => p ?? []))
+  }, [])
+  usePolling(load, enabled ? 60000 : null, { immediate: true })
   const items = React.useMemo<Notice[]>(
     () =>
       (events ?? []).slice(0, 12).map((e) => ({

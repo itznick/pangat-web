@@ -15,7 +15,7 @@ export function ZeroStateCard({ onAddOutlet }: ZeroStateCardProps) {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
+    <div className="df min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-xl w-full rounded-3xl border border-white/10 bg-gradient-to-b from-zinc-900/90 to-zinc-950 p-8 sm:p-12 shadow-2xl relative overflow-hidden backdrop-blur-xl">
         {/* Glow */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />

@@ -7,12 +7,13 @@ import { sa } from '../api'
 import { useDebounced, useFetch, useListState, usePerms } from '../hooks'
 import { ago, dateTime, num, titleCase } from '../format'
 import { DataTable, Drawer, Field, FilterSelect, Modal, Notice, Page, Pager, Panel, Pill, SearchBox, SelectInput, Skeleton, Spinner, Stat, StatusPill, TextArea, TextInput, Toolbar, useAction } from '../ui/kit'
+import { useSupportMeta } from '../shared'
 
 export function SupportPage() {
   const { can } = usePerms()
   const st = useListState({ status: '', priority: '', category: '', assignee: '', open: '' }, { sort: 'created', order: 'desc' })
   const list = useFetch(() => sa.tickets(st.params), [JSON.stringify(st.params)])
-  const meta = useFetch(() => sa.supportMeta(), [])
+  const meta = useSupportMeta()
   const [open, setOpen] = React.useState<string | null>(null)
   const [creating, setCreating] = React.useState(false)
   const s = list.data?.summary

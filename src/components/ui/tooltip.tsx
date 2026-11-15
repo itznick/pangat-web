@@ -77,7 +77,7 @@ export function Tooltip({ label, hint, side = "bottom", disabled, className, chi
             role="tooltip"
             style={{ left: pos.x, top: pos.y }}
             className={cn(
-              "pointer-events-none fixed z-[100] flex items-center gap-2 whitespace-nowrap rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-100 shadow-xl animate-in fade-in duration-100",
+              "df pointer-events-none fixed z-[100] flex items-center gap-2 whitespace-nowrap rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-100 shadow-xl animate-in fade-in duration-100",
               side === "right" ? "-translate-y-1/2" : "-translate-x-1/2",
               side === "top" && "-translate-y-full"
             )}

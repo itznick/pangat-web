@@ -7,6 +7,8 @@ import { sa } from '../api'
 import { useFetch, useListState, usePerms } from '../hooks'
 import { ago, dateTime, num, titleCase } from '../format'
 import { ConfirmDialog, CredentialModal, DataTable, Drawer, Empty, Field, FilterSelect, KV, Modal, Notice, Page, Pager, Panel, Pill, SearchBox, SelectInput, Skeleton, Spinner, Stat, StatusPill, Tabs, TextInput, Toolbar, useAction } from '../ui/kit'
+import { useAccessCatalog } from '../shared'
+import { usePasswordReset } from '../components/usePasswordReset'
 
 type Tab = 'users' | 'admins' | 'signins'
 const ROLES = ['SUPER_OWNER', 'STORE_MANAGER', 'CASHIER', 'STEWARD', 'CHEF'].map((r) => ({ value: r, label: titleCase(r) }))
@@ -84,12 +86,12 @@ function MerchantUsers() {
 function UserDrawer({ id, canManage, onClose, onChanged }: { id: string | null; canManage: boolean; onClose: () => void; onChanged: () => void }) {
   const navigate = useNavigate()
   const u = useFetch<any>(() => sa.user(id!), [id], { enabled: id !== null })
-  const [dlg, setDlg] = React.useState<null | 'deactivate' | 'activate' | 'reset'>(null)
-  const [cred, setCred] = React.useState<any>(null)
+  const [dlg, setDlg] = React.useState<null | 'deactivate' | 'activate'>(null)
   const { busy, run } = useAction()
   const user = u.data?.user
   const locked = user?.locked_until && new Date(user.locked_until) > new Date()
   const after = () => { u.reload(); onChanged() }
+  const pw = usePasswordReset(after)
   return (
     <>
       <Drawer open={id !== null} onClose={onClose} title={user?.name ?? 'User'} subtitle={user?.email}>
@@ -109,7 +111,7 @@ function UserDrawer({ id, canManage, onClose, onChanged }: { id: string | null; 
               <div className="flex flex-wrap gap-2">
                 {locked && <Button variant="outline" size="sm" disabled={busy} onClick={async () => { if (await run(() => sa.userUnlock(id!), 'User unlocked')) after() }}><LockOpen className="h-3.5 w-3.5" /> Unlock</Button>}
                 <Button variant="outline" size="sm" disabled={busy} onClick={async () => { if (await run(() => sa.userLogout(id!), 'Signed out of every session')) after() }}><LogOut className="h-3.5 w-3.5" /> Sign out everywhere</Button>
-                <Button variant="outline" size="sm" onClick={() => setDlg('reset')}><KeyRound className="h-3.5 w-3.5" /> Reset password</Button>
+                <Button variant="outline" size="sm" onClick={() => pw.ask({ kind: 'user', id: id! })}><KeyRound className="h-3.5 w-3.5" /> Reset password</Button>
                 {user.is_active ? <Button variant="destructive" size="sm" onClick={() => setDlg('deactivate')}><UserX className="h-3.5 w-3.5" /> Deactivate</Button> : <Button size="sm" onClick={() => setDlg('activate')}>Reactivate</Button>}
               </div>
             )}
@@ -134,8 +136,7 @@ function UserDrawer({ id, canManage, onClose, onChanged }: { id: string | null; 
       </Drawer>
       <ConfirmDialog open={dlg === 'deactivate'} onClose={() => setDlg(null)} title="Deactivate user" description="They are signed out immediately and cannot sign in until reactivated." confirmLabel="Deactivate" tone="danger" requireReason onConfirm={async (reason) => { await sa.userActive(id!, false, reason); after() }} />
       <ConfirmDialog open={dlg === 'activate'} onClose={() => setDlg(null)} title="Reactivate user" confirmLabel="Reactivate" onConfirm={async (reason) => { await sa.userActive(id!, true, reason); after() }} />
-      <ConfirmDialog open={dlg === 'reset'} onClose={() => setDlg(null)} title="Reset password" description="Creates a one-time password and signs the user out everywhere." confirmLabel="Reset password" tone="danger" onConfirm={async () => { const r = await sa.userReset(id!); setCred(r); after() }} />
-      {cred && <CredentialModal open onClose={() => setCred(null)} title="Password reset" name={cred.name} email={cred.email} password={cred.temporaryPassword} />}
+      {pw.dialogs}
     </>
   )
 }
@@ -143,10 +144,10 @@ function UserDrawer({ id, canManage, onClose, onChanged }: { id: string | null; 
 function Admins() {
   const { can } = usePerms()
   const admins = useFetch(() => sa.admins(), [])
-  const access = useFetch(() => sa.access(), [])
+  const access = useAccessCatalog()
   const [edit, setEdit] = React.useState<any | 'new' | null>(null)
   const [cred, setCred] = React.useState<any>(null)
-  const [resetFor, setResetFor] = React.useState<any>(null)
+  const pw = usePasswordReset()
   const manage = can('admins.manage')
   const roleLabel = (k: string) => access.data?.roles.find((r) => r.key === k)?.label ?? k
   return (
@@ -165,7 +166,7 @@ function Admins() {
               { key: 'p', header: 'Permissions', hideOnMobile: true, cell: (a: any) => <span className="text-zinc-500">{a.effective_permissions.length} of {access.data?.permissions.length ?? '…'}</span> },
               { key: 's', header: 'Status', cell: (a: any) => <Pill tone={a.is_active ? 'good' : 'bad'} dot>{a.is_active ? 'Active' : 'Deactivated'}</Pill> },
               { key: 'l', header: 'Last sign-in', cell: (a: any) => <span className="text-zinc-500">{ago(a.last_login_at)}</span> },
-              { key: 'a', header: '', cell: (a: any) => manage && <div className="flex justify-end gap-1.5"><Button variant="outline" size="sm" onClick={() => setEdit(a)}><UserCog className="h-3.5 w-3.5" /> Edit</Button><Button variant="ghost" size="icon-sm" aria-label="Reset password" title="Reset password" onClick={() => setResetFor(a)}><KeyRound className="h-4 w-4" /></Button></div> },
+              { key: 'a', header: '', cell: (a: any) => manage && <div className="flex justify-end gap-1.5"><Button variant="outline" size="sm" onClick={() => setEdit(a)}><UserCog className="h-3.5 w-3.5" /> Edit</Button><Button variant="ghost" size="icon-sm" aria-label="Reset password" title="Reset password" onClick={() => pw.ask({ kind: 'admin', id: a.id, name: a.name })}><KeyRound className="h-4 w-4" /></Button></div> },
             ]}
           />
         </div>
@@ -188,7 +189,7 @@ function Admins() {
         )}
       </Panel>
       {edit && access.data && <AdminEditor admin={edit === 'new' ? null : edit} access={access.data} onClose={() => setEdit(null)} onSaved={(c) => { setEdit(null); admins.reload(); if (c) setCred(c) }} />}
-      <ConfirmDialog open={resetFor !== null} onClose={() => setResetFor(null)} title={`Reset password for ${resetFor?.name}`} description="They are signed out everywhere and must use the new one-time password." confirmLabel="Reset password" tone="danger" onConfirm={async () => { setCred(await sa.resetAdmin(resetFor.id)) }} />
+      {pw.dialogs}
       {cred && <CredentialModal open onClose={() => setCred(null)} title="Administrator credentials" name={cred.name ?? cred.email} email={cred.email} password={cred.temporaryPassword} />}
     </div>
   )

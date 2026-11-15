@@ -4,6 +4,7 @@ import { ChevronRight, LifeBuoy, MessageSquareText, Search } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { NotificationsMenu, type Notice } from "./NotificationsMenu"
 import { useConsoleUi } from "./useConsoleUi"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 interface TopBarProps {
   /** Trail shown after the sidebar toggle, e.g. ["Orders & Settlements"] */
@@ -24,7 +25,7 @@ export function TopBar({ trail, mobileTitle, notices, noticesLoading, feedbackHr
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1.5 border-b border-white/[0.07] bg-[#050506]/75 px-2.5 backdrop-blur-xl sm:px-4">
+    <header className="df sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1.5 border-b border-white/[0.07] bg-[#050506]/75 px-2.5 backdrop-blur-xl sm:px-4">
       <SidebarTrigger />
 
       {/* Breadcrumb (desktop) / title (phone) */}
@@ -78,6 +79,7 @@ export function TopBar({ trail, mobileTitle, notices, noticesLoading, feedbackHr
         >
           <LifeBuoy className="h-4 w-4 text-zinc-500" /> Help
         </a>
+        <ThemeToggle />
         <NotificationsMenu items={notices} loading={noticesLoading} />
       </div>
     </header>

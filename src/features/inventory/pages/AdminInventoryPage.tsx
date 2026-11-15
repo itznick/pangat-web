@@ -189,7 +189,7 @@ export function AdminInventoryPage() {
         {loadError && (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
             <span>{loadError.message}</span>
-            <button type="button" onClick={loadData} className="h-9 rounded-lg border border-rose-300/30 px-3 hover:bg-white/10">Try again</button>
+            <button type="button" onClick={loadData} className="h-9 rounded-lg border border-rose-300/30 px-3 hover:bg-slate-900/10 dark:hover:bg-white/10">Try again</button>
           </div>
         )}
         {/* ── Metric KPI Cards ──────────────────────────────────────────────── */}
@@ -485,7 +485,7 @@ export function AdminInventoryPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setAdjustingIngredient(ing)}
-                              className="h-7 text-xs border-zinc-800 hover:bg-zinc-800 inline-flex items-center gap-1"
+                              className="h-7 text-xs border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 inline-flex items-center gap-1"
                             >
                               <SlidersHorizontal className="w-3 h-3 text-zinc-500" />
                               <span>Adjust</span>
@@ -596,17 +596,17 @@ export function AdminInventoryPage() {
         {/* ── Tab 2: Dish Recipes ────────────────────────────────────────────── */}
         {activeTab === "RECIPES" && (
           <div className="space-y-4">
-            <div className="p-4 bg-zinc-900/60 rounded-xl border border-zinc-800 text-xs text-zinc-300 flex items-start gap-2.5">
+            <div className="p-4 bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs text-slate-700 dark:text-zinc-300 flex items-start gap-2.5">
               <ChefHat className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
               <div>
-                <p className="font-bold text-zinc-100 text-sm">Automatic Kitchen Order Deduction</p>
+                <p className="font-bold text-slate-900 dark:text-zinc-100 text-sm">Automatic Kitchen Order Deduction</p>
                 <p className="text-zinc-400 mt-0.5">
                   When a diner or steward confirms an order into RECEIVED, Pangat consults these dish recipes and deducts ingredients in concurrency-safe database transactions.
                 </p>
               </div>
             </div>
 
-            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-xl">
+            <div className="bg-[#ffffff] dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl">
               <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow className="border-zinc-800/80 hover:bg-transparent">
@@ -627,13 +627,13 @@ export function AdminInventoryPage() {
                         className="border-zinc-200/70 dark:border-zinc-800/50 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                       >
                         <TableCell>
-                          <span className="font-semibold text-zinc-100 text-xs">
+                          <span className="font-semibold text-slate-900 dark:text-zinc-100 text-xs">
                             {item.name}
                           </span>
                         </TableCell>
 
                         <TableCell>
-                          <span className="font-mono font-medium text-xs text-zinc-300">
+                          <span className="font-mono font-medium text-xs text-slate-700 dark:text-zinc-300">
                             ₹{item.price}
                           </span>
                         </TableCell>
@@ -656,7 +656,7 @@ export function AdminInventoryPage() {
                               {recipe.ingredients.map((ri, idx) => (
                                 <span
                                   key={idx}
-                                  className="text-[11px] px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/80 rounded text-zinc-300 font-mono"
+                                  className="text-[11px] px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/80 rounded text-slate-700 dark:text-zinc-300 font-mono"
                                 >
                                   {ri.ingredient?.name || "Ing"}: {ri.quantity} {ri.unit}
                                 </span>
@@ -672,7 +672,7 @@ export function AdminInventoryPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => setRecipeMenuItem(item)}
-                            className="h-7 text-xs border-zinc-800 hover:bg-zinc-800 inline-flex items-center gap-1.5"
+                            className="h-7 text-xs border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 inline-flex items-center gap-1.5"
                           >
                             <ChefHat className="w-3.5 h-3.5 text-amber-500" />
                             <span>{recipe ? "Edit Recipe" : "Attach Recipe"}</span>
@@ -685,7 +685,7 @@ export function AdminInventoryPage() {
               </Table>
 
               {/* Mobile Cards for Recipes */}
-              <div className="block md:hidden divide-y divide-zinc-800">
+              <div className="block md:hidden divide-y divide-slate-200 dark:divide-zinc-800">
                 {menuItems.map((item) => {
                   const recipe = recipes.find((r) => r.menuItemId === item.id)
 
@@ -693,7 +693,7 @@ export function AdminInventoryPage() {
                     <div key={item.id} className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-bold text-sm text-zinc-100">{item.name}</h3>
+                          <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">{item.name}</h3>
                           <span className="font-mono text-xs text-zinc-400">₹{item.price}</span>
                         </div>
 
@@ -702,7 +702,7 @@ export function AdminInventoryPage() {
                             <span>Active (v{recipe.version})</span>
                           </span>
                         ) : (
-                          <span className="text-zinc-500 bg-zinc-800/80 px-2.5 py-0.5 rounded-lg border border-zinc-700 text-[11px]">
+                          <span className="text-zinc-500 bg-zinc-800/80 px-2.5 py-0.5 rounded-lg border border-slate-300 dark:border-zinc-700 text-[11px]">
                             No Recipe
                           </span>
                         )}
@@ -714,7 +714,7 @@ export function AdminInventoryPage() {
                             {recipe.ingredients.map((ri, idx) => (
                               <span
                                 key={idx}
-                                className="text-[10px] px-2 py-0.5 bg-zinc-800 border border-zinc-700/80 rounded text-zinc-300 font-mono"
+                                className="text-[10px] px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 border border-zinc-700/80 rounded text-slate-700 dark:text-zinc-300 font-mono"
                               >
                                 {ri.ingredient?.name || "Ing"}: {ri.quantity} {ri.unit}
                               </span>
@@ -730,7 +730,7 @@ export function AdminInventoryPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setRecipeMenuItem(item)}
-                          className="h-8 text-xs border-zinc-700 hover:bg-zinc-800 text-zinc-200 inline-flex items-center gap-1.5 w-full sm:w-auto justify-center"
+                          className="h-8 text-xs border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 inline-flex items-center gap-1.5 w-full sm:w-auto justify-center"
                         >
                           <ChefHat className="w-3.5 h-3.5 text-amber-500" />
                           <span>{recipe ? "Edit Recipe" : "Attach Recipe"}</span>

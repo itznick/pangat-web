@@ -4,7 +4,8 @@ import { ArrowLeftRight, CalendarPlus, Gift, PlayCircle, RotateCcw, XCircle } fr
 import { Button } from '@/components/ui/button'
 import { sa, type Row } from '../api'
 import { useAction, Field, Modal, Notice, SelectInput, Spinner, TextArea, TextInput } from '../ui/kit'
-import { useFetch, usePerms } from '../hooks'
+import { usePerms } from '../hooks'
+import { usePlans } from '../shared'
 
 type Kind = 'change-plan' | 'extend' | 'cancel' | 'reactivate' | 'trial' | 'assign'
 
@@ -42,7 +43,7 @@ export function SubscriptionActions({ orgId, orgName, sub, onDone, compact }: { 
 }
 
 function SubForm({ kind, orgId, orgName, sub, status, onClose, onDone }: { kind: Kind; orgId: string; orgName: string; sub: Row | null; status?: string; onClose: () => void; onDone: () => void }) {
-  const plans = useFetch(() => sa.plans(), [])
+  const plans = usePlans()
   const { busy, run } = useAction()
   const [planCode, setPlanCode] = React.useState(sub?.plan_code ?? '')
   const [days, setDays] = React.useState(kind === 'trial' ? 14 : 30)

@@ -63,14 +63,15 @@ export function Delta({ value, invert }: DeltaProps) {
   )
 }
 
-export function Stat({ label, value, hint, delta, invertDelta, icon: Icon, tone = 'emerald', loading, onClick, children }: {
+const STAT_TONES: Record<string, string> = {
+  emerald: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400', sky: 'bg-sky-500/12 text-sky-600 dark:text-sky-400', amber: 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
+  rose: 'bg-rose-500/12 text-rose-600 dark:text-rose-400', violet: 'bg-violet-500/12 text-violet-600 dark:text-violet-400', zinc: 'bg-zinc-500/12 text-zinc-500',
+}
+
+function StatBase({ label, value, hint, delta, invertDelta, icon: Icon, tone = 'emerald', loading, onClick, children }: {
   label: string; value: React.ReactNode; hint?: React.ReactNode; delta?: number | null; invertDelta?: boolean; icon?: React.ElementType
   tone?: 'emerald' | 'sky' | 'amber' | 'rose' | 'violet' | 'zinc'; loading?: boolean; onClick?: () => void; children?: React.ReactNode
 }) {
-  const tones: Record<string, string> = {
-    emerald: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400', sky: 'bg-sky-500/12 text-sky-600 dark:text-sky-400', amber: 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
-    rose: 'bg-rose-500/12 text-rose-600 dark:text-rose-400', violet: 'bg-violet-500/12 text-violet-600 dark:text-violet-400', zinc: 'bg-zinc-500/12 text-zinc-500',
-  }
   const Tag = onClick ? 'button' : 'div'
   return (
     <Tag
@@ -80,7 +81,7 @@ export function Stat({ label, value, hint, delta, invertDelta, icon: Icon, tone 
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-[12.5px] font-medium text-zinc-500 dark:text-zinc-400">{label}</p>
-        {Icon && <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl', tones[tone])}><Icon className="h-4 w-4" /></span>}
+        {Icon && <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl', STAT_TONES[tone])}><Icon className="h-4 w-4" /></span>}
       </div>
       <div className="mt-2 flex items-end gap-2">
         {loading ? <Skeleton className="h-8 w-24" /> : <p className="font-heading text-[1.4rem] font-semibold leading-none sm:text-[1.65rem] tracking-tight tabular-nums text-zinc-900 dark:text-zinc-50">{value}</p>}
@@ -92,11 +93,13 @@ export function Stat({ label, value, hint, delta, invertDelta, icon: Icon, tone 
   )
 }
 
+export const Stat = React.memo(StatBase)
+
 // ── Tiny primitives ──────────────────────────────────────────────────────────
 
-export function Skeleton({ className }: { className?: string }) {
+export const Skeleton = React.memo(function Skeleton({ className }: { className?: string }) {
   return <div className={cn('animate-pulse rounded-lg bg-zinc-500/15', className)} />
-}
+})
 
 export type Tone = 'neutral' | 'good' | 'warn' | 'bad' | 'info' | 'violet'
 const PILL: Record<Tone, string> = {
@@ -128,11 +131,13 @@ const STATUS_TONE: Record<string, Tone> = {
   INFO: 'info', WARNING: 'warn', CRITICAL: 'bad',
   GATEWAY: 'info', MANUAL: 'violet',
 }
-export function StatusPill({ status, label }: { status?: string | null; label?: string }) {
+function StatusPillBase({ status, label }: { status?: string | null; label?: string }) {
   if (!status) return <Pill>—</Pill>
   const tone = STATUS_TONE[status] ?? 'neutral'
   return <Pill tone={tone} dot>{label ?? status.toLowerCase().replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase())}</Pill>
 }
+
+export const StatusPill = React.memo(StatusPillBase)
 
 export function Spinner({ className }: { className?: string }) {
   return <Loader2 className={cn('h-4 w-4 animate-spin', className)} />
