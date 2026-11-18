@@ -190,12 +190,15 @@ export interface CreateOrderPayload {
 export const api = {
   // Auth
   auth: {
-    login: (credentials: { email: string; password: string }): Promise<{
-      accessToken: string
-      user: StaffUser
-      organization?: Organization | null
-      outlets?: Restaurant[]
-    }> =>
+    login: (credentials: { email: string; password: string; otp?: string }): Promise<
+      | {
+          accessToken: string
+          user: StaffUser
+          organization?: Organization | null
+          outlets?: Restaurant[]
+        }
+      | { otpRequired: true; message?: string }
+    > =>
       apiClient.post('/auth/login', credentials),
     kdsPinLogin: (credentials: { pinCode: string; outletSlug: string; station?: string }): Promise<{
       accessToken: string
@@ -215,6 +218,9 @@ export const api = {
       apiClient.post('/auth/forgot-password', { email }),
     resetPassword: (token: string, newPassword: string): Promise<{ success: boolean; message: string }> =>
       apiClient.post('/auth/reset-password', { token, newPassword }),
+    /** Email a verification code before self-service sign-up. `required: false` means the platform does not ask for one. */
+    requestSignupOtp: (email: string): Promise<{ required: boolean; message: string }> =>
+      apiClient.post('/auth/signup-otp', { email }),
     onboard: (data: OnboardPayload): Promise<OnboardResponseData> =>
       apiClient.post('/auth/onboard', data),
     setupSuperAdmin: (data: { name: string; email: string; password: string; phone?: string }): Promise<{

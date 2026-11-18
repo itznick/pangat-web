@@ -250,6 +250,8 @@ export interface OnboardPayload {
   mobileNumber: string
   email: string
   password: string
+  /** 6-digit code from api.auth.requestSignupOtp, when the platform requires email verification */
+  emailOtp?: string
 
   // Step 2: Outlet Details
   outletName: string
