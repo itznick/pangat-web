@@ -27,6 +27,9 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [pinCode, setPinCode] = useState('')
+  // Platform admins can be asked for a 6-digit emailed code after the password is accepted
+  const [otpStep, setOtpStep] = useState(false)
+  const [otp, setOtp] = useState('')
   const [outletSlug, setOutletSlug] = useState(initialSlug)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -42,8 +45,8 @@ export function LoginPage() {
     return <Navigate to={home} replace />
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleLogin = async (e?: React.FormEvent, resendCode = false) => {
+    e?.preventDefault()
     setIsLoading(true)
     setErrorMsg(null)
     setNotice(null)
@@ -119,7 +122,14 @@ export function LoginPage() {
         return
       }
 
-      const res = await api.auth.login({ email: email.trim(), password })
+      const res = await api.auth.login({ email: email.trim(), password, ...(otpStep && !resendCode && otp.trim() ? { otp: otp.trim() } : {}) })
+
+      if ('otpRequired' in res) {
+        setOtpStep(true)
+        setOtp('')
+        setNotice(res.message || 'We emailed you a 6-digit code.')
+        return
+      }
 
       setSession(
         res.accessToken,
@@ -388,6 +398,30 @@ export function LoginPage() {
                 </>
               )}
 
+              {mode === 'credentials' && otpStep && (
+                <div>
+                  <label htmlFor="otp" className="mb-1.5 block text-[13px] text-zinc-400">6-digit code from your email</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    <Input
+                      id="otp"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456"
+                      className={`${field} text-center font-mono text-lg tracking-[0.4em]`}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <button type="button" disabled={isLoading} onClick={() => void handleLogin(undefined, true)} className="mt-2 text-[12px] text-zinc-500 transition-colors hover:text-zinc-300 disabled:opacity-40">
+                    Send a new code
+                  </button>
+                </div>
+              )}
+
               {errorMsg && (
                 <div role="alert" className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-[13px] text-rose-300">
                   <AlertCircle className="h-4 w-4 shrink-0" />
@@ -399,7 +433,7 @@ export function LoginPage() {
                 type="submit"
                 disabled={
                   isLoading ||
-                  (mode === 'credentials' ? !email || !password : mode === 'pin' ? !pinCode || !outletSlug : mode === 'forgot' ? !email : !newPassword || !confirmPassword)
+                  (mode === 'credentials' ? !email || !password || (otpStep && otp.length !== 6) : mode === 'pin' ? !pinCode || !outletSlug : mode === 'forgot' ? !email : !newPassword || !confirmPassword)
                 }
                 className="lp-btn lp-btn-primary w-full !h-12 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
               >
@@ -409,7 +443,7 @@ export function LoginPage() {
                   </>
                 ) : (
                   <>
-                    {mode === 'credentials' ? 'Sign in' : mode === 'pin' ? 'Open kitchen display' : mode === 'forgot' ? 'Send reset link' : 'Update password'}
+                    {mode === 'credentials' ? (otpStep ? 'Verify and sign in' : 'Sign in') : mode === 'pin' ? 'Open kitchen display' : mode === 'forgot' ? 'Send reset link' : 'Update password'}
                     <ArrowRight className="lp-arrow h-4 w-4" />
                   </>
                 )}
