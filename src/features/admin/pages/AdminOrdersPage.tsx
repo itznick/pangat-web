@@ -659,7 +659,7 @@ export function AdminOrdersPage() {
                             setStartDate("")
                             setEndDate("")
                           }}
-                          className="mt-3 text-xs font-semibold text-emerald-400 hover:text-emerald-300 cursor-pointer"
+                          className="mt-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 cursor-pointer"
                         >
                           Clear All Filters
                         </button>

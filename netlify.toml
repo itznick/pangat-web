@@ -6,3 +6,34 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Security headers for every response.
+# CSP: scripts only from this origin (no inline scripts, no eval); the API is reached over https/wss, so connect-src
+# allows any TLS origin because the API URL is a build-time setting (VITE_API_URL). Tighten it to your API origin
+# (e.g. "connect-src 'self' https://api.example.com wss://api.example.com") once it is fixed.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss:; media-src 'self' data: blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Cross-Origin-Opener-Policy = "same-origin"
+
+# Hashed build assets never change: cache them for a year. The HTML shell must always revalidate.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/theme-init.js"
+  [headers.values]
+    Cache-Control = "no-cache"

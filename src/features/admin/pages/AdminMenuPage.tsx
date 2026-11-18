@@ -102,7 +102,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
           size="sm"
           variant="outline"
           onClick={addGroup}
-          className="text-xs h-7 border-slate-300 dark:border-zinc-700 hover:border-emerald-500 text-slate-700 dark:text-zinc-300 hover:text-emerald-400 gap-1"
+          className="text-xs h-7 border-slate-300 dark:border-zinc-700 hover:border-emerald-500 text-slate-700 dark:text-zinc-300 hover:text-emerald-800 dark:hover:text-emerald-400 gap-1"
         >
           <Plus className="h-3 w-3" />
           Add Modifier Group
@@ -139,7 +139,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
                     className={cn(
                       "px-2 py-1 rounded text-[11px] font-semibold border transition-colors min-h-[32px] sm:min-h-0",
                       group.isRequired
-                        ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
+                        ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
                         : "bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-zinc-500"
                     )}
                   >
@@ -148,7 +148,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
                   <button
                     type="button"
                     onClick={() => removeGroup(gIdx)}
-                    className="p-1 rounded text-zinc-500 hover:text-rose-400 min-h-[32px] sm:min-h-0 flex items-center justify-center"
+                    className="p-1 rounded text-zinc-500 hover:text-rose-800 dark:hover:text-rose-400 min-h-[32px] sm:min-h-0 flex items-center justify-center"
                     title="Remove group"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -179,7 +179,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
                     <button
                       type="button"
                       onClick={() => removeOption(gIdx, oIdx)}
-                      className="p-1 text-zinc-500 hover:text-rose-400"
+                      className="p-1 text-zinc-500 hover:text-rose-800 dark:hover:text-rose-400"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -188,7 +188,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
                 <button
                   type="button"
                   onClick={() => addOption(gIdx)}
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 mt-1"
+                  className="text-[11px] text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium flex items-center gap-1 mt-1"
                 >
                   <Plus className="h-3 w-3" /> Add Choice
                 </button>
@@ -696,7 +696,7 @@ export function AdminMenuPage() {
                         <>
                           <span className="min-w-0 flex-1 truncate px-2 text-sm">{c.name} <span className="text-xs text-zinc-500">· {count} dish{count === 1 ? "" : "es"}</span></span>
                           <Button size="sm" variant="ghost" onClick={() => setRenaming({ id: c.id, name: c.name })} className="h-10 text-zinc-400 hover:text-slate-900 dark:hover:text-white">Rename</Button>
-                          <Button size="sm" variant="ghost" disabled={busyAction || count > 0} title={count > 0 ? "Move or delete its dishes first" : undefined} onClick={() => void handleDeleteCategory(c.id, c.name)} className="h-10 text-rose-400 hover:text-rose-300 disabled:opacity-30">Delete</Button>
+                          <Button size="sm" variant="ghost" disabled={busyAction || count > 0} title={count > 0 ? "Move or delete its dishes first" : undefined} onClick={() => void handleDeleteCategory(c.id, c.name)} className="h-10 text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 disabled:opacity-30">Delete</Button>
                         </>
                       )}
                     </li>
@@ -798,7 +798,7 @@ export function AdminMenuPage() {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                     newDish.isVeg
-                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                       : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                   )}
                 >
@@ -811,7 +811,7 @@ export function AdminMenuPage() {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                     !newDish.isVeg
-                      ? "border-rose-500 bg-rose-500/15 text-rose-400"
+                      ? "border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-400"
                       : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                   )}
                 >
@@ -906,7 +906,7 @@ export function AdminMenuPage() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                       editingDish.isVeg
-                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                         : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                     )}
                   >
@@ -919,7 +919,7 @@ export function AdminMenuPage() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
                       !editingDish.isVeg
-                        ? "border-rose-500 bg-rose-500/15 text-rose-400"
+                        ? "border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-400"
                         : "border-slate-300 dark:border-zinc-700 text-zinc-500 hover:border-slate-400 dark:hover:border-zinc-600"
                     )}
                   >
@@ -939,12 +939,12 @@ export function AdminMenuPage() {
             <DialogFooter className="flex-wrap items-center">
               {confirmDeleteDish ? (
                 <div className="mr-auto flex items-center gap-2 text-sm">
-                  <span className="text-rose-300">Delete this dish?</span>
+                  <span className="text-rose-700 dark:text-rose-300">Delete this dish?</span>
                   <Button size="sm" disabled={busyAction} onClick={() => void handleDeleteDish()} className="h-10 bg-rose-600 text-white hover:bg-rose-500">Yes, delete</Button>
                   <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteDish(false)} className="h-10 text-zinc-400">No</Button>
                 </div>
               ) : (
-                <Button variant="ghost" onClick={() => setConfirmDeleteDish(true)} className="mr-auto h-10 text-rose-400 hover:text-rose-300">Delete dish</Button>
+                <Button variant="ghost" onClick={() => setConfirmDeleteDish(true)} className="mr-auto h-10 text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300">Delete dish</Button>
               )}
               <Button variant="ghost" onClick={() => { setEditingDish(null); setConfirmDeleteDish(false) }} className="text-zinc-400">
                 Cancel

@@ -4,24 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
     <title>Pangat (पंगत) | Zero-Hardware Table Ordering & Kitchen Orchestration</title>
     <meta name="description" content="Modern dining speed, rooted in timeless hospitality. Instant UPI payments, zero thermal printers, and live kitchen tracking for independent cafes and specialty coffee spots." />
     <meta name="theme-color" content="#050506" />
-    <script>
-      // Apply the saved (or system) theme before first paint so there is no dark/light flash.
-      (function () {
-        var t = 'system';
-        try { t = localStorage.getItem('pangat_theme') || 'system'; } catch (e) {}
-        var dark = t === 'dark' || (t !== 'light' && !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches));
-        var r = document.documentElement;
-        r.classList.toggle('dark', dark);
-        r.style.colorScheme = dark ? 'dark' : 'light';
-        r.setAttribute('data-theme', dark ? 'dark' : 'light');
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

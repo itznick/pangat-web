@@ -7,13 +7,15 @@ interface FloatingCartPillProps {
   /** Outlet GST so the pill total matches the checkout total */
   gstPercentage?: number
   serviceChargePercentage?: number
+  /** Hide it (and take it out of the accessibility tree) while a drawer covers the page */
+  hidden?: boolean
 }
 
-export function FloatingCartPill({ onViewOrder, gstPercentage = 5, serviceChargePercentage = 0 }: FloatingCartPillProps) {
+export function FloatingCartPill({ onViewOrder, gstPercentage = 5, serviceChargePercentage = 0, hidden = false }: FloatingCartPillProps) {
   const itemCount = useCartStore((s) => s.itemCount())
   const total = useCartStore((s) => s.total(gstPercentage, serviceChargePercentage))
 
-  if (itemCount === 0) return null
+  if (itemCount === 0 || hidden) return null
 
   return (
     <div className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4">

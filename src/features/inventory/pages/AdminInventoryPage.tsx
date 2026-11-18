@@ -187,7 +187,7 @@ export function AdminInventoryPage() {
 
       <div className="flex-1 p-4 sm:p-6 space-y-6">
         {loadError && (
-          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
             <span>{loadError.message}</span>
             <button type="button" onClick={loadData} className="h-9 rounded-lg border border-rose-300/30 px-3 hover:bg-slate-900/10 dark:hover:bg-white/10">Try again</button>
           </div>
@@ -698,7 +698,7 @@ export function AdminInventoryPage() {
                         </div>
 
                         {recipe ? (
-                          <span className="font-bold text-emerald-300 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 text-[11px] inline-flex items-center gap-1">
+                          <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 text-[11px] inline-flex items-center gap-1">
                             <span>Active (v{recipe.version})</span>
                           </span>
                         ) : (

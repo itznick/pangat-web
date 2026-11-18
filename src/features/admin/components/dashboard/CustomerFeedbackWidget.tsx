@@ -77,7 +77,7 @@ export function CustomerFeedbackWidget({
                   className={cn(
                     "h-3 w-3",
                     totalCount > 0 && i < Math.round(averageRating)
-                      ? "fill-amber-400 text-amber-400"
+                      ? "fill-amber-400 text-amber-700 dark:text-amber-400"
                       : "text-zinc-300 dark:text-zinc-700"
                   )}
                 />
@@ -142,14 +142,14 @@ export function CustomerFeedbackWidget({
                     <span className="text-xs font-bold text-zinc-900 dark:text-zinc-200 bg-white dark:bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700">
                       Table {rev.tableNumber}
                     </span>
-                    <div className="flex items-center text-amber-400">
+                    <div className="flex items-center text-amber-700 dark:text-amber-400">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
                           className={cn(
                             "h-3 w-3",
                             i < rev.rating
-                              ? "fill-amber-400 text-amber-400"
+                              ? "fill-amber-400 text-amber-700 dark:text-amber-400"
                               : "text-zinc-300 dark:text-zinc-700"
                           )}
                         />

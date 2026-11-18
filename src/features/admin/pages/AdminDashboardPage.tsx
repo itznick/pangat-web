@@ -170,7 +170,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-              <Plus className="h-4 w-4 text-emerald-400" />
+              <Plus className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-slate-900 dark:text-zinc-100">
@@ -250,7 +250,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                           className={cn(
                             "w-6 h-6 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors",
                             qty > 0
-                              ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30"
+                              ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600/30"
                               : "bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700"
                           )}
                         >
@@ -266,10 +266,10 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           {/* Cart summary */}
           {itemCount > 0 && (
             <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
-              <span className="text-xs font-semibold text-emerald-300">
+              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                 {itemCount} item{itemCount !== 1 ? "s" : ""} in order
               </span>
-              <span className="text-sm font-black text-emerald-400">₹{cartTotal}</span>
+              <span className="text-sm font-black text-emerald-700 dark:text-emerald-400">₹{cartTotal}</span>
             </div>
           )}
         </div>
@@ -369,16 +369,16 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
                     className={cn(
                       "text-[10px] font-bold px-1.5 py-0.5 rounded border",
                       isOutOfStock
-                        ? "text-rose-300 bg-rose-500/20 border-rose-500/30"
-                        : "text-emerald-300 bg-emerald-500/20 border-emerald-500/30"
+                        ? "text-rose-700 dark:text-rose-300 bg-rose-500/20 border-rose-500/30"
+                        : "text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 border-emerald-500/30"
                     )}
                   >
                     {isOutOfStock ? "Out of Stock" : "In Stock"}
                   </span>
                   {isOutOfStock ? (
-                    <XCircle className="h-4 w-4 text-rose-400" />
+                    <XCircle className="h-4 w-4 text-rose-700 dark:text-rose-400" />
                   ) : (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    <CheckCircle2 className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                   )}
                 </div>
               </button>

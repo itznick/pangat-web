@@ -43,7 +43,7 @@ export function PaymentBreakdownWidget() {
     {
       label: "UPI / Digital",
       amount: upiTotal,
-      color: "text-emerald-400",
+      color: "text-emerald-700 dark:text-emerald-400",
       barColor: "bg-emerald-500",
       icon: Smartphone,
       count: upiOrders.length,
@@ -51,7 +51,7 @@ export function PaymentBreakdownWidget() {
     {
       label: "Cash / Counter",
       amount: counterTotal,
-      color: "text-blue-400",
+      color: "text-blue-700 dark:text-blue-400",
       barColor: "bg-blue-500",
       icon: CreditCard,
       count: counterOrders.length,
@@ -59,7 +59,7 @@ export function PaymentBreakdownWidget() {
     {
       label: "Pending / Open Tab",
       amount: pendingTotal,
-      color: "text-amber-400",
+      color: "text-amber-700 dark:text-amber-400",
       barColor: "bg-amber-500",
       icon: Clock3,
       count: pendingOrders.length,

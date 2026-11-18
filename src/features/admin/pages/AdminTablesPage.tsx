@@ -290,11 +290,11 @@ export function AdminTablesPage() {
                     <button
                       onClick={() => handleDelete(table.id, displayName)}
                       disabled={deletingId === table.id}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 -mr-1 -mt-1 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 -mr-1 -mt-1 rounded-lg text-zinc-500 hover:text-rose-800 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
                       title="Delete table"
                     >
                       {deletingId === table.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-rose-400" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-rose-700 dark:text-rose-400" />
                       ) : (
                         <Trash2 className="h-3.5 w-3.5" />
                       )}
@@ -316,10 +316,10 @@ export function AdminTablesPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQrTable(table.tableNumber)}
-                  className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs group/qr"
+                  className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs group/qr"
                   title={`View, download and print QR code standee for ${displayName}`}
                 >
-                  <QrCode className="h-4 w-4 shrink-0 text-emerald-400 transition-transform group-hover/qr:scale-110" />
+                  <QrCode className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400 transition-transform group-hover/qr:scale-110" />
                   <span className="truncate">QR code &amp; tent</span>
                 </button>
 

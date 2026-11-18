@@ -208,7 +208,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                     <div className="flex items-center gap-2">
                       {isPending ? (
                         <>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 border border-amber-500/30 text-amber-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300">
                             {order.paymentMethod === "PAY_AT_COUNTER"
                               ? "Pay at Counter"
                               : "Unpaid"}
@@ -222,7 +222,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                           </button>
                         </>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Settled
                         </span>
@@ -240,17 +240,17 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
           <div className="flex-shrink-0 px-5 py-4 border-t border-slate-200 dark:border-zinc-800 space-y-2.5 bg-zinc-950/50">
             {totalUnbilled > 0 && (
               <div className="flex items-center justify-between p-3 rounded-xl bg-amber-950/30 border border-amber-500/30">
-                <span className="text-xs font-semibold text-amber-300">
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
                   Unbilled Balance
                 </span>
-                <span className="text-base font-black text-amber-400">
+                <span className="text-base font-black text-amber-700 dark:text-amber-400">
                   ₹{Number(totalUnbilled || 0).toFixed(2)}
                 </span>
               </div>
             )}
             <button
               onClick={handleClearTable}
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 font-semibold text-sm transition-colors"
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-700 dark:text-rose-300 font-semibold text-sm transition-colors"
             >
               <Trash2 className="h-4 w-4" />
               Clear Table & Mark Vacant

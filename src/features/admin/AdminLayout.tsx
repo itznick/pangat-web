@@ -192,7 +192,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
                         {badgeFor(item.path) > 0 && (
-                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
+                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
                             {badgeFor(item.path)}
                           </span>
                         )}
@@ -227,7 +227,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
                         {badgeFor(item.path) > 0 && (
-                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
+                          <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
                             {badgeFor(item.path)}
                           </span>
                         )}
@@ -289,7 +289,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
           >
             <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_META[billing.status].tone === "good" ? "bg-emerald-400" : STATUS_META[billing.status].tone === "bad" ? "bg-rose-400" : "bg-amber-300")} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12.5px] font-medium text-white">{billing.plan.name}</span>
+              <span className="block truncate text-[12.5px] font-medium text-slate-900 dark:text-white">{billing.plan.name}</span>
               <span className="block truncate text-[11px] text-zinc-500">
                 {STATUS_META[billing.status].label}
                 {billing.daysLeft !== null && billing.status === "TRIAL" ? ` · ${billing.daysLeft}d left` : ""}
@@ -571,7 +571,7 @@ export function AdminLayout() {
 
         {/* Impersonation Error Alert */}
         {isPlatformSuperAdmin && impersonationError && (
-          <div className="bg-rose-500/15 border-b border-rose-500/30 text-rose-300 px-4 py-2.5 text-xs font-semibold flex items-center justify-between">
+          <div className="bg-rose-500/15 border-b border-rose-500/30 text-rose-700 dark:text-rose-300 px-4 py-2.5 text-xs font-semibold flex items-center justify-between">
             <span>{impersonationError}</span>
             <button
               type="button"

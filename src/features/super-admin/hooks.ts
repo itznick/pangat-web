@@ -2,6 +2,7 @@ import * as React from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { errMsg } from '@/lib/api'
 import { usePolling } from '@/hooks/usePolling'
+import { createSharedCache } from './sharedCache'
 
 /** Permissions the server granted this platform admin (the server re-checks every call; this only hides what would be refused). */
 export function usePerms() {
@@ -65,42 +66,19 @@ export function useFetch<T>(fn: () => Promise<T>, deps: React.DependencyList, op
 
 // ── Shared reference data ──────────────────────────────────────────────────────
 // Plans, templates, support meta and the access catalog change rarely but were re-requested by every screen
-// that needed them. One entry per key: concurrent callers share the in-flight request, results live for `ttl`.
-const shared = new Map<string, { at: number; data?: unknown; promise?: Promise<unknown> }>()
-const sharedSubs = new Map<string, Set<() => void>>()
-const notify = (key: string) => sharedSubs.get(key)?.forEach((fn) => fn())
-
-function loadShared<T>(key: string, fn: () => Promise<T>, ttl: number, force = false): Promise<T> {
-  const hit = shared.get(key)
-  if (!force && hit) {
-    if (hit.promise) return hit.promise as Promise<T>
-    if (hit.data !== undefined && Date.now() - hit.at < ttl) return Promise.resolve(hit.data as T)
-  }
-  const promise = fn()
-    .then((data) => {
-      shared.set(key, { at: Date.now(), data })
-      notify(key)
-      return data
-    })
-    .catch((e) => {
-      shared.delete(key)
-      throw e
-    })
-  shared.set(key, { at: hit?.at ?? 0, data: hit?.data, promise })
-  return promise
-}
+// that needs them. One entry per key (see sharedCache.ts): concurrent callers share the in-flight request.
+const cache = createSharedCache()
 
 /** Drop a shared entry after a mutation; mounted consumers refetch immediately. */
 export function invalidateShared(key: string) {
-  shared.delete(key)
-  notify(key)
+  cache.invalidate(key)
 }
 
 /** Like useFetch, but the result is cached across screens (and deduplicated) under `key`. */
 export function useShared<T>(key: string, fn: () => Promise<T>, opts: { enabled?: boolean; ttl?: number } = {}): Fetched<T> {
   const ttl = opts.ttl ?? 5 * 60_000
   const enabled = opts.enabled !== false
-  const [data, setData] = React.useState<T | null>(() => (enabled ? ((shared.get(key)?.data as T | undefined) ?? null) : null))
+  const [data, setData] = React.useState<T | null>(() => (enabled ? (cache.peek<T>(key) ?? null) : null))
   const [loading, setLoading] = React.useState(enabled && data === null)
   const [error, setError] = React.useState<string | null>(null)
   const fnRef = React.useRef(fn)
@@ -114,25 +92,23 @@ export function useShared<T>(key: string, fn: () => Promise<T>, opts: { enabled?
     const force = tick > 0
     const run = () => {
       setLoading(true)
-      loadShared(key, () => fnRef.current(), ttl, force)
+      cache.load(key, () => fnRef.current(), ttl, force)
         .then((d) => alive && (setData(d), setError(null)))
         .catch((e) => alive && setError(errMsg(e, 'Could not load this data')))
         .finally(() => alive && setLoading(false))
     }
     run()
-    const subs = sharedSubs.get(key) ?? new Set()
-    sharedSubs.set(key, subs)
-    const onChange = () => alive && (shared.has(key) ? setData((shared.get(key)?.data as T) ?? null) : run())
-    subs.add(onChange)
+    const onChange = () => alive && (cache.has(key) ? setData(cache.peek<T>(key) ?? null) : run())
+    const unsubscribe = cache.subscribe(key, onChange)
     return () => {
       alive = false
-      subs.delete(onChange)
+      unsubscribe()
     }
   }, [key, enabled, ttl, tick])
   const reload = React.useCallback(() => {
-    shared.delete(key)
+    // a forced load replaces the entry and notifies every other consumer of this key when it completes
     setTick((x) => x + 1)
-  }, [key])
+  }, [])
   return { data, loading, error, reload, setData }
 }
 

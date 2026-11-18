@@ -81,6 +81,28 @@ html:not(.dark) .text-on-fill {
   color: #fff;
 }
 
+/* Very dark accent tints (bg-amber-950/20, from-emerald-950/40 …) were drawn for dark surfaces; on light they turn
+ * muddy grey-brown. Re-point those shades at the hue's mid tone so the same alpha gives a clean pastel. */
+html:not(.dark) :is(.df, .lp) {
+  --color-emerald-950: #10b981; --color-green-950: #22c55e; --color-teal-950: #14b8a6;
+  --color-amber-950: #f59e0b;   --color-yellow-950: #eab308; --color-orange-950: #f97316;
+  --color-rose-950: #f43f5e;    --color-red-950: #ef4444;    --color-pink-950: #ec4899;
+  --color-sky-950: #0ea5e9;     --color-blue-950: #3b82f6;   --color-cyan-950: #06b6d4;
+  --color-indigo-950: #6366f1;  --color-violet-950: #8b5cf6; --color-purple-950: #a855f7;
+}
+
+/* Text nested inside a SOLID saturated fill (cart pill, CTA buttons) keeps white / pale-tint colours */
+html:not(.dark) :is(.df, .lp) :is(
+  [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"], [class~="bg-green-600"],
+  [class~="bg-rose-500"], [class~="bg-rose-600"], [class~="bg-red-600"], [class~="bg-amber-600"], [class~="bg-orange-500"],
+  [class~="bg-sky-600"], [class~="bg-blue-600"], [class~="bg-indigo-600"], [class~="bg-violet-600"], [class~="bg-purple-600"]
+) :is(.text-white, [class*="text-emerald-100"], [class*="text-emerald-200"], [class*="text-emerald-300"], [class*="text-rose-100"], [class*="text-rose-200"], [class*="text-amber-100"], [class*="text-amber-200"], [class*="text-sky-100"], [class*="text-sky-200"], [class*="text-violet-100"], [class*="text-violet-200"]) {
+  color: rgb(255 255 255 / 0.95);
+}
+html:not(.dark) :is(.df, .lp) :is([class~="bg-emerald-600"], [class~="bg-emerald-500"], [class~="bg-emerald-700"]) [class*="text-emerald-200"] {
+  color: rgb(220 252 231 / 0.9);
+}
+
 /* Hard-coded near-black surfaces -> light equivalents */
 html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#050506]"],
 html:not(.dark) :is(.df, .df *, .lp, .lp *)[class*="bg-[#09090b]"] { background-color: #f8fafc; }
@@ -194,7 +216,7 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 
 @theme inline {
     /* ── Apple-Grade Typography ─────────────────────────────────────────── */
-    --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", "Inter Variable", "Inter", -apple-system, system-ui, sans-serif;
+    --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", "Inter Variable", "Inter", "Noto Sans Devanagari", -apple-system, system-ui, sans-serif;
     --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "Inter Variable", "Inter", -apple-system, system-ui, sans-serif;
     --color-zinc-850: var(--color-zinc-850);
     --color-sidebar-ring: var(--sidebar-ring);

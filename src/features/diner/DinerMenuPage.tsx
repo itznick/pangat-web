@@ -273,6 +273,9 @@ export function DinerMenuPage() {
           </div>
         )}
 
+        {/* Reserve the prep-time row + category bar while the menu loads, so content below does not jump when they appear */}
+        {isLoading && categories.length === 0 && <div aria-hidden className="h-[93px]" />}
+
         {categories.length > 0 && (
           <CategoryNav
             categories={categories}
@@ -411,7 +414,7 @@ export function DinerMenuPage() {
         />
 
         {/* Floating Cart Pill */}
-        <FloatingCartPill gstPercentage={restaurant.gstPercentage} serviceChargePercentage={restaurant.serviceChargePercentage} onViewOrder={() => {
+        <FloatingCartPill hidden={showCheckout || showCustomization} gstPercentage={restaurant.gstPercentage} serviceChargePercentage={restaurant.serviceChargePercentage} onViewOrder={() => {
           setOrderError(null)
           setShowCheckout(true)
         }} />
