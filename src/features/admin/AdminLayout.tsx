@@ -289,13 +289,13 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
           >
             <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_META[billing.status].tone === "good" ? "bg-emerald-400" : STATUS_META[billing.status].tone === "bad" ? "bg-rose-400" : "bg-amber-300")} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12.5px] font-medium text-white">{billing.plan.name}</span>
-              <span className="block truncate text-[11px] text-zinc-500">
+              <span className="block truncate text-[12.5px] font-medium text-slate-900 dark:text-white">{billing.plan.name}</span>
+              <span className="block truncate text-[11px] text-slate-500 dark:text-zinc-500">
                 {STATUS_META[billing.status].label}
                 {billing.daysLeft !== null && billing.status === "TRIAL" ? ` · ${billing.daysLeft}d left` : ""}
               </span>
             </span>
-            <span className="text-[11px] text-zinc-500 transition-colors group-hover:text-emerald-300">Manage</span>
+            <span className="text-[11px] text-slate-500 dark:text-zinc-500 transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-300">Manage</span>
           </button>
         )}
         <UserMenu
