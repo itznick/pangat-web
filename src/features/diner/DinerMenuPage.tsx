@@ -7,6 +7,7 @@ import { MenuItemCard } from "./components/MenuItemCard"
 import { CustomizationDrawer } from "./components/CustomizationDrawer"
 import { FloatingCartPill } from "./components/FloatingCartPill"
 import { CheckoutDrawer } from "./components/CheckoutDrawer"
+import { toast } from "@/components/ui/toast"
 import { useCartStore, useOrderTrackingStore } from "@/stores/useCartStore"
 import { useKdsStore } from "@/stores/useKdsStore"
 import { api } from "@/lib/api"
@@ -60,7 +61,12 @@ export function DinerMenuPage() {
       .then((data) => {
         if (data.restaurant) setRestaurant(data.restaurant)
         if (data.categories) setCategories(data.categories)
-        if (data.items) setMenuItems(data.items)
+        if (data.items) {
+          setMenuItems(data.items)
+          // A cart saved in this browser can hold dishes that no longer exist (menu rebuilt, dish deleted)
+          const removed = useCartStore.getState().pruneMissing(data.items.map((i) => i.id))
+          if (removed > 0) toast.info(`${removed} item${removed === 1 ? "" : "s"} in your cart ${removed === 1 ? "is" : "are"} no longer on the menu and ${removed === 1 ? "was" : "were"} removed.`)
+        }
         setIsLoading(false)
       })
       .catch((err) => {

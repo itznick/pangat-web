@@ -33,6 +33,8 @@ interface CartStore {
   decrementItem: (localId: string) => void
   updateModifiers: (localId: string, mods: SelectedModifier[]) => void
   clearCart: () => void
+  /** Drop cart lines whose dish is not on the live menu (e.g. a cart saved before the menu was rebuilt). Returns how many were removed. */
+  pruneMissing: (validMenuItemIds: Iterable<string>) => number
   setDietaryFilter: (filter: DietaryFilter) => void
 
   // ── Computed selectors ─────────────────────────────────────────────────────
@@ -127,6 +129,14 @@ export const useCartStore = create<CartStore>()(
       },
 
       // ── Serialise for order placement ─────────────────────────────────────────
+
+      pruneMissing: (validMenuItemIds) => {
+        const valid = new Set(validMenuItemIds)
+        const before = get().entries.length
+        const kept = get().entries.filter((e) => valid.has(e.menuItemId))
+        if (kept.length !== before) set({ entries: kept })
+        return before - kept.length
+      },
 
       toOrderItems: (): OrderItem[] =>
         get().entries.map(({ _localId, isVeg, ...rest }) => rest),

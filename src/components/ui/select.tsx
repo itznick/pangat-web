@@ -23,11 +23,11 @@ const Select = ({ value, onValueChange, options, placeholder, className, id }: S
         id={id}
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
-        className="w-full appearance-none rounded-lg border border-slate-300 dark:border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-slate-900 dark:text-zinc-100 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+        className="w-full appearance-none rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 px-3 py-2 text-sm text-slate-900 dark:text-zinc-100 pr-8 [color-scheme:light] dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
       >
         {placeholder && <option value="" disabled>{placeholder}</option>}
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value} className="bg-slate-100 dark:bg-zinc-800">
+          <option key={opt.value} value={opt.value} className="bg-white text-slate-900 dark:bg-zinc-800 dark:text-zinc-100">
             {opt.label}
           </option>
         ))}
@@ -39,7 +39,7 @@ const Select = ({ value, onValueChange, options, placeholder, className, id }: S
 
 // Simplified Select sub-components for compatibility
 const SelectTrigger = ({ className, children, ...props }: React.HTMLAttributes<HTMLButtonElement>) => (
-  <button className={cn("flex w-full items-center justify-between rounded-lg border border-slate-300 dark:border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500", className)} {...props}>
+  <button className={cn("flex w-full items-center justify-between rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 px-3 py-2 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500", className)} {...props}>
     {children}
     <ChevronDown className="h-4 w-4 text-zinc-400" />
   </button>
