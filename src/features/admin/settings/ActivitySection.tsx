@@ -14,6 +14,28 @@ const LABEL: Record<string, string> = {
   STAFF_UPDATED: "Updated a team member",
   STAFF_PASSWORD_RESET: "Reset a team member's password",
   KITCHEN_PIN_CHANGED: "Changed the kitchen PIN",
+  ITEM_CREATED: "Added a dish",
+  ITEM_UPDATED: "Edited a dish",
+  ITEM_MARKED_SOLD_OUT: "Marked a dish sold out",
+  ITEM_MARKED_AVAILABLE: "Marked a dish available",
+  CATEGORY_CREATED: "Added a menu category",
+  CATEGORY_UPDATED: "Edited a menu category",
+  CATEGORY_DELETED: "Deleted a menu category",
+  TABLE_ADDED: "Added a table",
+  TABLE_REMOVED: "Removed a table",
+  STAFF_ROLE_CHANGED: "Changed a team member's role",
+  STAFF_DEACTIVATED: "Deactivated a team member",
+  OUTLET_CREATED: "Created an outlet",
+  ORGANIZATION_SIGNED_UP: "Account created",
+  PASSWORD_CHANGED: "Changed their password",
+  PASSWORD_RESET_REQUESTED: "Requested a password reset",
+  PASSWORD_RESET_COMPLETED: "Reset their password",
+  SESSIONS_REVOKED: "Signed out of every device",
+  PROFILE_UPDATED: "Updated their profile",
+  ORDER_CANCELLED: "Cancelled an order",
+  ORDER_REFUND_REQUESTED: "Refund requested",
+  ORDER_REFUND_SETTLED: "Refund settled",
+  ORDER_ITEMS_EDITED: "Edited an order",
   AUTO_SOLD_OUT: "Dish sold out automatically",
   AUTO_RESTOCKED: "Dish back in stock automatically",
 }
@@ -24,6 +46,12 @@ function detail(e: AuditLogEntry): string {
   if (e.action === "PRICE_CHANGED") return `${m.name}: ₹${m.from} → ₹${m.to}`
   if (e.action === "PAYMENT_MARKED_PAID") return `${e.entityId.slice(-6)} · ₹${m.amount}`
   if (e.action === "SETTINGS_UPDATED" && Array.isArray(m.changed)) return (m.changed as string[]).join(", ")
+  if (e.action === "STAFF_ROLE_CHANGED") {
+    const b = (m.before ?? {}) as Record<string, string>
+    const a = (m.after ?? {}) as Record<string, string>
+    return `${m.target}: ${String(b.role).replace(/_/g, " ").toLowerCase()} → ${String(a.role).replace(/_/g, " ").toLowerCase()}`
+  }
+  if (typeof m.summary === "string") return m.summary
   if (typeof m.name === "string") return m.name
   if (typeof m.email === "string") return m.email
   return e.reason || e.entityId.slice(-8)
@@ -65,6 +93,7 @@ export function ActivitySection() {
               </div>
               <p className="mt-0.5 text-[12.5px] text-zinc-500">
                 {e.staffName ? `${e.staffName}${e.staffRole ? ` (${e.staffRole.replace(/_/g, " ").toLowerCase()})` : ""}` : "System"} · {detail(e)}
+                {e.ip ? <span className="text-zinc-600"> · {e.ip}</span> : null}
               </p>
             </li>
           ))}
@@ -76,6 +105,75 @@ export function ActivitySection() {
           <span>Page {page} of {Math.ceil(total / 25)}</span>
           <button type="button" disabled={page * 25 >= total} onClick={() => setPage((p) => p + 1)} className="h-10 rounded-lg px-3 hover:text-white disabled:opacity-40">Older →</button>
         </div>
+      )}
+    </Card>
+  )
+}
+
+const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+
+/** Owner only: who signed in (or failed to) and from where. A run of failures for one email is the first sign of someone guessing a password. */
+export function SignInActivityCard() {
+  const outlet = useAuthStore((s) => s.currentOutlet)
+  const [rows, setRows] = React.useState<Awaited<ReturnType<typeof api.audit.signIns>> | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    if (!outlet?.id) return
+    let alive = true
+    api.audit.signIns(outlet.id).then((r) => alive && setRows(r)).catch((e) => alive && setError(errMsg(e)))
+    return () => { alive = false }
+  }, [outlet?.id])
+  return (
+    <Card title="Sign-in activity" desc="Recent sign-ins for your team, including failed attempts." error={error ?? undefined}>
+      {rows === null && !error ? (
+        <p className="flex items-center gap-2 text-sm text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>
+      ) : rows && rows.length === 0 ? (
+        <p className="text-sm text-zinc-500">No sign-ins recorded yet.</p>
+      ) : (
+        <ul className="-mx-1 divide-y divide-white/[0.06]">
+          {rows?.slice(0, 30).map((r, i) => (
+            <li key={i} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1 py-2.5">
+              <p className="text-[13.5px] text-white">
+                <span className={r.success ? "text-emerald-400" : "text-rose-400"}>{r.success ? "Signed in" : "Failed"}</span> · {r.email}
+                {!r.success && r.reason ? <span className="text-zinc-500"> ({r.reason.replace(/_/g, " ").toLowerCase()})</span> : null}
+              </p>
+              <p className="text-xs text-zinc-500">{r.ip ?? "unknown address"} · {when(r.createdAt)}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  )
+}
+
+/** Owner only: transparency about Pangat's own staff. Every time they open your data it is listed here. */
+export function PlatformAccessCard() {
+  const outlet = useAuthStore((s) => s.currentOutlet)
+  const [rows, setRows] = React.useState<Awaited<ReturnType<typeof api.audit.platformAccess>> | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    if (!outlet?.id) return
+    let alive = true
+    api.audit.platformAccess(outlet.id).then((r) => alive && setRows(r)).catch((e) => alive && setError(errMsg(e)))
+    return () => { alive = false }
+  }, [outlet?.id])
+  return (
+    <Card title="Pangat staff access" desc="Every time someone from the Pangat team opened your restaurant's data, for support or maintenance." error={error ?? undefined}>
+      {rows === null && !error ? (
+        <p className="flex items-center gap-2 text-sm text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>
+      ) : rows && rows.length === 0 ? (
+        <p className="text-sm text-zinc-500">Nobody from Pangat has opened your data.</p>
+      ) : (
+        <ul className="-mx-1 divide-y divide-white/[0.06]">
+          {rows?.map((r, i) => (
+            <li key={i} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1 py-2.5">
+              <p className="text-[13.5px] text-white">
+                {r.actorName ?? "Pangat team member"} <span className="text-zinc-500">({String(r.actorRole ?? "staff").replace(/_/g, " ").toLowerCase()})</span> · {r.action === "MERCHANT_DATA_CHANGED" ? "changed" : "viewed"} {r.area ?? "data"}
+              </p>
+              <time className="text-xs text-zinc-500" dateTime={r.createdAt}>{when(r.createdAt)}</time>
+            </li>
+          ))}
+        </ul>
       )}
     </Card>
   )

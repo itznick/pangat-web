@@ -1,5 +1,6 @@
 import '@/features/landing/landing.css'
 import * as React from 'react'
+import { ShieldCheck } from 'lucide-react'
 import { Navigate, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useProvisionStore } from './useProvisionStore'
@@ -136,12 +137,13 @@ export function SuperAdminLayout() {
   const visible = React.useMemo(() => ALL_NAV.filter((n) => permKey === '*' || permKey.split('|').includes(n.perm)), [permKey])
   const menuEntries = React.useMemo<MenuEntry[]>(
     () => [
+      { label: 'Two-factor sign-in', icon: ShieldCheck, onSelect: () => navigate('/account/security') },
       { label: 'Keyboard shortcuts', icon: Keyboard, shortcut: '?', onSelect: openShortcuts, divider: true },
       { label: 'What’s new', icon: Sparkles, onSelect: openChangelog },
       { label: 'Send feedback', icon: MessageSquareText, href: FEEDBACK_MAIL, divider: true },
       { label: 'Sign out', icon: LogOut, danger: true, divider: true, onSelect: handleLogout },
     ],
-    [openShortcuts, openChangelog, handleLogout],
+    [openShortcuts, openChangelog, handleLogout, navigate],
   )
   const commandItems = React.useMemo<CommandItem[]>(
     () => [

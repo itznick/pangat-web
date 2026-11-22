@@ -178,6 +178,7 @@ export function DinerMenuPage() {
     customerName?: string
     deliveryAddress?: string
     deliveryInstructions?: string
+    consentAccepted?: boolean
   }) => {
     const orderItems = toOrderItems()
     const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -198,6 +199,7 @@ export function DinerMenuPage() {
           customerPhone: data.mobile,
           deliveryAddress: data.deliveryAddress,
           deliveryInstructions: data.deliveryInstructions,
+          consentAccepted: data.consentAccepted,
           paymentMethod: data.paymentMethod,
           items: orderItems,
         },

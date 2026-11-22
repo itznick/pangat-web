@@ -1,4 +1,4 @@
-import { Activity, BarChart3, Bell, Building2, CreditCard, Inbox, LifeBuoy, ScrollText, Settings2, Store, Users, Wallet } from 'lucide-react'
+import { Activity, BarChart3, Bell, Building2, CreditCard, Inbox, LifeBuoy, ScrollText, ShieldCheck, Settings2, Store, Users, Wallet } from 'lucide-react'
 import type { ElementType } from 'react'
 
 export interface NavItem { id: string; label: string; to: string; icon: ElementType; perm: string; key: string; end?: boolean }
@@ -33,6 +33,7 @@ export const NAV: NavGroup[] = [
     label: 'Platform',
     items: [
       { id: 'monitoring', label: 'Monitoring', to: '/super-admin/monitoring', icon: Activity, perm: 'monitoring.view', key: 'm' },
+      { id: 'privacy', label: 'Privacy requests', to: '/super-admin/privacy', icon: ShieldCheck, perm: 'privacy.view', key: 'v' },
       { id: 'audit', label: 'Audit log', to: '/super-admin/audit', icon: ScrollText, perm: 'audit.view', key: 'a' },
       { id: 'settings', label: 'Settings', to: '/super-admin/settings', icon: Settings2, perm: 'settings.view', key: 'e' },
     ],

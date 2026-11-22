@@ -79,16 +79,21 @@ export const API_BASE_URL = resolveApiBaseUrl();
 export class ApiError extends Error {
   status: number
   code?: string
-  constructor(message: string, status = 0, code?: string) {
+  /** Server request id: quote it to support to find this exact request in the logs */
+  requestId?: string
+  constructor(message: string, status = 0, code?: string, requestId?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.requestId = requestId
   }
 }
 
 /** Best human-readable message for anything thrown by an API call. */
 export function errMsg(e: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  // Server faults carry a reference so a person can quote it and we can find the exact request
+  if (e instanceof ApiError && e.status >= 500 && e.requestId) return `${e.message || fallback} (Ref: ${e.requestId.slice(0, 8)})`
   if (e instanceof Error && e.message) return e.message
   return fallback
 }
@@ -110,6 +115,8 @@ export const subscriptionGate = hub<ApiError>()
 export const sessionGate = hub()
 /** Suspended / deactivated restaurant account or platform maintenance mode (full-screen state) */
 export const platformGate = hub<ApiError>()
+export const passwordGate = hub()
+export const twoFactorGate = hub()
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -148,7 +155,11 @@ apiClient.interceptors.response.use(
       Array.isArray(errorMsg) ? errorMsg.join(', ') : String(errorMsg),
       error.response?.status ?? 0,
       data?.code,
+      data?.requestId,
     )
+    // A temporary password must be replaced before anything else works: send the person to the screen that does that
+    if (apiError.code === 'PASSWORD_CHANGE_REQUIRED') passwordGate.emit()
+    if (apiError.code === 'TWO_FACTOR_ENROLMENT_REQUIRED') twoFactorGate.emit()
     // A lapsed subscription / plan limit is a global condition, not a per-form error
     if (apiError.status === 402) subscriptionGate.emit(apiError)
     if ((apiError.code === 'ACCOUNT_SUSPENDED' || apiError.code === 'ACCOUNT_DEACTIVATED' || apiError.code === 'MAINTENANCE_MODE') && localStorage.getItem('pangat_access_token') && !/\/auth\/login/.test(error.config?.url || '')) {
@@ -176,6 +187,8 @@ export interface CreateOrderPayload {
   customerPhone?: string
   deliveryAddress?: string
   deliveryInstructions?: string
+  /** The diner agreed to the Privacy Notice (required whenever personal details are sent) */
+  consentAccepted?: boolean
   paymentMethod?: PaymentMethod
   items: {
     menuItemId: string
@@ -187,10 +200,44 @@ export interface CreateOrderPayload {
   }[]
 }
 
+/** The printable tax invoice returned by GET /orders/:id/bill (all values come from what was stored when the order was paid). */
+export interface BillDocument {
+  status: 'ISSUED' | 'PROVISIONAL'
+  billNumber: string | null
+  issuedAt: string | null
+  restaurant: { name?: string; branchArea: string | null; phone: string | null; gstin: string | null; fssaiLicense: string | null; hsnSac: string }
+  order: { id: string; type: string; table: string | null; createdAt: string; customerName: string | null }
+  items: { name: string; quantity: number; unitPrice: number; amount: number; modifiers: string[] }[]
+  taxableValue: number
+  gst: { ratePercent: number; cgst: number; sgst: number; total: number }
+  serviceCharge: number
+  deliveryFee: number
+  total: number
+  payment: { method: string; status: string; settledAt: string | null }
+  refundedAmount: number
+  creditNotes: { number: string; amount: number; reason: string | null; issuedAt: string }[]
+}
+
+export interface PrivacyRequestPayload {
+  kind: 'ACCESS' | 'CORRECTION' | 'ERASURE' | 'WITHDRAW_CONSENT' | 'GRIEVANCE' | 'NOMINATE'
+  name: string
+  contact: string
+  restaurantRef?: string
+  message?: string
+  confirm: boolean
+  /** honeypot field: always empty for real people */
+  website?: string
+}
+
 export const api = {
+  privacy: {
+    createRequest: (data: PrivacyRequestPayload): Promise<{ reference: string; dueDays: number }> =>
+      apiClient.post('/privacy/requests', data),
+  },
   // Auth
   auth: {
-    login: (credentials: { email: string; password: string; otp?: string }): Promise<
+    login: (credentials: { email: string; password: string; otp?: string; totp?: string }): Promise<
+      | { totpRequired: true; message?: string }
       | {
           accessToken: string
           user: StaffUser
@@ -208,12 +255,15 @@ export const api = {
       outlet?: Restaurant
     }> =>
       apiClient.post('/auth/kds-pin-login', credentials),
-    me: (): Promise<{ id: string; name: string; email: string; phone?: string | null; role: string; lastLoginAt?: string | null }> =>
+    me: (): Promise<{ id: string; name: string; email: string; phone?: string | null; role: string; totpEnabled?: boolean; lastLoginAt?: string | null }> =>
       apiClient.get('/auth/me'),
     updateProfile: (data: { name?: string; phone?: string }): Promise<unknown> =>
       apiClient.patch('/auth/me', data),
     changePassword: (data: { currentPassword: string; newPassword: string }): Promise<{ accessToken: string; message: string }> =>
       apiClient.post('/auth/change-password', data),
+    twoFactorSetup: (): Promise<{ secret: string; otpauthUrl: string }> => apiClient.post('/auth/2fa/setup'),
+    twoFactorEnable: (code: string): Promise<{ recoveryCodes: string[] }> => apiClient.post('/auth/2fa/enable', { code }),
+    twoFactorDisable: (password: string, code: string): Promise<{ enabled: boolean }> => apiClient.post('/auth/2fa/disable', { password, code }),
     forgotPassword: (email: string): Promise<{ success: boolean; message: string }> =>
       apiClient.post('/auth/forgot-password', { email }),
     resetPassword: (token: string, newPassword: string): Promise<{ success: boolean; message: string }> =>
@@ -265,6 +315,9 @@ export const api = {
       data: Partial<Pick<StaffMember, 'name' | 'phone' | 'role' | 'isActive'>>
     ): Promise<StaffMember> =>
       apiClient.patch(`/restaurants/${restaurantId}/staff/${staffId}`, data),
+    /** A personal kitchen PIN: the chef signs in on the kitchen screen with it and their name is recorded on what they do */
+    setPin: (restaurantId: string, staffId: string, pin: string): Promise<{ staffId: string; hasPin: boolean }> =>
+      apiClient.post(`/restaurants/${restaurantId}/staff/${staffId}/pin`, { pin }),
     resetPassword: (restaurantId: string, staffId: string): Promise<{ staffId: string; email: string; temporaryPassword: string }> =>
       apiClient.post(`/restaurants/${restaurantId}/staff/${staffId}/reset-password`),
   },
@@ -284,6 +337,12 @@ export const api = {
       params?: { entityType?: string; action?: string; page?: number; limit?: number }
     ): Promise<{ items: AuditLogEntry[]; total: number; page: number; limit: number }> =>
       apiClient.get(`/restaurants/${restaurantId}/audit-logs`, { params }),
+    /** Owner only: recent sign-in attempts (successful and failed) for the team */
+    signIns: (restaurantId: string): Promise<{ email: string; success: boolean; reason?: string | null; ip?: string | null; userAgent?: string | null; createdAt: string }[]> =>
+      apiClient.get(`/restaurants/${restaurantId}/sign-ins`),
+    /** Owner only: every time Pangat staff opened this outlet's data */
+    platformAccess: (restaurantId: string): Promise<{ actorName?: string | null; actorRole?: string | null; action: string; area?: string | null; createdAt: string }[]> =>
+      apiClient.get(`/restaurants/${restaurantId}/platform-access`),
   },
   reports: {
     summary: (restaurantSlug: string, from?: string, to?: string): Promise<SalesReport> =>
@@ -345,6 +404,8 @@ export const api = {
 
   // Orders
   orders: {
+    bill: (id: string, token?: string): Promise<BillDocument> =>
+      apiClient.get(`/orders/${id}/bill`, { params: token ? { token } : undefined }),
     create: (data: CreateOrderPayload, idempotencyKey: string): Promise<Order> =>
       apiClient.post('/orders', data, {
         headers: {
@@ -398,6 +459,8 @@ export const api = {
       city: string
       tableCount?: string
       notes?: string
+      /** must be true: the Privacy Notice was accepted */
+      consentAccepted: boolean
     }): Promise<{ message: string; lead: Lead }> =>
       apiClient.post('/leads', data),
   },

@@ -162,7 +162,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
     if (f.ownerFullName.trim().length < 2) e.ownerFullName = 'Enter the owner’s full name'
     if (f.mobileNumber.replace(/\D/g, '').length < 10) e.mobileNumber = 'Enter a 10-digit mobile number'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) e.email = 'Enter a valid email'
-    if (f.password && f.password.length < 8) e.password = 'Use at least 8 characters, or leave blank to auto-generate'
+    if (f.password && f.password.length < 10) e.password = 'Use at least 10 characters, or leave blank so the owner chooses their own by email'
     if (f.outletName.trim().length < 2) e.outletName = 'Enter the outlet name'
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug) || f.slug.length < 3) e.slug = 'Lowercase letters, numbers and dashes, 3+ characters'
     if (!/^[\w.-]{2,}@[a-zA-Z][\w]{1,}$/.test(f.upiVpa.trim())) e.upiVpa = 'Enter a valid UPI ID, like name@bank'
@@ -252,7 +252,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
   if (!isOpen) return null
 
   const welcome = result
-    ? `Namaskar ${result.ownerCredentials.name}! 🙏 Your Pangat portal for ${result.outlet.name} is live.\n\nLogin: ${window.location.origin}/login\nEmail: ${result.ownerCredentials.email}\nTemporary password: ${result.ownerCredentials.temporaryPassword}\n\nYour tables and QR menu are ready.`
+    ? `Namaskar ${result.ownerCredentials.name}! 🙏 Your Pangat portal for ${result.outlet.name} is live.\n\nLogin: ${window.location.origin}/login\nEmail: ${result.ownerCredentials.email}\n${result.ownerCredentials.temporaryPassword ? `Temporary password: ${result.ownerCredentials.temporaryPassword}` : 'We emailed you a link to choose your password.'}\n\nYour tables and QR menu are ready.`
     : ''
   const waNumber = f.mobileNumber.replace(/\D/g, '')
   const waHref = `https://wa.me/${waNumber.length === 10 ? '91' + waNumber : waNumber}?text=${encodeURIComponent(welcome)}`
@@ -628,7 +628,7 @@ function Success({
   const rows: [string, string, string][] = [
     ['Login URL', `${window.location.origin}/login`, 'url'],
     ['Email', result.ownerCredentials.email, 'email'],
-    ['Temporary password', result.ownerCredentials.temporaryPassword, 'pass'],
+    ...(result.ownerCredentials.temporaryPassword ? ([['Temporary password', result.ownerCredentials.temporaryPassword, 'pass']] as [string, string, string][]) : []),
   ]
   return (
     <div className="animate-in fade-in zoom-in-95 duration-300">
@@ -637,7 +637,7 @@ function Success({
       </span>
       <h2 className="lp-display mt-6 text-[2.2rem] text-white sm:text-[2.8rem]">{result.outlet.name} is live.</h2>
       <p className="mt-2 text-[0.95rem] text-zinc-400">
-        {result.batchTablesCreated} tables and {result.menuItemsSeeded} menu items were created. Share the credentials with {result.ownerCredentials.name}.
+        {result.batchTablesCreated} tables and {result.menuItemsSeeded} menu items were created. {result.ownerCredentials.welcomeLinkSent ? `A link to choose a password was emailed to ${result.ownerCredentials.email}. No password was created for you to share.` : `Share the credentials with ${result.ownerCredentials.name}.`}
       </p>
 
       <div className="mt-8 divide-y divide-white/[0.07] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025]">

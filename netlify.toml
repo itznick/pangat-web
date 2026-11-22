@@ -6,3 +6,29 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Security headers for every page.
+# The Content-Security-Policy allows exactly what the app loads: its own scripts, the one inline theme script (by hash),
+# Google Fonts, images from anywhere over https (menu photos) plus data:/blob: (QR codes), and API/WebSocket calls over https/wss.
+# IF YOU CHANGE index.html's inline script, recompute its hash: see docs in the pangat-api repo (docs/COMPLIANCE.md, "Security controls").
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-La+RFf2i+HwrCZm/7sQr8H1qe1sfCkxc7q5O9ZR2aCU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+
+# Hashed build files never change: cache them for a year. index.html must always be re-checked.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"

@@ -85,6 +85,20 @@ export function TeamSection() {
                 {!m.isActive && <span className="rounded-full bg-rose-400/10 px-2 py-0.5 text-[11px] text-rose-300">Deactivated</span>}
                 {isOwner && (
                   <div className="flex gap-1.5">
+                    {m.role === "CHEF" && (
+                      <button
+                        type="button"
+                        disabled={busy === m.id}
+                        onClick={() => {
+                          const pin = window.prompt(`Choose a 4 to 6 digit kitchen PIN for ${m.name}.\nThey will sign in on the kitchen screen with it, and what they do is recorded under their name.`)
+                          if (pin === null) return
+                          void act(m.id, () => api.staff.setPin(outlet.id, m.id, pin.trim()), "Personal PIN saved")
+                        }}
+                        className="flex h-10 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" /> {m.hasKitchenPin ? "Change PIN" : "Set PIN"}
+                      </button>
+                    )}
                     <button
                       type="button"
                       disabled={busy === m.id}
@@ -152,7 +166,7 @@ function AddMember({ outletId, onDone, onCancel }: { outletId: string; onDone: (
   const [saving, setSaving] = React.useState(false)
   const [err, setErr] = React.useState<string | null>(null)
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
-  const valid = form.name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.email) && form.password.length >= 8
+  const valid = form.name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.email) && form.password.length >= 10
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -183,7 +197,7 @@ function AddMember({ outletId, onDone, onCancel }: { outletId: string; onDone: (
         <Field label="Email (their login)"><Input value={form.email} onChange={(v) => set("email", v)} type="email" autoCapitalize="none" autoComplete="off" /></Field>
         <Field label="Phone" optional><Input value={form.phone} onChange={(v) => set("phone", v)} inputMode="tel" /></Field>
       </div>
-      <Field label="Starting password" hint="At least 8 characters. Ask them to change it after the first sign-in.">
+      <Field label="Starting password" hint="At least 10 characters. They will be asked to choose their own password the first time they sign in.">
         <Input value={form.password} onChange={(v) => set("password", v)} type="text" autoComplete="off" className="font-mono" />
       </Field>
       {err && <p role="alert" className="rounded-lg border border-rose-400/25 bg-rose-400/10 px-3 py-2 text-xs text-rose-300">{err}</p>}

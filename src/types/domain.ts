@@ -31,6 +31,12 @@ export interface StaffUser {
   restaurantId?: string | null
   restaurantSlug?: string
   pinCode?: string
+  /** True after a temporary or someone-else-chosen password: only the "choose a new password" screen works until it is changed */
+  mustChangePassword?: boolean
+  /** Authenticator-app sign-in is on for this account */
+  totpEnabled?: boolean
+  /** A platform administrator who must turn on two-factor before using anything else */
+  mustEnrollTotp?: boolean
 }
 
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
@@ -52,6 +58,8 @@ export interface OutletOperations {
   payments: { upi: boolean; payAtCounter: boolean; cod: boolean }
   avgPrepMinutes: number
   receiptFooter: string
+  /** Stewards may mark bills as paid (off by default: the cashier, manager or owner settles) */
+  stewardCanSettle: boolean
 }
 
 /** Computed by the API: is the outlet taking orders right now? */
@@ -77,6 +85,8 @@ export interface Restaurant {
   isVegOnly: boolean
   isActive?: boolean
   gstin?: string | null
+  /** 14-digit FSSAI licence number printed on every bill */
+  fssaiLicense?: string | null
   hsnSac?: string
   phone?: string
   email?: string
@@ -357,7 +367,9 @@ export interface ProvisionResult {
   ownerCredentials: {
     name: string
     email: string
-    temporaryPassword: string
+    /** Absent when a "choose your password" link was emailed to the owner instead */
+    temporaryPassword?: string
+    welcomeLinkSent?: boolean
     loginUrl: string
   }
   batchTablesCreated: number
@@ -599,6 +611,9 @@ export interface AuditLogEntry {
   staffRole?: string | null
   reason?: string | null
   metadata?: Record<string, unknown> | null
+  ip?: string | null
+  userAgent?: string | null
+  requestId?: string | null
   createdAt: string
 }
 

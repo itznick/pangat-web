@@ -1,3 +1,5 @@
+import { BillView } from "../components/BillView"
+import { resolveOps } from "../settings/operations"
 import { useState, useEffect, useMemo } from "react"
 import { toast } from "@/components/ui/toast"
 import { TimeAgo } from "@/components/TimeAgo"
@@ -899,126 +901,8 @@ export function AdminOrdersPage() {
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-0 overflow-hidden shadow-2xl">
           {selectedReceiptOrder && (
             <div className="flex flex-col max-h-[85dvh]">
-              {/* Receipt Header */}
-              <div className="p-6 bg-zinc-50 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 text-center relative">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 mb-2">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <h2 className="text-base font-bold text-zinc-900 dark:text-white">Itemized Tax Invoice</h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Pangat Zero-Hardware Hospitality Cockpit
-                </p>
-
-                <div className="mt-4 grid grid-cols-2 gap-2 text-left bg-white dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs shadow-xs">
-                  <div>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block">Order Token</span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                      #{selectedReceiptOrder.id.slice(-6).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block">Fulfillment</span>
-                    <span className="font-semibold text-zinc-900 dark:text-white">
-                      {selectedReceiptOrder.orderType === "TAKEAWAY"
-                        ? `Takeaway (${selectedReceiptOrder.customerName || "Parcel"})`
-                        : selectedReceiptOrder.orderType === "DELIVERY"
-                        ? `Delivery (${selectedReceiptOrder.customerName || "Customer"})`
-                        : `Table ${selectedReceiptOrder.tableNumber || "—"}`}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block">Date & Time</span>
-                    <span className="text-zinc-700 dark:text-zinc-300">
-                      {formatDateTime(selectedReceiptOrder.createdAt)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block">Payment Mode</span>
-                    <span className="text-zinc-700 dark:text-zinc-300 font-medium">
-                      {selectedReceiptOrder.paymentMethod === "PAY_AT_COUNTER"
-                        ? "Counter Cash / Card"
-                        : "UPI Direct"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Receipt Items Body */}
-              <div className="p-6 overflow-y-auto space-y-4 flex-1">
-                <div className="space-y-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Billed Line Items
-                  </p>
-                  {selectedReceiptOrder.items.map((item, idx) => {
-                    const modSum = (item.selectedModifiers || []).reduce(
-                      (acc, m) => acc + Number(m.price || 0),
-                      0
-                    )
-                    const itemTotal = (Number(item.price) + modSum) * item.quantity
-
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-start justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-900 text-xs"
-                      >
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 font-medium text-zinc-800 dark:text-zinc-200">
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{item.quantity}×</span>
-                            <span>{item.name}</span>
-                          </div>
-                          {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 pl-4">
-                              + {item.selectedModifiers.map((m) => m.name).join(", ")}
-                            </p>
-                          )}
-                        </div>
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-200 tabular-nums">
-                          ₹{itemTotal.toFixed(2)}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Subtotal & Taxes */}
-                <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs">
-                  {(() => {
-                    const o = selectedReceiptOrder
-                    const sub = Number(o.subtotal ?? Number(o.totalAmount) - Number(o.gstAmount || 0))
-                    const gstRate = sub > 0 ? Math.round((Number(o.gstAmount || 0) / sub) * 1000) / 10 : 0
-                    const svc = Number(o.serviceChargeAmount || 0)
-                    const svcRate = sub > 0 ? Math.round((svc / sub) * 1000) / 10 : 0
-                    const fee = Number(o.deliveryFee || 0)
-                    const line = "flex justify-between text-zinc-500 dark:text-zinc-400"
-                    return (
-                      <>
-                        <div className={line}><span>Subtotal</span><span className="tabular-nums">₹{sub.toFixed(2)}</span></div>
-                        <div className={line}><span>GST ({gstRate}%)</span><span className="tabular-nums">₹{Number(o.gstAmount || 0).toFixed(2)}</span></div>
-                        {svc > 0 && <div className={line}><span>Service charge ({svcRate}%)</span><span className="tabular-nums">₹{svc.toFixed(2)}</span></div>}
-                        {fee > 0 && <div className={line}><span>Delivery fee</span><span className="tabular-nums">₹{fee.toFixed(2)}</span></div>}
-                      </>
-                    )
-                  })()}
-                  <div className="flex justify-between text-sm font-bold text-zinc-900 dark:text-white pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                    <span>Grand Total Settled</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">
-                      ₹{Number(selectedReceiptOrder.totalAmount || 0).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Settlement Badge */}
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span className="font-medium">Settlement Status</span>
-                  </div>
-                  <span className="font-bold font-mono">
-                    {selectedReceiptOrder.paymentStatus === "PAID"
-                      ? "PAID & CLOSED"
-                      : "PENDING"}
-                  </span>
-                </div>
+              <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/60">
+                <BillView orderId={selectedReceiptOrder.id} footer={resolveOps(currentOutlet?.operations).receiptFooter || undefined} showSetupHints />
               </div>
 
               {/* Receipt Footer Controls */}
@@ -1036,7 +920,7 @@ export function AdminOrdersPage() {
                   className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print Receipt</span>
+                  <span>Print bill</span>
                 </Button>
               </div>
             </div>
