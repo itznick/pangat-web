@@ -11,7 +11,7 @@ import { Card, Field, Input, Switch } from "../settings/parts"
 import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import { TeamSection } from "../settings/TeamSection"
 import { AccountSection } from "../settings/AccountSection"
-import { ActivitySection } from "../settings/ActivitySection"
+import { ActivitySection, PlatformAccessCard, SignInActivityCard } from "../settings/ActivitySection"
 import "@/features/landing/landing.css"
 
 type SectionId = "profile" | "ordering" | "channels" | "tax" | "kitchen" | "team" | "account" | "activity"
@@ -351,7 +351,13 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
 
           {section === "team" && <TeamSection />}
           {section === "account" && <AccountSection />}
-          {section === "activity" && <ActivitySection />}
+          {section === "activity" && (
+            <>
+              <ActivitySection />
+              {isOwner && <SignInActivityCard />}
+              {isOwner && <PlatformAccessCard />}
+            </>
+          )}
         </div>
       </div>
 

@@ -603,6 +603,9 @@ export interface AuditLogEntry {
   staffRole?: string | null
   reason?: string | null
   metadata?: Record<string, unknown> | null
+  ip?: string | null
+  userAgent?: string | null
+  requestId?: string | null
   createdAt: string
 }
 

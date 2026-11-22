@@ -284,6 +284,12 @@ export const api = {
       params?: { entityType?: string; action?: string; page?: number; limit?: number }
     ): Promise<{ items: AuditLogEntry[]; total: number; page: number; limit: number }> =>
       apiClient.get(`/restaurants/${restaurantId}/audit-logs`, { params }),
+    /** Owner only: recent sign-in attempts (successful and failed) for the team */
+    signIns: (restaurantId: string): Promise<{ email: string; success: boolean; reason?: string | null; ip?: string | null; userAgent?: string | null; createdAt: string }[]> =>
+      apiClient.get(`/restaurants/${restaurantId}/sign-ins`),
+    /** Owner only: every time Pangat staff opened this outlet's data */
+    platformAccess: (restaurantId: string): Promise<{ actorName?: string | null; actorRole?: string | null; action: string; area?: string | null; createdAt: string }[]> =>
+      apiClient.get(`/restaurants/${restaurantId}/platform-access`),
   },
   reports: {
     summary: (restaurantSlug: string, from?: string, to?: string): Promise<SalesReport> =>
