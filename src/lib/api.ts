@@ -79,16 +79,21 @@ export const API_BASE_URL = resolveApiBaseUrl();
 export class ApiError extends Error {
   status: number
   code?: string
-  constructor(message: string, status = 0, code?: string) {
+  /** Server request id: quote it to support to find this exact request in the logs */
+  requestId?: string
+  constructor(message: string, status = 0, code?: string, requestId?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.requestId = requestId
   }
 }
 
 /** Best human-readable message for anything thrown by an API call. */
 export function errMsg(e: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  // Server faults carry a reference so a person can quote it and we can find the exact request
+  if (e instanceof ApiError && e.status >= 500 && e.requestId) return `${e.message || fallback} (Ref: ${e.requestId.slice(0, 8)})`
   if (e instanceof Error && e.message) return e.message
   return fallback
 }
@@ -110,6 +115,7 @@ export const subscriptionGate = hub<ApiError>()
 export const sessionGate = hub()
 /** Suspended / deactivated restaurant account or platform maintenance mode (full-screen state) */
 export const platformGate = hub<ApiError>()
+export const passwordGate = hub()
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -148,7 +154,10 @@ apiClient.interceptors.response.use(
       Array.isArray(errorMsg) ? errorMsg.join(', ') : String(errorMsg),
       error.response?.status ?? 0,
       data?.code,
+      data?.requestId,
     )
+    // A temporary password must be replaced before anything else works: send the person to the screen that does that
+    if (apiError.code === 'PASSWORD_CHANGE_REQUIRED') passwordGate.emit()
     // A lapsed subscription / plan limit is a global condition, not a per-form error
     if (apiError.status === 402) subscriptionGate.emit(apiError)
     if ((apiError.code === 'ACCOUNT_SUSPENDED' || apiError.code === 'ACCOUNT_DEACTIVATED' || apiError.code === 'MAINTENANCE_MODE') && localStorage.getItem('pangat_access_token') && !/\/auth\/login/.test(error.config?.url || '')) {

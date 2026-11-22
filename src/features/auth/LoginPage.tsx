@@ -64,8 +64,8 @@ export function LoginPage() {
     }
 
     if (mode === 'reset') {
-      if (newPassword.length < 8) {
-        setErrorMsg('Use at least 8 characters for your new password')
+      if (newPassword.length < 10) {
+        setErrorMsg('Use at least 10 characters for your new password')
         setIsLoading(false)
         return
       }
@@ -138,6 +138,12 @@ export function LoginPage() {
         res.outlets || [],
         res.outlets?.[0]
       )
+
+      // A temporary or someone-else-chosen password must be replaced first
+      if (res.user?.mustChangePassword) {
+        navigate('/change-password', { replace: true })
+        return
+      }
 
       // Strict role check: only PLATFORM_SUPER_ADMIN routes to /super-admin
       if (res.user?.role === 'PLATFORM_SUPER_ADMIN') {
@@ -284,7 +290,7 @@ export function LoginPage() {
                     <label htmlFor="new-password" className="mb-1.5 block text-[13px] text-zinc-400">New password</label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-                      <Input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 8 characters" className={field} required autoFocus minLength={8} />
+                      <Input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 10 characters" className={field} required autoFocus minLength={10} />
                     </div>
                   </div>
                   <div>

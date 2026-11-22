@@ -163,8 +163,8 @@ export function OnboardingPage() {
         setErrorMsg('Please fill in all required fields to continue.')
         return
       }
-      if (formData.password.length < 8) {
-        setErrorMsg('Choose a password of at least 8 characters.')
+      if (formData.password.length < 10) {
+        setErrorMsg('Choose a password of at least 10 characters.')
         return
       }
 

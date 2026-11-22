@@ -31,6 +31,8 @@ export interface StaffUser {
   restaurantId?: string | null
   restaurantSlug?: string
   pinCode?: string
+  /** True after a temporary or someone-else-chosen password: only the "choose a new password" screen works until it is changed */
+  mustChangePassword?: boolean
 }
 
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'

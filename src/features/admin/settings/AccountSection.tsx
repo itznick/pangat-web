@@ -40,7 +40,7 @@ export function AccountSection() {
   const savePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setPwError(null)
-    if (next.length < 8) return setPwError("Use at least 8 characters for the new password")
+    if (next.length < 10) return setPwError("Use at least 10 characters for the new password")
     if (next !== again) return setPwError("The two new passwords do not match")
     setSavingPw(true)
     try {
@@ -74,7 +74,7 @@ export function AccountSection() {
         <form onSubmit={savePassword} className="space-y-5">
           <Field label="Current password"><Input value={cur} onChange={setCur} type={show ? "text" : "password"} autoComplete="current-password" /></Field>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="New password" hint="At least 8 characters"><Input value={next} onChange={setNext} type={show ? "text" : "password"} autoComplete="new-password" /></Field>
+            <Field label="New password" hint="At least 10 characters"><Input value={next} onChange={setNext} type={show ? "text" : "password"} autoComplete="new-password" /></Field>
             <Field label="Repeat new password"><Input value={again} onChange={setAgain} type={show ? "text" : "password"} autoComplete="new-password" /></Field>
           </div>
           {pwError && <p role="alert" className="rounded-lg border border-rose-400/25 bg-rose-400/10 px-3 py-2 text-xs text-rose-300">{pwError}</p>}

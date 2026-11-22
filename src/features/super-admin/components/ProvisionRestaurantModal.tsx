@@ -162,7 +162,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
     if (f.ownerFullName.trim().length < 2) e.ownerFullName = 'Enter the owner’s full name'
     if (f.mobileNumber.replace(/\D/g, '').length < 10) e.mobileNumber = 'Enter a 10-digit mobile number'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) e.email = 'Enter a valid email'
-    if (f.password && f.password.length < 8) e.password = 'Use at least 8 characters, or leave blank to auto-generate'
+    if (f.password && f.password.length < 10) e.password = 'Use at least 10 characters, or leave blank so the owner chooses their own by email'
     if (f.outletName.trim().length < 2) e.outletName = 'Enter the outlet name'
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug) || f.slug.length < 3) e.slug = 'Lowercase letters, numbers and dashes, 3+ characters'
     if (!/^[\w.-]{2,}@[a-zA-Z][\w]{1,}$/.test(f.upiVpa.trim())) e.upiVpa = 'Enter a valid UPI ID, like name@bank'

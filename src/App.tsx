@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { RouterProvider } from "react-router"
 import { router } from "@/routes"
 import { Toaster, toast } from "@/components/ui/toast"
-import { sessionGate, subscriptionGate } from "@/lib/api"
+import { passwordGate, sessionGate, subscriptionGate } from "@/lib/api"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { PlatformGateScreen } from "@/components/platform/PlatformGateScreen"
 
@@ -16,6 +16,15 @@ export default function App() {
       if (!window.location.pathname.startsWith("/login")) router.navigate("/login", { replace: true })
     })
   }, [])
+
+  // A temporary password: only the "choose a new password" screen works until it is replaced
+  useEffect(
+    () =>
+      passwordGate.on(() => {
+        if (!window.location.pathname.startsWith("/change-password")) router.navigate("/change-password", { replace: true })
+      }),
+    []
+  )
 
   // A lapsed subscription / plan limit can come back from any call: say so once, in words
   useEffect(() => subscriptionGate.on((e) => toast.error(e.message)), [])
