@@ -33,6 +33,7 @@ interface Form {
   phone: string
   email: string
   gstin: string
+  fssaiLicense: string
   gstPercentage: number
   serviceChargePercentage: number
   hsnSac: string
@@ -54,6 +55,7 @@ function fromRestaurant(r: ReturnType<typeof useAdminStore.getState>["restaurant
     phone: r.phone || "",
     email: r.email || "",
     gstin: r.gstin || "",
+    fssaiLicense: r.fssaiLicense || "",
     gstPercentage: r.gstPercentage ?? 5,
     serviceChargePercentage: r.serviceChargePercentage ?? 0,
     hsnSac: r.hsnSac || "",
@@ -100,6 +102,7 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
     const p: Record<string, string> = {}
     if (form.name.trim().length < 2) p.name = "Enter the outlet name"
     if (form.gstin && !GSTIN_RE.test(form.gstin.trim().toUpperCase())) p.gstin = "GSTIN should be 15 characters, like 27AAAAA0000A1Z5"
+    if (form.fssaiLicense && !/^\d{14}$/.test(form.fssaiLicense.trim())) p.fssai = "The FSSAI licence number has 14 digits"
     if (form.gstPercentage < 0 || form.gstPercentage > 28) p.gst = "Enter a rate between 0 and 28"
     if (form.serviceChargePercentage < 0 || form.serviceChargePercentage > 20) p.service = "Service charge can be 0 to 20%"
     if (isOwner && form.upiVpa && !/^[a-zA-Z0-9._-]{2,64}@[a-zA-Z0-9]{2,32}$/.test(form.upiVpa.trim())) p.upi = "Enter a valid UPI ID, like name@bank"
@@ -131,6 +134,7 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
           phone: form.phone.trim(),
           email: form.email.trim(),
           gstin: form.gstin.trim().toUpperCase(),
+          fssaiLicense: form.fssaiLicense.trim(),
           hsnSac: form.hsnSac.trim(),
           gstPercentage: Number(form.gstPercentage),
           serviceChargePercentage: Number(form.serviceChargePercentage),
@@ -312,6 +316,7 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
                   <Field label="GST rate (%)" error={problems.gst}><Input value={String(form.gstPercentage)} onChange={(v) => set("gstPercentage", Number(v.replace(/[^\d.]/g, "")) || 0)} disabled={!isOwner} inputMode="decimal" /></Field>
                 </div>
                 <Field label="HSN / SAC code" optional hint="9963 is the usual code for restaurant services."><Input value={form.hsnSac} onChange={(v) => set("hsnSac", v)} disabled={!isOwner} className="!w-40 font-mono" maxLength={10} /></Field>
+                <Field label="FSSAI licence number" optional error={problems.fssai} hint="14 digits. The law requires it on every bill; it is printed on yours automatically."><Input value={form.fssaiLicense} onChange={(v) => set("fssaiLicense", v.replace(/\D/g, "").slice(0, 14))} disabled={!isOwner} className="!w-56 font-mono" inputMode="numeric" maxLength={14} placeholder="12345678901234" /></Field>
               </Card>
               <Card title="Service charge" desc="An optional percentage of the bill, shown to guests as its own line before they pay. Set 0 to turn it off.">
                 <Field label="Service charge (%)" error={problems.service} hint="GST is calculated on the food total; service charge is added on top.">

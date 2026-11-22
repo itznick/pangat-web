@@ -189,6 +189,24 @@ export interface CreateOrderPayload {
   }[]
 }
 
+/** The printable tax invoice returned by GET /orders/:id/bill (all values come from what was stored when the order was paid). */
+export interface BillDocument {
+  status: 'ISSUED' | 'PROVISIONAL'
+  billNumber: string | null
+  issuedAt: string | null
+  restaurant: { name?: string; branchArea: string | null; phone: string | null; gstin: string | null; fssaiLicense: string | null; hsnSac: string }
+  order: { id: string; type: string; table: string | null; createdAt: string; customerName: string | null }
+  items: { name: string; quantity: number; unitPrice: number; amount: number; modifiers: string[] }[]
+  taxableValue: number
+  gst: { ratePercent: number; cgst: number; sgst: number; total: number }
+  serviceCharge: number
+  deliveryFee: number
+  total: number
+  payment: { method: string; status: string; settledAt: string | null }
+  refundedAmount: number
+  creditNotes: { number: string; amount: number; reason: string | null; issuedAt: string }[]
+}
+
 export interface PrivacyRequestPayload {
   kind: 'ACCESS' | 'CORRECTION' | 'ERASURE' | 'WITHDRAW_CONSENT' | 'GRIEVANCE' | 'NOMINATE'
   name: string
@@ -368,6 +386,8 @@ export const api = {
 
   // Orders
   orders: {
+    bill: (id: string, token?: string): Promise<BillDocument> =>
+      apiClient.get(`/orders/${id}/bill`, { params: token ? { token } : undefined }),
     create: (data: CreateOrderPayload, idempotencyKey: string): Promise<Order> =>
       apiClient.post('/orders', data, {
         headers: {

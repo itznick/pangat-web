@@ -79,6 +79,8 @@ export interface Restaurant {
   isVegOnly: boolean
   isActive?: boolean
   gstin?: string | null
+  /** 14-digit FSSAI licence number printed on every bill */
+  fssaiLicense?: string | null
   hsnSac?: string
   phone?: string
   email?: string

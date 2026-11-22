@@ -849,3 +849,12 @@ html.dark {
   background: rgba(255, 255, 255, 0.72);
 }
 .dark .sa-glass { background: rgba(16, 16, 19, 0.72); }
+
+
+/* Printing a bill: hide everything except the invoice itself */
+@media print {
+  body * { visibility: hidden !important; }
+  #bill-print, #bill-print * { visibility: visible !important; }
+  #bill-print { position: fixed; left: 0; top: 0; width: 80mm; max-width: 80mm; margin: 0; padding: 4mm; background: #fff; color: #000; }
+  @page { margin: 4mm; }
+}
