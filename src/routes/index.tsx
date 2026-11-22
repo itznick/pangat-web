@@ -41,6 +41,7 @@ const LandingPage = lazy(() => import("@/features/landing").then((m) => ({ defau
 const PrivacyPage = lazy(() => import("@/features/legal").then((m) => ({ default: m.PrivacyPage })))
 const TermsPage = lazy(() => import("@/features/legal").then((m) => ({ default: m.TermsPage })))
 const ChangePasswordPage = lazy(() => import("@/features/auth/ChangePasswordPage").then((m) => ({ default: m.ChangePasswordPage })))
+const SecurityPage = lazy(() => import("@/features/account/SecurityPage").then((m) => ({ default: m.SecurityPage })))
 const LoginPage = lazy(() => import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage })))
 
 // Kitchen PIN sign-in now lives on /login (Kitchen PIN tab). Keep old /kds-login links working.
@@ -125,6 +126,11 @@ export const router = createBrowserRouter([
   {
     path: "/change-password",
     element: df(Lazy(ChangePasswordPage)),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/account/security",
+    element: df(Lazy(SecurityPage)),
     errorElement: <RouteErrorBoundary />,
   },
   {

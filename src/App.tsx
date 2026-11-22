@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { RouterProvider } from "react-router"
 import { router } from "@/routes"
 import { Toaster, toast } from "@/components/ui/toast"
-import { passwordGate, sessionGate, subscriptionGate } from "@/lib/api"
+import { passwordGate, sessionGate, subscriptionGate, twoFactorGate } from "@/lib/api"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { PlatformGateScreen } from "@/components/platform/PlatformGateScreen"
 
@@ -22,6 +22,15 @@ export default function App() {
     () =>
       passwordGate.on(() => {
         if (!window.location.pathname.startsWith("/change-password")) router.navigate("/change-password", { replace: true })
+      }),
+    []
+  )
+
+  // An administrator whose role requires two-factor can only use the set-up screen until it is on
+  useEffect(
+    () =>
+      twoFactorGate.on(() => {
+        if (!window.location.pathname.startsWith("/account/security")) router.navigate("/account/security", { replace: true })
       }),
     []
   )

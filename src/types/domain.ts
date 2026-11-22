@@ -33,6 +33,10 @@ export interface StaffUser {
   pinCode?: string
   /** True after a temporary or someone-else-chosen password: only the "choose a new password" screen works until it is changed */
   mustChangePassword?: boolean
+  /** Authenticator-app sign-in is on for this account */
+  totpEnabled?: boolean
+  /** A platform administrator who must turn on two-factor before using anything else */
+  mustEnrollTotp?: boolean
 }
 
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'

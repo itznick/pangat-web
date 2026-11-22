@@ -30,6 +30,9 @@ export function LoginPage() {
   // Platform admins can be asked for a 6-digit emailed code after the password is accepted
   const [otpStep, setOtpStep] = useState(false)
   const [otp, setOtp] = useState('')
+  // After the password, accounts with an authenticator app also enter its 6-digit code (or a recovery code)
+  const [totpStep, setTotpStep] = useState(false)
+  const [totp, setTotp] = useState('')
   const [outletSlug, setOutletSlug] = useState(initialSlug)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -122,7 +125,14 @@ export function LoginPage() {
         return
       }
 
-      const res = await api.auth.login({ email: email.trim(), password, ...(otpStep && !resendCode && otp.trim() ? { otp: otp.trim() } : {}) })
+      const res = await api.auth.login({ email: email.trim(), password, ...(otpStep && !resendCode && otp.trim() ? { otp: otp.trim() } : {}), ...(totpStep && totp.trim() ? { totp: totp.trim() } : {}) })
+
+      if ('totpRequired' in res) {
+        setTotpStep(true)
+        setTotp('')
+        setNotice(res.message || 'Enter the 6-digit code from your authenticator app.')
+        return
+      }
 
       if ('otpRequired' in res) {
         setOtpStep(true)
@@ -138,6 +148,12 @@ export function LoginPage() {
         res.outlets || [],
         res.outlets?.[0]
       )
+
+      // Administrators whose role requires two-factor must turn it on before anything else
+      if (res.user?.mustEnrollTotp && !res.user?.mustChangePassword) {
+        navigate('/account/security', { replace: true })
+        return
+      }
 
       // A temporary or someone-else-chosen password must be replaced first
       if (res.user?.mustChangePassword) {
@@ -404,6 +420,17 @@ export function LoginPage() {
                 </>
               )}
 
+              {mode === 'credentials' && totpStep && (
+                <div>
+                  <label htmlFor="totp" className="mb-1.5 block text-[13px] text-zinc-400">Code from your authenticator app</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    <Input id="totp" inputMode="numeric" autoComplete="one-time-code" value={totp} onChange={(e) => setTotp(e.target.value)} placeholder="123456" className={`${field} text-center font-mono text-lg tracking-[0.3em]`} required autoFocus />
+                  </div>
+                  <p className="mt-1.5 text-[12px] text-zinc-600">Lost your phone? Enter one of your recovery codes instead.</p>
+                </div>
+              )}
+
               {mode === 'credentials' && otpStep && (
                 <div>
                   <label htmlFor="otp" className="mb-1.5 block text-[13px] text-zinc-400">6-digit code from your email</label>
@@ -439,7 +466,7 @@ export function LoginPage() {
                 type="submit"
                 disabled={
                   isLoading ||
-                  (mode === 'credentials' ? !email || !password || (otpStep && otp.length !== 6) : mode === 'pin' ? !pinCode || !outletSlug : mode === 'forgot' ? !email : !newPassword || !confirmPassword)
+                  (mode === 'credentials' ? !email || !password || (otpStep && otp.length !== 6) || (totpStep && !totp.trim()) : mode === 'pin' ? !pinCode || !outletSlug : mode === 'forgot' ? !email : !newPassword || !confirmPassword)
                 }
                 className="lp-btn lp-btn-primary w-full !h-12 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
               >
@@ -449,7 +476,7 @@ export function LoginPage() {
                   </>
                 ) : (
                   <>
-                    {mode === 'credentials' ? (otpStep ? 'Verify and sign in' : 'Sign in') : mode === 'pin' ? 'Open kitchen display' : mode === 'forgot' ? 'Send reset link' : 'Update password'}
+                    {mode === 'credentials' ? (otpStep || totpStep ? 'Verify and sign in' : 'Sign in') : mode === 'pin' ? 'Open kitchen display' : mode === 'forgot' ? 'Send reset link' : 'Update password'}
                     <ArrowRight className="lp-arrow h-4 w-4" />
                   </>
                 )}

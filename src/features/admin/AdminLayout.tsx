@@ -34,6 +34,7 @@ import {
   Sparkles,
   LifeBuoy,
   MessageSquareText,
+  ShieldCheck,
 } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -124,6 +125,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const menuEntries: MenuEntry[] = [
     { label: "Settings", icon: Settings, shortcut: "G S", onSelect: () => setSettings(true) },
     { label: "Plan & billing", icon: CreditCard, shortcut: "G B", onSelect: () => setBilling(true) },
+    { label: "Two-factor sign-in", icon: ShieldCheck, onSelect: () => navigate("/account/security") },
     { label: "Keyboard shortcuts", icon: Keyboard, shortcut: "?", onSelect: () => setShortcuts(true), divider: true },
     { label: "What’s new", icon: Sparkles, onSelect: () => setChangelog(true) },
     { label: "Help & support", icon: LifeBuoy, onSelect: () => navigate("/admin/support"), divider: true },

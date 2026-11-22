@@ -116,6 +116,7 @@ export const sessionGate = hub()
 /** Suspended / deactivated restaurant account or platform maintenance mode (full-screen state) */
 export const platformGate = hub<ApiError>()
 export const passwordGate = hub()
+export const twoFactorGate = hub()
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -158,6 +159,7 @@ apiClient.interceptors.response.use(
     )
     // A temporary password must be replaced before anything else works: send the person to the screen that does that
     if (apiError.code === 'PASSWORD_CHANGE_REQUIRED') passwordGate.emit()
+    if (apiError.code === 'TWO_FACTOR_ENROLMENT_REQUIRED') twoFactorGate.emit()
     // A lapsed subscription / plan limit is a global condition, not a per-form error
     if (apiError.status === 402) subscriptionGate.emit(apiError)
     if ((apiError.code === 'ACCOUNT_SUSPENDED' || apiError.code === 'ACCOUNT_DEACTIVATED' || apiError.code === 'MAINTENANCE_MODE') && localStorage.getItem('pangat_access_token') && !/\/auth\/login/.test(error.config?.url || '')) {
@@ -234,7 +236,8 @@ export const api = {
   },
   // Auth
   auth: {
-    login: (credentials: { email: string; password: string; otp?: string }): Promise<
+    login: (credentials: { email: string; password: string; otp?: string; totp?: string }): Promise<
+      | { totpRequired: true; message?: string }
       | {
           accessToken: string
           user: StaffUser
@@ -252,12 +255,15 @@ export const api = {
       outlet?: Restaurant
     }> =>
       apiClient.post('/auth/kds-pin-login', credentials),
-    me: (): Promise<{ id: string; name: string; email: string; phone?: string | null; role: string; lastLoginAt?: string | null }> =>
+    me: (): Promise<{ id: string; name: string; email: string; phone?: string | null; role: string; totpEnabled?: boolean; lastLoginAt?: string | null }> =>
       apiClient.get('/auth/me'),
     updateProfile: (data: { name?: string; phone?: string }): Promise<unknown> =>
       apiClient.patch('/auth/me', data),
     changePassword: (data: { currentPassword: string; newPassword: string }): Promise<{ accessToken: string; message: string }> =>
       apiClient.post('/auth/change-password', data),
+    twoFactorSetup: (): Promise<{ secret: string; otpauthUrl: string }> => apiClient.post('/auth/2fa/setup'),
+    twoFactorEnable: (code: string): Promise<{ recoveryCodes: string[] }> => apiClient.post('/auth/2fa/enable', { code }),
+    twoFactorDisable: (password: string, code: string): Promise<{ enabled: boolean }> => apiClient.post('/auth/2fa/disable', { password, code }),
     forgotPassword: (email: string): Promise<{ success: boolean; message: string }> =>
       apiClient.post('/auth/forgot-password', { email }),
     resetPassword: (token: string, newPassword: string): Promise<{ success: boolean; message: string }> =>
