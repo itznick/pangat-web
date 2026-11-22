@@ -21,6 +21,7 @@ export const DEFAULT_OPS: OutletOperations = {
   payments: { upi: true, payAtCounter: true, cod: true },
   avgPrepMinutes: 15,
   receiptFooter: "",
+  stewardCanSettle: false,
 }
 
 /** Fill missing keys so older outlets (null / partial JSON) behave like the defaults. */

@@ -52,6 +52,8 @@ export interface OutletOperations {
   payments: { upi: boolean; payAtCounter: boolean; cod: boolean }
   avgPrepMinutes: number
   receiptFooter: string
+  /** Stewards may mark bills as paid (off by default: the cashier, manager or owner settles) */
+  stewardCanSettle: boolean
 }
 
 /** Computed by the API: is the outlet taking orders right now? */
@@ -357,7 +359,9 @@ export interface ProvisionResult {
   ownerCredentials: {
     name: string
     email: string
-    temporaryPassword: string
+    /** Absent when a "choose your password" link was emailed to the owner instead */
+    temporaryPassword?: string
+    welcomeLinkSent?: boolean
     loginUrl: string
   }
   batchTablesCreated: number

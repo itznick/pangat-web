@@ -295,6 +295,9 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
                 <Switch checked={ops.payments.payAtCounter} onChange={(v) => setOps({ payments: { ...ops.payments, payAtCounter: v } })} label="Pay at counter" desc="For dine-in and takeaway guests who prefer to pay staff." />
                 <Switch checked={ops.payments.cod} onChange={(v) => setOps({ payments: { ...ops.payments, cod: v } })} label="Cash on delivery" desc="Collected by your rider on delivery orders." />
               </Card>
+              <Card title="Who can settle a bill" desc="Keeping order-taking and money handling with different people is the simplest protection against billing mistakes and theft.">
+                <Switch checked={ops.stewardCanSettle} onChange={(v) => setOps({ stewardCanSettle: v })} label="Let stewards mark bills as paid" desc="Off by default: only the cashier, manager or owner settles. Turn on only for a small team where stewards also take payment. Every change is recorded in the activity log." />
+              </Card>
               <Card title="Menu rules">
                 <Switch checked={form.isVegOnly} onChange={(v) => set("isVegOnly", v)} label="Pure vegetarian outlet" desc="Hides non-veg dishes from guests and from new menu items." />
               </Card>
@@ -303,16 +306,16 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
 
           {section === "tax" && (
             <>
-              <Card title="GST" desc="Applied to every guest bill and printed on receipts.">
+              <Card title="GST" desc={isOwner ? "Applied to every guest bill and printed on receipts." : "Applied to every guest bill. Only the owner can change tax details."}>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_140px]">
-                  <Field label="GSTIN" optional error={problems.gstin}><Input value={form.gstin} onChange={(v) => set("gstin", v.toUpperCase())} className="font-mono uppercase" maxLength={15} placeholder="27AAAAA0000A1Z5" /></Field>
-                  <Field label="GST rate (%)" error={problems.gst}><Input value={String(form.gstPercentage)} onChange={(v) => set("gstPercentage", Number(v.replace(/[^\d.]/g, "")) || 0)} inputMode="decimal" /></Field>
+                  <Field label="GSTIN" optional error={problems.gstin}><Input value={form.gstin} onChange={(v) => set("gstin", v.toUpperCase())} disabled={!isOwner} className="font-mono uppercase" maxLength={15} placeholder="27AAAAA0000A1Z5" /></Field>
+                  <Field label="GST rate (%)" error={problems.gst}><Input value={String(form.gstPercentage)} onChange={(v) => set("gstPercentage", Number(v.replace(/[^\d.]/g, "")) || 0)} disabled={!isOwner} inputMode="decimal" /></Field>
                 </div>
-                <Field label="HSN / SAC code" optional hint="9963 is the usual code for restaurant services."><Input value={form.hsnSac} onChange={(v) => set("hsnSac", v)} className="!w-40 font-mono" maxLength={10} /></Field>
+                <Field label="HSN / SAC code" optional hint="9963 is the usual code for restaurant services."><Input value={form.hsnSac} onChange={(v) => set("hsnSac", v)} disabled={!isOwner} className="!w-40 font-mono" maxLength={10} /></Field>
               </Card>
               <Card title="Service charge" desc="An optional percentage of the bill, shown to guests as its own line before they pay. Set 0 to turn it off.">
                 <Field label="Service charge (%)" error={problems.service} hint="GST is calculated on the food total; service charge is added on top.">
-                  <Input value={String(form.serviceChargePercentage)} onChange={(v) => set("serviceChargePercentage", Number(v.replace(/[^\d.]/g, "")) || 0)} inputMode="decimal" className="!w-32" />
+                  <Input value={String(form.serviceChargePercentage)} onChange={(v) => set("serviceChargePercentage", Number(v.replace(/[^\d.]/g, "")) || 0)} disabled={!isOwner} inputMode="decimal" className="!w-32" />
                 </Field>
               </Card>
               <Card title="Settlement" desc="Where guest payments land.">

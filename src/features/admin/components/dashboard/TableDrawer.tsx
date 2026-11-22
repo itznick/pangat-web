@@ -8,6 +8,8 @@ import { TimeAgo } from "@/components/TimeAgo"
 import { X, CheckCircle2, Trash2, IndianRupee, Clock, Hash } from "lucide-react"
 import { cn, isSameTableNumber } from "@/lib/utils"
 import { useAdminStore } from "@/stores/useAdminStore"
+import { useAuthStore } from "@/stores/useAuthStore"
+import { resolveOps } from "@/features/admin/settings/operations"
 import { api } from "@/lib/api"
 import type { Table, Order } from "@/types/domain"
 
@@ -20,6 +22,10 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
   const panelRef = useModal(Boolean(table), onClose)
   const activeOrders = useAdminStore((s) => s.activeOrders)
   const settleOrder = useAdminStore((s) => s.settleOrder)
+  const role = useAuthStore((s) => s.user?.role)
+  const activeOutlet = useAuthStore((s) => s.currentOutlet)
+  // Stewards only settle bills when the outlet has turned that on (the API enforces the same rule)
+  const canSettle = role !== "STEWARD" || resolveOps(activeOutlet?.operations).stewardCanSettle
   const updateTableStatus = useAdminStore((s) => s.updateTableStatus)
 
   const tableOrders: Order[] = table
@@ -213,6 +219,7 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                               ? "Pay at Counter"
                               : "Unpaid"}
                           </span>
+                          {canSettle ? (
                           <button
                             onClick={() => handleSettle(order.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-lg shadow-emerald-900/40"
@@ -220,6 +227,9 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Settle
                           </button>
+                          ) : (
+                            <span className="text-[10px] text-zinc-500">Cashier settles</span>
+                          )}
                         </>
                       ) : (
                         <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 flex items-center gap-1.5">
