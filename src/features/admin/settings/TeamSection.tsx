@@ -85,6 +85,20 @@ export function TeamSection() {
                 {!m.isActive && <span className="rounded-full bg-rose-400/10 px-2 py-0.5 text-[11px] text-rose-300">Deactivated</span>}
                 {isOwner && (
                   <div className="flex gap-1.5">
+                    {m.role === "CHEF" && (
+                      <button
+                        type="button"
+                        disabled={busy === m.id}
+                        onClick={() => {
+                          const pin = window.prompt(`Choose a 4 to 6 digit kitchen PIN for ${m.name}.\nThey will sign in on the kitchen screen with it, and what they do is recorded under their name.`)
+                          if (pin === null) return
+                          void act(m.id, () => api.staff.setPin(outlet.id, m.id, pin.trim()), "Personal PIN saved")
+                        }}
+                        className="flex h-10 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" /> {m.hasKitchenPin ? "Change PIN" : "Set PIN"}
+                      </button>
+                    )}
                     <button
                       type="button"
                       disabled={busy === m.id}

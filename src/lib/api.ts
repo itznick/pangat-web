@@ -309,6 +309,9 @@ export const api = {
       data: Partial<Pick<StaffMember, 'name' | 'phone' | 'role' | 'isActive'>>
     ): Promise<StaffMember> =>
       apiClient.patch(`/restaurants/${restaurantId}/staff/${staffId}`, data),
+    /** A personal kitchen PIN: the chef signs in on the kitchen screen with it and their name is recorded on what they do */
+    setPin: (restaurantId: string, staffId: string, pin: string): Promise<{ staffId: string; hasPin: boolean }> =>
+      apiClient.post(`/restaurants/${restaurantId}/staff/${staffId}/pin`, { pin }),
     resetPassword: (restaurantId: string, staffId: string): Promise<{ staffId: string; email: string; temporaryPassword: string }> =>
       apiClient.post(`/restaurants/${restaurantId}/staff/${staffId}/reset-password`),
   },
