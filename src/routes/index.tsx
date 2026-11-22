@@ -38,6 +38,8 @@ function AdminHome() {
 }
 
 const LandingPage = lazy(() => import("@/features/landing").then((m) => ({ default: m.LandingPage })))
+const PrivacyPage = lazy(() => import("@/features/legal").then((m) => ({ default: m.PrivacyPage })))
+const TermsPage = lazy(() => import("@/features/legal").then((m) => ({ default: m.TermsPage })))
 const LoginPage = lazy(() => import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage })))
 
 // Kitchen PIN sign-in now lives on /login (Kitchen PIN tab). Keep old /kds-login links working.
@@ -63,6 +65,7 @@ const SaSupport = saPage("SupportPage")
 const SaCommunications = saPage("CommunicationsPage")
 const SaMonitoring = saPage("MonitoringPage")
 const SaAudit = saPage("AuditPage")
+const SaPrivacy = saPage("PrivacyRequestsPage")
 const SaSettings = saPage("SettingsPage")
 const SaGate = lazy(() => import("@/features/super-admin/PermGate").then((m) => ({ default: m.PermGate })))
 const sa = (perm: string, C: React.ComponentType) => (
@@ -96,6 +99,16 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: Lazy(LandingPage),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/privacy",
+    element: Lazy(PrivacyPage),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/terms",
+    element: Lazy(TermsPage),
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -136,6 +149,7 @@ export const router = createBrowserRouter([
       { path: "support", element: sa("support.view", SaSupport) },
       { path: "communications", element: sa("notifications.view", SaCommunications) },
       { path: "monitoring", element: sa("monitoring.view", SaMonitoring) },
+      { path: "privacy", element: sa("privacy.view", SaPrivacy) },
       { path: "audit", element: sa("audit.view", SaAudit) },
       { path: "settings", element: sa("settings.view", SaSettings) },
       { path: "*", element: <Navigate to="/super-admin" replace /> },

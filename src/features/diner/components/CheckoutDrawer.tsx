@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { ConsentCheckbox } from "@/features/legal/ConsentCheckbox"
 import {
   X,
   Minus,
@@ -45,6 +46,7 @@ interface CheckoutDrawerProps {
     customerName?: string
     deliveryAddress?: string
     deliveryInstructions?: string
+    consentAccepted?: boolean
   }) => void
 }
 
@@ -68,6 +70,7 @@ export function CheckoutDrawer({
   const [mobile, setMobile] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI_INSTANT")
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
+  const [consent, setConsent] = useState(false)
 
   useEffect(() => {
     if (tableId) {
@@ -118,6 +121,10 @@ export function CheckoutDrawer({
   const isNameValid = orderType === "DINE_IN" || customerName.trim().length > 0
   const isAddressValid = orderType !== "DELIVERY" || deliveryAddress.trim().length > 0
 
+  // A plain dine-in order by table collects nothing personal; as soon as a name, number or address is given, the guest must agree to the notice
+  const collectsPersonalData = customerName.trim().length > 0 || cleanedPhone.length > 0 || (orderType === "DELIVERY" && deliveryAddress.trim().length > 0)
+  const isConsentValid = !collectsPersonalData || consent
+
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "").slice(0, 10)
     setMobile(val)
@@ -125,7 +132,7 @@ export function CheckoutDrawer({
 
   const handleSubmit = () => {
     setHasAttemptedSubmit(true)
-    if (!isMobileValid || !isNameValid || !isAddressValid || !isTableValid) return
+    if (!isMobileValid || !isNameValid || !isAddressValid || !isTableValid || !isConsentValid) return
 
     onProceedToPay({
       mobile: mobile.trim() || undefined,
@@ -135,6 +142,7 @@ export function CheckoutDrawer({
       customerName: customerName.trim() || undefined,
       deliveryAddress: orderType === "DELIVERY" ? deliveryAddress.trim() : undefined,
       deliveryInstructions: orderType === "DELIVERY" ? deliveryInstructions.trim() : undefined,
+      consentAccepted: collectsPersonalData ? true : undefined,
     })
   }
 
@@ -608,6 +616,13 @@ export function CheckoutDrawer({
             </p>
           )}
         </div>
+
+        {collectsPersonalData && (
+          <div className={cn("rounded-xl border p-3", hasAttemptedSubmit && !isConsentValid ? "border-rose-500/50 bg-rose-950/30" : "border-zinc-800 bg-zinc-900/40")}>
+            <ConsentCheckbox checked={consent} onChange={setConsent} purpose="by this restaurant and Pangat only to prepare, deliver and bill this order" />
+            {hasAttemptedSubmit && !isConsentValid && <p className="mt-1.5 text-[11px] text-rose-300">Please tick to continue. We need your agreement to use your details.</p>}
+          </div>
+        )}
 
         {/* Server Error Message Alert */}
         {errorMessage && (

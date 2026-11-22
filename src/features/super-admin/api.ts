@@ -66,6 +66,11 @@ export const sa = {
   flags: () => get<Row[]>('/admin/feature-flags'),
   setFlag: (key: string, enabled: boolean, reason?: string) => patch<Row[]>(`/admin/feature-flags/${key}`, { enabled, reason }),
 
+  privacyRequests: (q: Q) => get<Paged & { overdue: number }>('/admin/privacy/requests', q),
+  updatePrivacyRequest: (id: string, d: { status?: string; resolutionNote?: string; notifyRequester?: boolean }) => patch(`/admin/privacy/requests/${id}`, d),
+  privacyLookup: (phone: string) => post<{ phone: string; orders: Row[]; leads: Row[] }>('/admin/privacy/lookup', { phone }),
+  privacyErase: (phone: string, requestReference?: string) => post<{ ordersAnonymised: number; leadsDeleted: number }>('/admin/privacy/erase', { phone, requestReference }),
+
   commsHistory: (q: Q) => get<Paged & { emailConfigured: boolean }>('/admin/communications/history', q),
   commsDeliveries: (id: string) => get(`/admin/communications/history/${id}`),
   send: (d: any) => post('/admin/communications/send', d),

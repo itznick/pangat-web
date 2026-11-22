@@ -477,6 +477,10 @@ export function LoginPage() {
                 Book a free demo
               </button>
             </p>
+            <p className="mt-4 text-center text-[12px] text-zinc-600">
+              By signing in you agree to our <Link to="/terms" className="underline-offset-2 hover:text-zinc-400 hover:underline">Terms</Link> and{' '}
+              <Link to="/privacy" className="underline-offset-2 hover:text-zinc-400 hover:underline">Privacy Policy</Link>.
+            </p>
           </div>
         </main>
       </div>

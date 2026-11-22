@@ -129,6 +129,11 @@ export function Footer({ onOpenPilot }: FooterProps) {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             © 2026 Pangat Technologies · Made in Pune, Maharashtra
           </span>
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-1" aria-label="Legal">
+            <a href="/privacy" className="transition-colors hover:text-zinc-300">Privacy Policy</a>
+            <a href="/terms" className="transition-colors hover:text-zinc-300">Terms</a>
+            <a href="/privacy#request" className="transition-colors hover:text-zinc-300">Your data rights</a>
+          </nav>
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

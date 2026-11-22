@@ -1,3 +1,4 @@
+import { ConsentCheckbox } from "@/features/legal/ConsentCheckbox"
 import * as React from "react"
 import { useModal } from "@/hooks/useModal"
 import {
@@ -25,6 +26,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
   const [submitting, setSubmitting] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [toastVisible, setToastVisible] = React.useState(false)
+  const [consent, setConsent] = React.useState(false)
 
   const [formData, setFormData] = React.useState({
     ownerName: "",
@@ -50,6 +52,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
         city: formData.city,
         phone: formData.phone,
         tableCount: formData.tableCount,
+        consentAccepted: consent,
       })
 
       setSubmitted(true)
@@ -228,11 +231,13 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
                 </div>
               </div>
 
+              <ConsentCheckbox checked={consent} onChange={setConsent} purpose="by Pangat to contact me about a demo" />
+
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-sm rounded-full py-3.5 cursor-pointer shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
+                  disabled={submitting || !consent}
+                  className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-sm rounded-full py-3.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>

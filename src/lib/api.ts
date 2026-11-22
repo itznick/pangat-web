@@ -176,6 +176,8 @@ export interface CreateOrderPayload {
   customerPhone?: string
   deliveryAddress?: string
   deliveryInstructions?: string
+  /** The diner agreed to the Privacy Notice (required whenever personal details are sent) */
+  consentAccepted?: boolean
   paymentMethod?: PaymentMethod
   items: {
     menuItemId: string
@@ -187,7 +189,22 @@ export interface CreateOrderPayload {
   }[]
 }
 
+export interface PrivacyRequestPayload {
+  kind: 'ACCESS' | 'CORRECTION' | 'ERASURE' | 'WITHDRAW_CONSENT' | 'GRIEVANCE' | 'NOMINATE'
+  name: string
+  contact: string
+  restaurantRef?: string
+  message?: string
+  confirm: boolean
+  /** honeypot field: always empty for real people */
+  website?: string
+}
+
 export const api = {
+  privacy: {
+    createRequest: (data: PrivacyRequestPayload): Promise<{ reference: string; dueDays: number }> =>
+      apiClient.post('/privacy/requests', data),
+  },
   // Auth
   auth: {
     login: (credentials: { email: string; password: string; otp?: string }): Promise<
@@ -404,6 +421,8 @@ export const api = {
       city: string
       tableCount?: string
       notes?: string
+      /** must be true: the Privacy Notice was accepted */
+      consentAccepted: boolean
     }): Promise<{ message: string; lead: Lead }> =>
       apiClient.post('/leads', data),
   },
