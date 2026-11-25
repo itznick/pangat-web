@@ -3,6 +3,7 @@ import { useModal } from "@/hooks/useModal"
 import { createPortal } from 'react-dom'
 import '@/features/landing/landing.css'
 import { api } from '@/lib/api'
+import { LimitOverrideDialog, isLimitRefusal, useCanOverrideLimits } from '@/components/console/LimitOverrideDialog'
 import { PangatLogo } from '@/components/ui/PangatLogo'
 import type { Lead, ProvisionPayload, ProvisionResult } from '@/types/domain'
 import {
@@ -84,6 +85,10 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
   const [touched, setTouched] = React.useState<Record<string, boolean>>({})
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  // The trial plan's table limit stopped the request: an authorised administrator may make an audited exception (the API re-checks everything)
+  const canOverride = useCanOverrideLimits()
+  const [limitRefused, setLimitRefused] = React.useState<{ limit?: number; requested?: number } | null>(null)
+  const [overrideOpen, setOverrideOpen] = React.useState(false)
   const [result, setResult] = React.useState<ProvisionResult | null>(null)
   const [copied, setCopied] = React.useState<string | null>(null)
   const [confirmDiscard, setConfirmDiscard] = React.useState(false)
@@ -208,9 +213,10 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
     setTimeout(() => setCopied(null), 1800)
   }
 
-  const submit = async () => {
+  const submit = async (limitOverrideReason?: string) => {
     setSubmitting(true)
     setError(null)
+    setLimitRefused(null)
     const payload: ProvisionPayload = {
       brandName: f.brandName.trim(),
       ownerFullName: f.ownerFullName.trim(),
@@ -227,6 +233,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
       outdoorTableCount: Number(f.outdoor) || 0,
       menuPreset: f.menuPreset,
       leadId: initialLead?.id,
+      ...(limitOverrideReason ? { limitOverrideReason } : {}),
     }
     try {
       const res = await api.admin.provision(payload)
@@ -234,6 +241,11 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
       onSuccess?.()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Provisioning failed. Check the outlet URL and email, then try again.')
+      if (isLimitRefusal(err, 'tables')) {
+        setLimitRefused(err.details as { limit?: number; requested?: number })
+        setStep(STEPS.length - 1)
+        return
+      }
       // Most failures are a taken slug/email — send the operator to the relevant step
       if (/slug|url|outlet/i.test(String(err))) setStep(1)
       else if (/email|owner/i.test(String(err))) setStep(0)
@@ -519,6 +531,11 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
                   {error && (
                     <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-sm text-rose-200">
                       {error}
+                      {limitRefused && canOverride && (
+                        <button type="button" onClick={() => setOverrideOpen(true)} data-testid="override-open" className="mt-3 block rounded-lg border border-amber-300/40 px-3 py-1.5 text-[13px] font-medium text-amber-200 hover:bg-amber-300/10">
+                          Exceed plan limit (audited exception)…
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -528,6 +545,16 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
             )}
           </div>
         </div>
+
+        <LimitOverrideDialog
+          open={overrideOpen}
+          onClose={() => setOverrideOpen(false)}
+          what={`The floor of ${Number(f.indoor || 0) + Number(f.outdoor || 0) || '?'} tables is above the trial plan's limit of ${limitRefused?.limit ?? '?'} per outlet.`}
+          onConfirm={async (reason) => {
+            setOverrideOpen(false)
+            await submit(reason)
+          }}
+        />
 
         {/* Footer */}
         {!result && (

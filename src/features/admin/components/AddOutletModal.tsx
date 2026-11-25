@@ -11,6 +11,7 @@ import { useAdminStore } from '@/stores/useAdminStore'
 import { api, errMsg } from '@/lib/api'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { useBilling } from '@/features/subscriptions/billing'
 
 interface AddOutletModalProps {
   open: boolean
@@ -43,6 +44,18 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
   const [slugTouched, setSlugTouched] = React.useState(false)
   const [upi, setUpi] = React.useState('')
   const [gst, setGst] = React.useState('5')
+  const billing = useBilling()
+  // Everything below comes from the API's entitlement decision, never from a plan name: -1 means unlimited
+  const tableLimit = billing.entitlements?.limits.maxTablesPerOutlet ?? -1
+  const maxTables = tableLimit === -1 ? 100 : Math.max(1, Math.min(100, tableLimit))
+  const multiLocked = billing.isLocked('MULTI_OUTLET')
+  const outletLimit = billing.entitlements?.limits.maxOutlets ?? -1
+  const outletsFull = outletLimit !== -1 && billing.usage.outlets >= outletLimit
+  const blockedReason = multiLocked
+    ? 'Your plan does not include multiple outlets. Upgrade to add another branch.'
+    : outletsFull
+      ? `Your plan allows ${outletLimit} outlet${outletLimit === 1 ? '' : 's'} and you already have ${billing.usage.outlets}. Upgrade to add more.`
+      : null
   const [tables, setTables] = React.useState(12)
   const [slugState, setSlugState] = React.useState<SlugState>('idle')
   const [submitting, setSubmitting] = React.useState(false)
@@ -52,9 +65,9 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
   // Fresh form every time the dialog opens; GST starts from the outlet you are in
   React.useEffect(() => {
     if (!open) return
-    setName(''); setArea(''); setSlug(''); setSlugTouched(false); setUpi(''); setTables(12)
+    setName(''); setArea(''); setSlug(''); setSlugTouched(false); setUpi(''); setTables(Math.min(12, maxTables))
     setGst(String(current?.gstPercentage ?? 5)); setSlugState('idle'); setServerError(null); setTried(false)
-  }, [open, current?.gstPercentage])
+  }, [open, current?.gstPercentage, maxTables])
 
   // The link follows the name until the owner types their own
   React.useEffect(() => {
@@ -141,6 +154,12 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
 
           {/* Body */}
           <div className="space-y-5 overflow-y-auto px-5 py-5 sm:px-7">
+            {blockedReason && (
+              <div role="alert" className="flex items-start gap-2 rounded-xl border border-amber-300/25 bg-amber-300/[0.06] p-3 text-[13px] text-amber-200">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{blockedReason}</span>
+              </div>
+            )}
             {serverError && (
               <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-[13px] text-rose-200">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -194,19 +213,19 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
               </Field>
             </div>
 
-            <Field label="Tables to create" hint={`Creates ${tables === 1 ? 'T01' : `T01 to T${String(tables).padStart(2, '0')}`}, each with its own QR code. You can add more later.`}>
+            <Field label="Tables to create" hint={`${tableLimit === -1 ? '' : `Your plan allows up to ${tableLimit} tables per outlet. `}Creates ${tables === 1 ? 'T01' : `T01 to T${String(tables).padStart(2, '0')}`}, each with its own QR code. You can add more later.`}>
               <div className="flex items-center gap-2">
                 <button type="button" aria-label="Fewer tables" onClick={() => setTables((t) => Math.max(1, t - 1))} className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-zinc-300 transition-colors hover:bg-white/[0.06] active:scale-95">
                   <Minus className="h-4 w-4" />
                 </button>
                 <input
                   value={tables}
-                  onChange={(e) => setTables(Math.max(1, Math.min(100, parseInt(e.target.value.replace(/\D/g, ''), 10) || 1)))}
+                  onChange={(e) => setTables(Math.max(1, Math.min(maxTables, parseInt(e.target.value.replace(/\D/g, ''), 10) || 1)))}
                   inputMode="numeric"
                   aria-label="Number of tables"
                   className="h-11 w-20 rounded-xl border border-white/10 bg-white/[0.04] text-center font-mono text-[15px] text-white outline-none focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
-                <button type="button" aria-label="More tables" onClick={() => setTables((t) => Math.min(100, t + 1))} className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-zinc-300 transition-colors hover:bg-white/[0.06] active:scale-95">
+                <button type="button" aria-label="More tables" onClick={() => setTables((t) => Math.min(maxTables, t + 1))} className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-zinc-300 transition-colors hover:bg-white/[0.06] active:scale-95">
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
@@ -216,7 +235,7 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
           {/* Footer */}
           <div className="flex flex-col-reverse gap-2.5 border-t border-white/[0.07] bg-white/[0.015] px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
             <button type="button" onClick={onClose} className="h-11 rounded-xl px-5 text-sm text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white">Cancel</button>
-            <button type="submit" disabled={submitting} className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-emerald-500 px-6 text-sm font-semibold text-zinc-950 transition-colors hover:bg-emerald-400 disabled:opacity-60">
+            <button type="submit" disabled={submitting || Boolean(blockedReason)} className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-emerald-500 px-6 text-sm font-semibold text-zinc-950 transition-colors hover:bg-emerald-400 disabled:opacity-60">
               {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</> : <><Plus className="h-4 w-4" /> Create outlet</>}
             </button>
           </div>

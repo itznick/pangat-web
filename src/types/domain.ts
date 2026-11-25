@@ -347,6 +347,8 @@ export interface ProvisionPayload {
   outdoorTableCount?: number
   menuPreset?: 'pune_cafe' | 'south_indian' | 'blank'
   leadId?: string
+  /** Platform administrators with "subscriptions.manage" only: exceed the trial plan's table limit, with a recorded reason */
+  limitOverrideReason?: string
 }
 
 export interface ProvisionResult {
@@ -643,8 +645,28 @@ export interface SalesReport {
   topItems: { name: string; quantity: number; revenue: number }[]
 }
 
+/** What this organisation may use right now: plan + platform switches + per-restaurant overrides, decided by the API. */
+export interface FeatureEntitlement {
+  allowed: boolean
+  /** OK | PLAN | DISABLED | OVERRIDE_OFF | OVERRIDE_ON | NOT_AVAILABLE */
+  reason: string
+  /** false when nothing is built behind the feature (never sold) */
+  available: boolean
+  label: string
+}
+export interface Entitlements {
+  organizationId: string
+  plan: { id: string; code: string; name: string } | null
+  status: string
+  access: { blocked: boolean; reason: string | null }
+  features: Record<string, FeatureEntitlement>
+  /** -1 = unlimited */
+  limits: { maxOutlets: number; maxTablesPerOutlet: number; maxStaffPerOutlet: number }
+}
+
 export interface SubscriptionDetailsResponse {
   subscription: OrganizationSubscription
   plan: SubscriptionPlan
   invoices: SubscriptionInvoice[]
+  entitlements?: Entitlements
 }

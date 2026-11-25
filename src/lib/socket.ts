@@ -96,6 +96,18 @@ socket.on('connect', () => {
   }
 })
 
+/** The server withdrew the live kitchen feed (plan, subscription, platform switch or override changed). Listeners decide what to show. */
+type RevokedHandler = (info: { feature?: string; reason?: string }) => void
+const revokedHandlers = new Set<RevokedHandler>()
+export function onAccessRevoked(handler: RevokedHandler): () => void {
+  revokedHandlers.add(handler)
+  return () => revokedHandlers.delete(handler)
+}
+socket.on('access:revoked', (info: { feature?: string; reason?: string }) => {
+  if (info?.feature === 'KDS') currentKdsSlug = null // do not keep trying to rejoin a room we were removed from
+  revokedHandlers.forEach((h) => h(info ?? {}))
+})
+
 socket.on('disconnect', (reason) => {
   console.log('🔌 Disconnected from Pangat WebSocket gateway:', reason)
 })

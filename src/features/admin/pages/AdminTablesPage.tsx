@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react"
 import { toast } from "@/components/ui/toast"
 import { errMsg } from "@/lib/api"
+import { LimitOverrideDialog, isLimitRefusal, useCanOverrideLimits } from "@/components/console/LimitOverrideDialog"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -146,6 +147,11 @@ export function AdminTablesPage() {
     setAddModalOpen(true)
   }
 
+  // An authorised platform administrator can make an audited exception when the plan's table limit stops an add
+  const canOverride = useCanOverrideLimits()
+  const [limitRefused, setLimitRefused] = useState<{ limit?: number; current?: number } | null>(null)
+  const [overrideOpen, setOverrideOpen] = useState(false)
+
   const handleConfirmAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newTableNum.trim()) return
@@ -158,6 +164,7 @@ export function AdminTablesPage() {
       setAddModalOpen(false)
       showNotification(`Table ${created.tableNumber} created successfully!`)
     } catch (err: any) {
+      setLimitRefused(isLimitRefusal(err, "tables") ? (err.details as { limit?: number; current?: number }) : null)
       setAddError(err.response?.data?.message || err.message || "Failed to create table")
     } finally {
       setIsAdding(false)
@@ -414,6 +421,12 @@ export function AdminTablesPage() {
               </div>
             )}
 
+            {limitRefused && canOverride && (
+              <Button type="button" variant="outline" size="sm" onClick={() => setOverrideOpen(true)} className="w-full border-amber-400/60 text-amber-700 dark:text-amber-300" data-testid="override-open">
+                Exceed plan limit (audited exception)…
+              </Button>
+            )}
+
             <DialogFooter className="gap-2 sm:gap-0 pt-2">
               <Button
                 type="button"
@@ -443,6 +456,18 @@ export function AdminTablesPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <LimitOverrideDialog
+        open={overrideOpen}
+        onClose={() => setOverrideOpen(false)}
+        what={`Adding table ${newTableNum.trim() || ""} would take this outlet past its plan: ${limitRefused?.current ?? "?"} in use, limit ${limitRefused?.limit ?? "?"}.`}
+        onConfirm={async (reason) => {
+          const created = await addTable(newTableNum.trim(), reason)
+          setOverrideOpen(false)
+          setAddModalOpen(false)
+          setLimitRefused(null)
+          showNotification(`Table ${created.tableNumber} created with an audited limit exception`)
+        }}
+      />
 
       {/* Table QR cards: preview, download and print one table or the whole floor */}
       {(Boolean(selectedQrTable) || batchPrintOpen) && (

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react'
+import { toast } from '@/components/ui/toast'
 import { useNavigate } from 'react-router'
 import { Check, Download, Minus, Pencil, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -91,6 +92,8 @@ function PlansTab() {
   const plans = usePlans()
   const [editing, setEditing] = React.useState<any | 'new' | null>(null)
   const features = (plans.data?.features ?? []).map((f) => f.feature_key as string)
+  // keys with nothing built behind them: shown, but cannot be newly sold (the API refuses them too)
+  const unavailable = new Set((plans.data?.features ?? []).filter((f) => f.available === false).map((f) => f.feature_key as string))
   return (
     <div className="space-y-4">
       <div className="flex justify-end">{can('plans.manage') && <Button onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> New plan</Button>}</div>
@@ -112,7 +115,7 @@ function PlansTab() {
                   <div key={l as string} className="rounded-xl bg-zinc-500/[0.08] px-1 py-2"><dd className="text-[15px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">{(v as number) === -1 ? '∞' : v}</dd><dt className="text-zinc-500">{l}</dt></div>
                 ))}
               </dl>
-              <div className="mt-3 flex flex-wrap gap-1.5">{(p.features as string[]).map((f) => <Pill key={f} tone="good">{FEATURE_LABEL[f] ?? f}</Pill>)}</div>
+              <div className="mt-3 flex flex-wrap gap-1.5">{(p.features as string[]).map((f) => <Pill key={f} tone={unavailable.has(f) ? 'neutral' : 'good'}>{FEATURE_LABEL[f] ?? f}{unavailable.has(f) ? ' (not built yet)' : ''}</Pill>)}</div>
               <div className="mt-auto flex items-center justify-between pt-4 text-[12.5px] text-zinc-500">
                 <span>{p.subscribers.total} restaurant{p.subscribers.total === 1 ? '' : 's'} · {Object.entries(p.subscribers.byStatus).map(([k, v]) => `${v} ${titleCase(k).toLowerCase()}`).join(', ') || 'none'}</span>
                 {can('plans.manage') && <Button variant="outline" size="sm" onClick={() => setEditing(p)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>}
@@ -129,7 +132,7 @@ function PlansTab() {
               <tbody>
                 {features.map((f) => (
                   <tr key={f} className="border-b border-zinc-100 last:border-0 dark:border-white/[0.05]">
-                    <td className="px-4 py-2.5 text-zinc-800 dark:text-zinc-200">{FEATURE_LABEL[f] ?? f}</td>
+                    <td className="px-4 py-2.5 text-zinc-800 dark:text-zinc-200">{FEATURE_LABEL[f] ?? f}{unavailable.has(f) && <span className="ml-2 text-[11.5px] text-zinc-500">(not built yet, not sold)</span>}</td>
                     {plans.data!.plans.filter((p) => p.isActive).map((p) => <td key={p.id} className="px-3 py-2.5 text-center">{(p.features as string[]).includes(f) ? <Check className="mx-auto h-4 w-4 text-emerald-500" aria-label="Included" /> : <Minus className="mx-auto h-4 w-4 text-zinc-400" aria-label="Not included" />}</td>)}
                   </tr>
                 ))}
@@ -138,12 +141,12 @@ function PlansTab() {
           </div>
         </Panel>
       )}
-      {editing && <PlanEditor plan={editing === 'new' ? null : editing} features={features} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); invalidatePlans() }} />}
+      {editing && <PlanEditor plan={editing === 'new' ? null : editing} features={features} unavailable={unavailable} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); invalidatePlans() }} />}
     </div>
   )
 }
 
-function PlanEditor({ plan, features, onClose, onSaved }: { plan: any | null; features: string[]; onClose: () => void; onSaved: () => void }) {
+function PlanEditor({ plan, features, unavailable, onClose, onSaved }: { plan: any | null; features: string[]; unavailable: Set<string>; onClose: () => void; onSaved: () => void }) {
   const { busy, run } = useAction()
   const [f, setF] = React.useState({
     code: plan?.code ?? '', name: plan?.name ?? '', description: plan?.description ?? '', billingInterval: plan?.billingInterval ?? 'MONTHLY', basePrice: String(plan?.basePrice ?? ''),
@@ -167,7 +170,14 @@ function PlanEditor({ plan, features, onClose, onSaved }: { plan: any | null; fe
     if (plan) body.isActive = f.isActive
     else body.code = f.code.trim().toUpperCase()
     try {
-      const ok = await run(() => (plan ? sa.updatePlan(plan.id, body) : sa.createPlan(body)), plan ? 'Plan updated' : 'Plan created')
+      let over: any[] = []
+      const ok = await run(async () => {
+        const r: any = await (plan ? sa.updatePlan(plan.id, body) : sa.createPlan(body))
+        over = r?.overLimitOrganisations ?? []
+        return r
+      }, plan ? 'Plan updated' : 'Plan created')
+      // Lowering a limit never deletes anything: say who is now above it (they simply cannot add more until they are within the limit)
+      if (ok && over.length) toast.info(`${over.length} restaurant${over.length === 1 ? ' is' : 's are'} now above this plan's limits and cannot add more until they are within them: ${over.slice(0, 3).map((o) => o.name).join(', ')}${over.length > 3 ? '…' : ''}`)
       if (ok) onSaved()
     } catch (x) {
       setErr(errMsg(x))
@@ -194,9 +204,9 @@ function PlanEditor({ plan, features, onClose, onSaved }: { plan: any | null; fe
           <p className="mb-1.5 text-[12.5px] font-medium text-zinc-700 dark:text-zinc-300">Included features</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {features.map((k) => (
-              <label key={k} className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-zinc-200 px-3 py-2 text-[13.5px] dark:border-white/10">
-                <input type="checkbox" className="h-4 w-4 accent-emerald-600" checked={f.features.includes(k)} onChange={(e) => set('features', e.target.checked ? [...f.features, k] : f.features.filter((x: string) => x !== k))} />
-                {FEATURE_LABEL[k] ?? k}
+              <label key={k} className={`flex items-center gap-2.5 rounded-xl border border-zinc-200 px-3 py-2 text-[13.5px] dark:border-white/10 ${unavailable.has(k) && !f.features.includes(k) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                <input type="checkbox" className="h-4 w-4 accent-emerald-600" disabled={unavailable.has(k) && !f.features.includes(k)} checked={f.features.includes(k)} onChange={(e) => set('features', e.target.checked ? [...f.features, k] : f.features.filter((x: string) => x !== k))} />
+                {FEATURE_LABEL[k] ?? k}{unavailable.has(k) && <span className="ml-auto text-[11.5px] text-zinc-500">not built yet</span>}
               </label>
             ))}
           </div>

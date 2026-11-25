@@ -23,11 +23,23 @@ export function useAdminNotices(navigate: (to: string) => void) {
 
   const outletId = outlet?.id
   const outletSlug = outlet?.slug
+  // Stock alerts exist only where the API says Inventory is available (plan, platform switch and per-restaurant override are already
+  // folded into entitlements). Until that is known, or when it is not available, nothing is requested: no wasted call, no upgrade toast.
+  // Polling for them starts the moment availability is confirmed (the interval is null, i.e. off, otherwise).
+  const inventoryAllowed = billing.entitlements?.features.INVENTORY?.allowed === true
+  const loadStockAlerts = React.useCallback(() => {
+    if (!outletId) return
+    api.inventory.getAlerts(outletId, { background: true }).then(setAlerts).catch(() => {})
+  }, [outletId])
+  usePolling(loadStockAlerts, inventoryAllowed && outletId ? 120000 : null, { immediate: true })
+  React.useEffect(() => {
+    if (!inventoryAllowed) setAlerts(null)
+  }, [inventoryAllowed])
+
   const loadOutletSignals = React.useCallback(() => {
-    if (!outletId || !outletSlug) return
-    api.inventory.getAlerts(outletId).then(setAlerts).catch(() => {})
+    if (!outletSlug) return
     api.restaurants.getFeedback(outletSlug).then(setFeedback).catch(() => {})
-  }, [outletId, outletSlug])
+  }, [outletSlug])
   usePolling(loadOutletSignals, outletId && outletSlug ? 120000 : null, { immediate: true })
 
   // Messages from the Pangat team (sent from the platform control centre)
