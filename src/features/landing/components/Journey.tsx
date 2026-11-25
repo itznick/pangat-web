@@ -5,13 +5,13 @@ import { prefersReducedMotion } from "./motion"
 import {
   DinerCustomizeScreen,
   DinerMenuScreen,
-  DinerPayScreen,
+  DinerOrderScreen,
   KdsScreen,
   PhoneFrame,
   ScanScreen,
   Standee,
   TabletFrame,
-  WhatsAppDigest,
+  DaySummary,
   type KdsStage,
 } from "./ProductScreens"
 
@@ -37,40 +37,40 @@ const STEPS: Step[] = [
     n: "01",
     verb: "Scan",
     title: "A tag on the table is all it takes.",
-    body: "Guests point their camera at the table standee. Your menu opens in under a second — no app to install, no account to create, no waving across the room.",
-    metric: "Menu in under 0.8s",
+    body: "Guests point their camera at the table standee. Your menu opens right in the browser — no app to install, no account to create, no waving across the room.",
+    metric: "No app to install",
   },
   {
     key: "order",
     n: "02",
     verb: "Order",
     title: "Made exactly how they like it.",
-    body: "Oat or almond, less ice, extra crispy. Modifiers are chosen on screen and land on the ticket word for word — no mishearing, no re-takes.",
-    metric: "Zero mis-heard orders",
+    body: "Oat or almond, less ice, extra crispy. Modifiers are chosen on screen and land on the kitchen ticket as written — no mishearing, no re-takes.",
+    metric: "Modifiers on the ticket",
   },
   {
     key: "pay",
     n: "03",
-    verb: "Pay",
-    title: "Settled before the first sip.",
-    body: "Google Pay, PhonePe, Paytm or CRED — guests pay upfront from their seat. The money goes to your bank with no commission and no walkouts.",
-    metric: "0% commission",
+    verb: "Send",
+    title: "One tap, straight to the kitchen.",
+    body: "Guests review the order and send it. It reaches the kitchen display immediately and the guest follows its progress live. Payment is settled at your counter, where your cashier marks it paid and the GST bill is issued.",
+    metric: "Live order tracking",
   },
   {
     key: "prepare",
     n: "04",
     verb: "Prepare",
     title: "The kitchen hears it instantly.",
-    body: "A distinct chime rings on any phone or tablet the second an order is paid. Live timers and stage tracking keep a loud rush calm.",
-    metric: "Real-time sync",
+    body: "A distinct chime rings on any phone or tablet the moment a new order arrives. Live timers and stage tracking keep a loud rush calm.",
+    metric: "Live kitchen display",
   },
   {
     key: "close",
     n: "05",
-    verb: "Close",
-    title: "Your day, in one WhatsApp message.",
-    body: "Every night at 11:30 PM: tables served, money collected, average table turn and your best-seller. No dashboard to open after a long shift.",
-    metric: "Daily at 11:30 PM",
+    verb: "Review",
+    title: "Your day, at a glance.",
+    body: "Your dashboard shows today's revenue, covers and average prep time. From the Starter plan, sales reports break the days and weeks down by payment method, order type and best-sellers.",
+    metric: "Dashboard and reports",
   },
 ]
 
@@ -133,7 +133,7 @@ function Visual({ k, active }: { k: string; active: boolean }) {
       return (
         <div className="relative flex items-center justify-center">
           <PhoneFrame>
-            <DinerPayScreen paid={paid} />
+            <DinerOrderScreen placed={paid} />
           </PhoneFrame>
           <div
             className={`lp-glass absolute -right-2 bottom-12 w-[210px] rounded-2xl p-4 transition-all duration-700 [transition-timing-function:var(--lp-ease)] sm:-right-24 ${
@@ -141,10 +141,10 @@ function Visual({ k, active }: { k: string; active: boolean }) {
             }`}
           >
             <div className="mb-2 flex items-center gap-2 text-[11px] text-zinc-400">
-              <Landmark className="h-3.5 w-3.5 text-emerald-300" /> Settled to your bank
+              <Landmark className="h-3.5 w-3.5 text-emerald-300" /> Order sent to kitchen
             </div>
             <p className="lp-display text-[2rem] text-white">₹520</p>
-            <p className="mt-1 text-[11px] text-emerald-300">Fee: ₹0 · 100% yours</p>
+            <p className="mt-1 text-[11px] text-emerald-300">Pay at your counter</p>
           </div>
         </div>
       )
@@ -166,7 +166,7 @@ function Visual({ k, active }: { k: string; active: boolean }) {
     default:
       return (
         <div className="flex items-center justify-center">
-          <WhatsAppDigest className="lp-float" />
+          <DaySummary className="lp-float" />
         </div>
       )
   }
@@ -414,7 +414,7 @@ function Intro() {
         Five quiet moments.
       </h2>
       <p className="mt-5 max-w-[30rem] text-[1.02rem] leading-relaxed text-zinc-400 sm:text-lg">
-        Follow a single table from first scan to closing summary. Nothing to install, nothing to print, nothing to chase.
+        Follow a single table from first scan to your daily numbers. Nothing to install on guests' phones, no printer needed, nothing to chase.
       </p>
     </div>
   )

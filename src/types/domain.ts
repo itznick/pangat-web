@@ -554,6 +554,7 @@ export interface SubscriptionPlan {
   taxPercentage: number
   maxOutlets: number
   maxTablesPerOutlet: number
+  maxStaffPerOutlet: number
   features: string[]
   pricing: PlanPricing
   razorpayPlanId?: string | null

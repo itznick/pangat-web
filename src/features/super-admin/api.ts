@@ -33,7 +33,9 @@ export const sa = {
   resetOwnerPassword: (orgId: string) => post(`/admin/organizations/${orgId}/reset-password`),
 
   subscriptions: (q: Q) => get<Paged>('/admin/subscriptions', q),
-  plans: () => get<{ plans: Row[]; features: Row[] }>('/admin/subscription-plans'),
+  plans: () => get<{ plans: Row[]; features: Row[]; trial?: Row }>('/admin/subscription-plans'),
+  capacity: () => get<Row[]>('/admin/subscriptions/capacity'),
+  founding: () => get<{ slotsTotal: number; slotsUsed: number; grants: Row[] }>('/admin/subscriptions/founding'),
   createPlan: (d: any) => post('/subscriptions/admin/plans', d),
   updatePlan: (id: string, d: any) => patch(`/subscriptions/admin/plans/${id}`, d),
   subHistory: (id: string) => get(`/admin/restaurants/${id}/subscription-history`),

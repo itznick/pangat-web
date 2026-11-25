@@ -49,7 +49,7 @@ export function Footer({ onOpenPilot }: FooterProps) {
             accent={[3]}
           />
           <Reveal as="p" delay={300} className="mx-auto mt-7 max-w-[32rem] text-[1.05rem] leading-relaxed text-zinc-400 sm:text-xl">
-            We&rsquo;ll bring two standees to your cafe in Pune, set up your menu in 15 minutes, and test the chime together.
+            Start a 14-day free trial. We&rsquo;ll help you set up your menu and QR codes and test the kitchen chime together.
           </Reveal>
           <Reveal delay={450} className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <button type="button" onClick={onOpenPilot} className="lp-btn lp-btn-primary w-full sm:w-auto sm:!h-[3.25rem] sm:!px-8 sm:!text-base">
@@ -119,7 +119,7 @@ export function Footer({ onOpenPilot }: FooterProps) {
           <FooterCol title="Promise">
             <span>0% commission</span>
             <span>No hardware to buy</span>
-            <span>Nightly WhatsApp summary</span>
+            <span>GST bills included</span>
             <span>Direct founder support</span>
           </FooterCol>
         </div>

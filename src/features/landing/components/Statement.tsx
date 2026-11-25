@@ -2,7 +2,7 @@ import * as React from "react"
 import { CountUp, Reveal, prefersReducedMotion, useScrollLinked } from "./motion"
 
 const COPY =
-  "Ever waved at a waiter who never looked up? Yeah, your guests have too. With Pangat they order and pay from their seat, your kitchen hears it instantly, and tables turn faster."
+  "Ever waved at a waiter who never looked up? Yeah, your guests have too. With Pangat they scan, order from their seat and your kitchen sees it the moment it is placed, so your team spends less time running back and forth."
 
 // words (lowercase, punctuation stripped) that get the accent colour once lit
 const HL = new Set(["waved", "order", "pay", "instantly", "faster"])
@@ -57,9 +57,9 @@ export function Statement() {
 
 export function Proof() {
   const stats = [
-    { to: 14, suffix: " min", label: "saved on every table turn", sub: "No waiting for a menu. No waiting for a card machine." },
-    { to: 0, prefix: "", suffix: "%", label: "commission on your sales", sub: "Guests pay UPI straight into your bank account." },
+    { to: 0, prefix: "", suffix: "%", label: "commission from Pangat", sub: "A flat monthly subscription. We take no cut of your food sales." },
     { to: 0, prefix: "₹", suffix: "", label: "spent on hardware", sub: "Runs in the browser on devices you already own." },
+    { to: 14, prefix: "", suffix: " days", label: "free trial, no card", sub: "Try it with your own menu before you pay anything." },
   ]
   return (
     <section className="relative border-y border-white/[0.06] py-16 sm:py-24">

@@ -14,7 +14,7 @@ const TABS: { id: AdminTab; title: string; body: string; Panel: React.ComponentT
   {
     id: "floor",
     title: "See every table at a glance",
-    body: "Live status for each table — dining, preparing, waiting on the bill. Water and bill requests surface instantly, so no guest gets missed in a rush.",
+    body: "Live status for each table — vacant, occupied, preparing, served — and the open orders behind it, so the floor is readable at a glance.",
     Panel: FloorPanel,
   },
   {
@@ -26,19 +26,19 @@ const TABS: { id: AdminTab; title: string; body: string; Panel: React.ComponentT
   {
     id: "inventory",
     title: "Know what's running low before it does",
-    body: "Link dishes to recipes and every order deducts ingredients automatically. Low-stock alerts, wastage and stock-received ledgers keep the back room honest.",
+    body: "Link dishes to recipes and every order deducts ingredients automatically. Low-stock alerts, wastage and stock-received ledgers keep the back room honest. Included from the Growth plan.",
     Panel: InventoryPanel,
   },
   {
     id: "feedback",
     title: "Hear it from the table",
-    body: "Guests rate their visit from their phone. Catch the quiet problems early, and see exactly what people love about your cafe.",
+    body: "Guests can rate their visit from their phone after their order. Catch the quiet problems early and see what people like about your place.",
     Panel: FeedbackPanel,
   },
   {
     id: "orders",
-    title: "Every rupee, reconciled",
-    body: "Orders and UPI settlements side by side, with payment breakdowns and kitchen speed. Closing the books takes minutes, not an evening.",
+    title: "Your numbers, in one report",
+    body: "Sales, GST collected, refunds, payment-method and order-type breakdowns, best-sellers and kitchen speed for any date range. Sales reports are included from the Starter plan.",
     Panel: OrdersPanel,
   },
 ]
@@ -70,7 +70,7 @@ export function Operations() {
             className="lp-display lp-grad-text text-[2.6rem] sm:text-[3.8rem] lg:text-[4.6rem]"
           />
           <Reveal as="p" delay={250} className="mx-auto mt-6 max-w-[34rem] text-[1.05rem] leading-relaxed text-zinc-400 sm:text-lg">
-            Tables, menu, stock, feedback and settlements — one owner portal built for people who would rather be on the floor.
+            Tables, menu, orders, stock and feedback — one owner portal built for people who would rather be on the floor.
           </Reveal>
         </div>
 

@@ -1,3 +1,4 @@
+import { BillingProfileCard } from "../components/BillingProfileCard"
 import * as React from "react"
 import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import { useSearchParams } from "react-router"
@@ -218,10 +219,12 @@ export function AdminSubscriptionPage() {
                   </div>
                 </section>
 
+                <BillingProfileCard canEdit={isOwner} />
+
                 <section className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.04] p-6">
                   <ShieldCheck className="h-5 w-5 text-emerald-300" />
                   <p className="mt-3 text-sm font-medium text-white">Your data is always yours</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">Menus, orders, customers and tax invoices stay exportable even if a plan lapses or is cancelled.</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">If a plan lapses your menus, orders and bills are kept. You can still view them and renew at any time.</p>
                 </section>
               </aside>
             </div>
@@ -242,6 +245,12 @@ export function AdminSubscriptionPage() {
                   </div>
                 )}
               </div>
+
+              {!b.plans.some((p) => p.id === plan.id) && (
+                <p role="note" className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] p-4 text-[13px] leading-relaxed text-zinc-400">
+                  You are on <span className="font-medium text-zinc-200">{plan.name}</span>, a plan we no longer offer. Your price, limits and features have not changed, and nothing moves unless you ask. Request any plan below to switch.
+                </p>
+              )}
 
               {visiblePlans.length === 0 ? (
                 <p className="rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center text-sm text-zinc-500">No {interval.toLowerCase()} plans are available right now.</p>
@@ -266,6 +275,7 @@ export function AdminSubscriptionPage() {
                       <tr><td className="px-5 py-3.5 text-zinc-500">Price (excl. GST)</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5 tabular-nums">{inr(p.basePrice)}</td>)}</tr>
                       <tr><td className="px-5 py-3.5 text-zinc-500">Outlets</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{limitValue(p.maxOutlets)}</td>)}</tr>
                       <tr><td className="px-5 py-3.5 text-zinc-500">Tables per outlet</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{limitValue(p.maxTablesPerOutlet)}</td>)}</tr>
+                      <tr><td className="px-5 py-3.5 text-zinc-500">Staff accounts per outlet</td>{visiblePlans.map((p) => <td key={p.id} className="px-5 py-3.5">{limitValue(p.maxStaffPerOutlet)}</td>)}</tr>
                       {[...new Set(visiblePlans.flatMap((p) => p.features))].map((f) => (
                         <tr key={f}>
                           <td className="px-5 py-3.5 text-zinc-500">{featureLabel(f)}</td>

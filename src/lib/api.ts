@@ -234,6 +234,9 @@ export interface PrivacyRequestPayload {
   website?: string
 }
 
+/** Who Pangat's tax invoices are addressed to, and the state that decides CGST+SGST versus IGST. */
+export interface BillingProfile { legalName: string | null; address: string | null; stateCode: string | null; gstin: string | null; supplierStateCode: string }
+
 export const api = {
   privacy: {
     createRequest: (data: PrivacyRequestPayload): Promise<{ reference: string; dueDays: number }> =>
@@ -616,6 +619,8 @@ export const api = {
       apiClient.post('/subscriptions/admin/plans', data),
     updatePlan: (id: string, data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> =>
       apiClient.patch(`/subscriptions/admin/plans/${id}`, data),
+    billingProfile: (): Promise<BillingProfile> => apiClient.get('/subscriptions/billing-profile'),
+    updateBillingProfile: (data: Partial<Omit<BillingProfile, 'supplierStateCode'>>): Promise<BillingProfile> => apiClient.patch('/subscriptions/billing-profile', data),
     cancel: (): Promise<unknown> => apiClient.post('/subscriptions/cancel'),
     resume: (): Promise<unknown> => apiClient.post('/subscriptions/resume'),
     requestChange: (planCode: string, message?: string): Promise<{ requested: boolean; plan: string }> =>
