@@ -2,7 +2,7 @@ import * as React from "react"
 import { api } from "@/lib/api"
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
-import type { SubscriptionDetailsResponse, SubscriptionInvoice, SubscriptionPlan, SubscriptionStatus } from "@/types/domain"
+import type { Entitlements, SubscriptionDetailsResponse, SubscriptionInvoice, SubscriptionPlan, SubscriptionStatus } from "@/types/domain"
 
 export const inr = (n: number | undefined | null, decimals = 0) =>
   `₹${(n ?? 0).toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
@@ -84,6 +84,10 @@ export interface Billing {
   /** Whole days until the trial / current period ends (never negative) */
   daysLeft: number | null
   usage: { tables: number; tableLimit: number; outlets: number; outletLimit: number }
+  /** The API's final decision per feature and the limits in force (null until loaded). Never derive access from plan names or prices. */
+  entitlements: Entitlements | null
+  /** True when the feature is known to be unavailable to this organisation (not loaded yet = not locked, the API still enforces). */
+  isLocked: (feature: string) => boolean
 }
 
 /** Subscription, plans, invoices and live usage for the signed-in organisation. */
@@ -136,9 +140,14 @@ export function useBilling(): Billing {
     daysLeft,
     usage: {
       tables: tables.length,
-      tableLimit: plan?.maxTablesPerOutlet ?? 0,
+      tableLimit: details?.entitlements?.limits.maxTablesPerOutlet ?? plan?.maxTablesPerOutlet ?? 0,
       outlets: Math.max(outlets.length, 1),
-      outletLimit: plan?.maxOutlets ?? 0,
+      outletLimit: details?.entitlements?.limits.maxOutlets ?? plan?.maxOutlets ?? 0,
+    },
+    entitlements: details?.entitlements ?? null,
+    isLocked: (feature: string) => {
+      const f = details?.entitlements?.features[feature]
+      return f ? !f.allowed : false
     },
   }
 }

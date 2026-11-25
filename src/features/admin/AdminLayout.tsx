@@ -15,6 +15,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import {
+  Lock,
   BarChart3,
   LineChart,
   LayoutGrid,
@@ -55,6 +56,9 @@ import { ConsoleOverlays } from "@/components/console/ConsoleOverlays"
 import { useConsoleUi } from "@/components/console/useConsoleUi"
 import type { CommandItem } from "@/components/console/types"
 import type { Restaurant } from "@/types/domain"
+
+/** Which plan feature each page needs. Whether it is available is decided by the API (billing.isLocked), never by a plan name here. */
+const NAV_FEATURE: Record<string, string> = { "/admin/reports": "ANALYTICS", "/admin/inventory": "INVENTORY" }
 
 const OPERATIONS_NAV = [
   { label: "Dashboard", path: "/admin/dashboard", icon: BarChart3, roles: ["SUPER_OWNER", "STORE_MANAGER"] },
@@ -193,6 +197,9 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                     {!collapsed && (
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
+                        {NAV_FEATURE[item.path] && billing.isLocked(NAV_FEATURE[item.path]) && (
+                          <Lock className="h-3 w-3 shrink-0 text-amber-300" aria-label="Not included in your plan" />
+                        )}
                         {badgeFor(item.path) > 0 && (
                           <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
                             {badgeFor(item.path)}
@@ -228,6 +235,9 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                     {!collapsed && (
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
+                        {NAV_FEATURE[item.path] && billing.isLocked(NAV_FEATURE[item.path]) && (
+                          <Lock className="h-3 w-3 shrink-0 text-amber-300" aria-label="Not included in your plan" />
+                        )}
                         {badgeFor(item.path) > 0 && (
                           <span className="min-w-5 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums text-emerald-300">
                             {badgeFor(item.path)}
@@ -256,6 +266,7 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
                 {!collapsed && (
                   <span className="truncate flex items-center justify-between w-full">
                     <span>Kitchen KDS</span>
+                    {billing.isLocked("KDS") && <Lock className="h-3 w-3 shrink-0 text-amber-300" aria-label="Not included in your plan" />}
                     <ExternalLink className="h-3 w-3 opacity-60 ml-1 text-zinc-400" />
                   </span>
                 )}

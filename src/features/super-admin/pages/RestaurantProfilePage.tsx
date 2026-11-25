@@ -261,6 +261,9 @@ function FeatureAccess({ orgId, sub, overrides, onDone }: { orgId: string; sub: 
   const [pending, setPending] = React.useState<null | { feature: string; mode: string }>(null)
   const editable = can('restaurants.manage') && can('settings.manage')
   const byFeature = new Map(overrides.map((o) => [o.feature_key, o]))
+  // the API says which keys have something built behind them; the others can be neither sold nor overridden
+  const catalogue = useFetch<any[]>(() => sa.flags(), [])
+  const notBuilt = new Set((catalogue.data ?? []).filter((f) => f.available === false).map((f) => f.feature_key as string))
   const inPlan = (f: string) => (sub?.features ?? []).includes(f)
   return (
     <Panel title="Feature access" description="Plan entitlements, with optional per-restaurant overrides (enforced by the API)">
@@ -273,9 +276,9 @@ function FeatureAccess({ orgId, sub, overrides, onDone }: { orgId: string; sub: 
               <span className={`h-2 w-2 shrink-0 rounded-full ${effective ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
               <div className="min-w-0 flex-1">
                 <p className="text-[13.5px] font-medium text-zinc-900 dark:text-zinc-50">{label}</p>
-                <p className="text-[11.5px] text-zinc-500">{o ? `Forced ${o.mode === 'FORCE_ON' ? 'on' : 'off'} by ${o.set_by}` : inPlan(key) ? 'Included in plan' : 'Not in plan'}</p>
+                <p className="text-[11.5px] text-zinc-500">{notBuilt.has(key) ? 'Not built yet: cannot be sold or overridden' : o ? `Forced ${o.mode === 'FORCE_ON' ? 'on' : 'off'} by ${o.set_by}` : inPlan(key) ? 'Included in plan' : 'Not in plan'}</p>
               </div>
-              {editable && (
+              {editable && !notBuilt.has(key) && (
                 <select aria-label={`${label} access`} disabled={busy} value={o?.mode ?? 'DEFAULT'} onChange={(e) => setPending({ feature: key, mode: e.target.value })} className="h-8 rounded-lg border border-zinc-200 bg-transparent px-1.5 text-[12px] dark:border-white/10">
                   <option value="DEFAULT">Follow plan</option><option value="FORCE_ON">Force on</option><option value="FORCE_OFF">Force off</option>
                 </select>

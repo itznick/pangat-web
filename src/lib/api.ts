@@ -81,12 +81,15 @@ export class ApiError extends Error {
   code?: string
   /** Server request id: quote it to support to find this exact request in the logs */
   requestId?: string
-  constructor(message: string, status = 0, code?: string, requestId?: string) {
+  /** Structured facts from the server, e.g. { limitKind, limit, current, requested } for PLAN_LIMIT_REACHED or { feature } for FEATURE_NOT_IN_PLAN */
+  details?: Record<string, unknown>
+  constructor(message: string, status = 0, code?: string, requestId?: string, details?: Record<string, unknown>) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.requestId = requestId
+    this.details = details
   }
 }
 
@@ -156,6 +159,7 @@ apiClient.interceptors.response.use(
       error.response?.status ?? 0,
       data?.code,
       data?.requestId,
+      data?.details && typeof data.details === 'object' ? data.details : undefined,
     )
     // A temporary password must be replaced before anything else works: send the person to the screen that does that
     if (apiError.code === 'PASSWORD_CHANGE_REQUIRED') passwordGate.emit()

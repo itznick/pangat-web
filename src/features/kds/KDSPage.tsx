@@ -8,6 +8,8 @@ import { KDSTicketCard } from "./components/KDSTicketCard"
 import { OutOfStockDrawer } from "./components/OutOfStockDrawer"
 import { useKdsStore } from "@/stores/useKdsStore"
 import { Button } from "@/components/ui/button"
+import { UpgradeNotice } from "@/components/UpgradeNotice"
+import { useBilling } from "@/features/subscriptions/billing"
 
 export function KDSPage() {
   const { restaurantSlug = "" } = useParams<{ restaurantSlug: string }>()
@@ -20,6 +22,9 @@ export function KDSPage() {
   const sendBackTicket = useKdsStore((s) => s.sendBackTicket)
   const archiveTicket = useKdsStore((s) => s.archiveTicket)
   const chimeCount = useKdsStore((s) => s.chimeCount)
+  // The API decides whether the kitchen display is available (plan, platform switch, override); it also refuses the live feed itself
+  const billing = useBilling()
+  const kdsLocked = billing.isLocked("KDS")
 
   // Fetch initial live tickets from API & connect socket
   useEffect(() => {
@@ -55,6 +60,15 @@ export function KDSPage() {
   ], [newTickets, inPrepTickets, readyTickets])
 
   const activeMobileColumn = columns.find((c) => c.id === mobileStage) || columns[0]
+
+  if (kdsLocked) {
+    return (
+      <div className="h-dvh flex flex-col bg-zinc-950 overflow-hidden">
+        <KDSTopBar restaurantSlug={restaurantSlug} />
+        <UpgradeNotice message="The kitchen display is not included in your current plan, or has been switched off for your account. Ask the restaurant owner to review the plan, or contact Pangat support." />
+      </div>
+    )
+  }
 
   return (
     <div className="h-dvh flex flex-col bg-zinc-950 overflow-hidden relative">

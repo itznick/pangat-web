@@ -126,13 +126,14 @@ function FeatureFlags({ flags, editable, reload }: { flags: Row[] | null; editab
                 <p className="text-[13.5px] font-medium text-zinc-900 dark:text-zinc-50">{label[f.feature_key] ?? f.feature_key} <span className="font-mono text-[11px] text-zinc-500">{f.feature_key}</span></p>
                 <p className="text-[12.5px] text-zinc-500">{f.description}{f.overrides > 0 ? ` · ${f.overrides} restaurant override${f.overrides === 1 ? '' : 's'}` : ''}</p>
               </div>
+              {f.available === false && <Pill tone="neutral">Not built yet</Pill>}
               <Pill tone={f.enabled ? 'good' : 'bad'} dot>{f.enabled ? 'Available' : 'Disabled'}</Pill>
               <Switch checked={f.enabled} disabled={!editable} aria-label={`${f.feature_key} availability`} onCheckedChange={(v) => setPending({ key: f.feature_key, enabled: v })} />
             </li>
           ))}
         </ul>
       )}
-      <p className="mt-3 text-[12px] text-zinc-500">Enforced by the API today: Inventory, Analytics, QR ordering (guest orders) and adding extra outlets. Kitchen display and Advanced reports are recorded here but not yet enforced.</p>
+      <p className="mt-3 text-[12px] text-zinc-500">Enforced by the API: QR ordering (guest orders and the ordering flag on the public menu), Kitchen display (kitchen sign-in, live feed, kitchen-role order access), Inventory, Analytics and Multi-outlet (adding a second or later outlet). Advanced reports is not built yet: nothing sits behind it, it cannot be added to a plan and customers never see it.</p>
       <ConfirmDialog open={pending !== null} onClose={() => setPending(null)} title={`${pending?.enabled ? 'Enable' : 'Disable'} ${pending ? label[pending.key] ?? pending.key : ''}`} description={pending?.enabled ? 'The feature becomes available to restaurants whose plan includes it.' : 'It stops working for every restaurant immediately.'} confirmLabel={pending?.enabled ? 'Enable' : 'Disable'} tone={pending?.enabled ? 'default' : 'danger'} requireReason={!pending?.enabled}
         onConfirm={async (reason) => { await run(() => sa.setFlag(pending!.key, pending!.enabled, reason), 'Feature updated'); reload() }} />
     </Panel>
