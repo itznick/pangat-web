@@ -102,7 +102,7 @@ interface AdminStore {
 
   // ── Table floor management ─────────────────────────────────────────────────
   updateTableStatus: (tableId: string, status: TableStatus) => Promise<void>
-  addTable: (tableNumber: string) => Promise<Table>
+  addTable: (tableNumber: string, limitOverrideReason?: string) => Promise<Table>
   deleteTable: (tableId: string) => Promise<void>
 
   // ── Menu management ────────────────────────────────────────────────────────
@@ -345,10 +345,10 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
-  addTable: async (tableNumber: string) => {
+  addTable: async (tableNumber: string, limitOverrideReason?: string) => {
     const restaurantId = get().restaurant.id || useAuthStore.getState().currentOutlet?.id
     if (!restaurantId) throw new Error("No active outlet selected")
-    const created = await api.tables.create({ restaurantId, tableNumber })
+    const created = await api.tables.create({ restaurantId, tableNumber, ...(limitOverrideReason ? { limitOverrideReason } : {}) })
     set((s) => ({
       tables: [...s.tables, created].sort((a, b) =>
         a.tableNumber.localeCompare(b.tableNumber, undefined, { numeric: true })

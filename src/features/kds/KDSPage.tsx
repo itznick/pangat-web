@@ -10,6 +10,7 @@ import { useKdsStore } from "@/stores/useKdsStore"
 import { Button } from "@/components/ui/button"
 import { UpgradeNotice } from "@/components/UpgradeNotice"
 import { useBilling } from "@/features/subscriptions/billing"
+import { joinKdsRoom, onAccessRevoked } from "@/lib/socket"
 
 export function KDSPage() {
   const { restaurantSlug = "" } = useParams<{ restaurantSlug: string }>()
@@ -25,6 +26,25 @@ export function KDSPage() {
   // The API decides whether the kitchen display is available (plan, platform switch, override); it also refuses the live feed itself
   const billing = useBilling()
   const kdsLocked = billing.isLocked("KDS")
+  const refreshBilling = billing.refresh
+
+  // The server can withdraw the live kitchen feed while the screen is open: show the notice at once instead of a board that silently stops
+  useEffect(() => onAccessRevoked((info) => { if (info.feature === "KDS") refreshBilling() }), [refreshBilling])
+  // While locked, re-check now and then; when access is restored the board reloads and rejoins the live feed by itself
+  useEffect(() => {
+    if (!kdsLocked) return
+    const t = setInterval(refreshBilling, 30000)
+    return () => clearInterval(t)
+  }, [kdsLocked, refreshBilling])
+  const wasLocked = useRef(false)
+  useEffect(() => {
+    if (kdsLocked) { wasLocked.current = true; return }
+    if (wasLocked.current && restaurantSlug) {
+      wasLocked.current = false
+      joinKdsRoom(restaurantSlug)
+      useKdsStore.getState().fetchTickets(restaurantSlug)
+    }
+  }, [kdsLocked, restaurantSlug])
 
   // Fetch initial live tickets from API & connect socket
   useEffect(() => {

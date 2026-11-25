@@ -165,7 +165,8 @@ apiClient.interceptors.response.use(
     if (apiError.code === 'PASSWORD_CHANGE_REQUIRED') passwordGate.emit()
     if (apiError.code === 'TWO_FACTOR_ENROLMENT_REQUIRED') twoFactorGate.emit()
     // A lapsed subscription / plan limit is a global condition, not a per-form error
-    if (apiError.status === 402) subscriptionGate.emit(apiError)
+    // (a request marked silentPlanGate is a background poll nobody asked for: the screen the user opens on purpose explains the refusal itself)
+    if (apiError.status === 402 && !(error.config as { silentPlanGate?: boolean } | undefined)?.silentPlanGate) subscriptionGate.emit(apiError)
     if ((apiError.code === 'ACCOUNT_SUSPENDED' || apiError.code === 'ACCOUNT_DEACTIVATED' || apiError.code === 'MAINTENANCE_MODE') && localStorage.getItem('pangat_access_token') && !/\/auth\/login/.test(error.config?.url || '')) {
       platformGate.emit(apiError)
     }
@@ -374,7 +375,8 @@ export const api = {
       apiClient.get('/tables', { params: { restaurantId } }),
     get: (id: string): Promise<Table> =>
       apiClient.get(`/tables/${id}`),
-    create: (data: { restaurantId: string; tableNumber: string }): Promise<Table> =>
+    /** `limitOverrideReason` is honoured only for an authorised platform administrator (the API refuses it for anyone else). */
+    create: (data: { restaurantId: string; tableNumber: string; limitOverrideReason?: string }): Promise<Table> =>
       apiClient.post('/tables', data),
     delete: (id: string): Promise<{ id: string }> =>
       apiClient.delete(`/tables/${id}`),
@@ -571,10 +573,12 @@ export const api = {
       apiClient.get('/inventory/movements', {
         params: { restaurantId, ...query },
       }),
-    getAlerts: (restaurantId: string): Promise<InventoryAlerts> =>
+    /** `background` = a poll the user did not ask for: a plan refusal (402) is then not announced with the global upgrade toast. */
+    getAlerts: (restaurantId: string, opts?: { background?: boolean }): Promise<InventoryAlerts> =>
       apiClient.get('/inventory/alerts', {
         params: { restaurantId },
-      }),
+        ...(opts?.background ? { silentPlanGate: true } : {}),
+      } as Record<string, unknown>),
     listRecipes: (restaurantId: string): Promise<Recipe[]> =>
       apiClient.get('/inventory/recipes', {
         params: { restaurantId },

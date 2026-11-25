@@ -347,6 +347,8 @@ export interface ProvisionPayload {
   outdoorTableCount?: number
   menuPreset?: 'pune_cafe' | 'south_indian' | 'blank'
   leadId?: string
+  /** Platform administrators with "subscriptions.manage" only: exceed the trial plan's table limit, with a recorded reason */
+  limitOverrideReason?: string
 }
 
 export interface ProvisionResult {
