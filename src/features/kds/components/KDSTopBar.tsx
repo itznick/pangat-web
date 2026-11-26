@@ -72,7 +72,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
             variant="outline"
             size="sm"
             onClick={handleReturnToDashboard}
-            className="gap-1.5 bg-zinc-800 hover:bg-zinc-750 border-zinc-700/80 text-zinc-200 text-xs font-medium cursor-pointer transition-colors shadow-xs shrink-0 h-8"
+            className="gap-1.5 bg-zinc-800 hover:bg-zinc-700 border-zinc-700/80 text-zinc-200 text-xs font-medium cursor-pointer transition-colors shadow-xs shrink-0 h-8"
             title={isChefOnly ? "Exit Kitchen Station" : "Return to Admin Dashboard"}
           >
             {isChefOnly ? <LogOut className="h-3.5 w-3.5" /> : <ArrowLeft className="h-3.5 w-3.5" />}
