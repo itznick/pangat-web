@@ -178,6 +178,14 @@ apiClient.interceptors.response.use(
   }
 )
 
+export interface MenuImportResult {
+  dryRun: boolean
+  summary: { create: number; update: number; skip: number; errors: number; newCategories: number }
+  rows: { line: number; category: string; name: string; price: number; action: 'create' | 'update' | 'skip'; reason?: string }[]
+  errors: { line: number; message: string }[]
+  newCategories: string[]
+}
+
 export interface GoLiveStep {
   key: string
   label: string
@@ -410,6 +418,9 @@ export const api = {
   menu: {
     getPublic: (restaurantSlug: string): Promise<PublicMenuResponse> =>
       apiClient.get(`/menu/public/${restaurantSlug}`),
+    /** CSV import. dryRun (the default on the server) previews; dryRun:false imports. */
+    importCsv: (body: { restaurantId: string; csv: string; dryRun: boolean; updatePrices?: boolean }): Promise<MenuImportResult> =>
+      apiClient.post('/menu/import', body),
     getItems: (restaurantId?: string): Promise<MenuItem[]> =>
       apiClient.get('/menu/items', { params: { restaurantId } }),
     updateAvailability: (id: string, isAvailable: boolean): Promise<MenuItem> =>

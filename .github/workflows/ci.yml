@@ -94,6 +94,11 @@ jobs:
       - name: Kitchen display reliability
         working-directory: web
         run: UAT_WEB=http://127.0.0.1:5173 node --test test/e2e/kds-reliability.e2e.test.mjs
+      - name: Roles, walk-in order dialog and menu import
+        working-directory: web
+        run: |
+          UAT_WEB=http://127.0.0.1:5173 node --test test/e2e/roles.e2e.test.mjs
+          UAT_WEB=http://127.0.0.1:5173 node --test test/e2e/menu-import.e2e.test.mjs
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

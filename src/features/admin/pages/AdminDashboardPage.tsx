@@ -111,6 +111,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
   const [selectedTable, setSelectedTable] = useState<string>("")
   const [cart, setCart] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [dishSearch, setDishSearch] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   const vacantTables = tables.filter((t) => t.status === "VACANT")
@@ -207,6 +208,8 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                 vacantTables.map((t) => (
                   <button
                     key={t.id}
+                    aria-pressed={selectedTable === t.id}
+                    aria-label={`Table ${t.tableNumber}`}
                     onClick={() => setSelectedTable(t.id)}
                     className={cn(
                       "h-10 rounded-xl border text-sm font-bold transition-all",
@@ -224,13 +227,20 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
 
           {/* Menu quick-add */}
           <div>
-            <label className="text-xs font-semibold text-zinc-400 mb-2 block">
+            <label htmlFor="walkin-dish-search" className="text-xs font-semibold text-zinc-400 mb-2 block">
               Add Items
             </label>
+            <input
+              id="walkin-dish-search"
+              type="search"
+              value={dishSearch}
+              onChange={(e) => setDishSearch(e.target.value)}
+              placeholder="Search dishes"
+              className="mb-2 h-9 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-transparent px-3 text-xs text-slate-900 dark:text-zinc-100 placeholder:text-zinc-500"
+            />
             <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
               {menuItems
-                .filter((m) => m.isAvailable)
-                .slice(0, 12)
+                .filter((m) => m.isAvailable && (!dishSearch.trim() || m.name.toLowerCase().includes(dishSearch.trim().toLowerCase())))
                 .map((item) => {
                   const qty = cart[item.id] ?? 0
                   return (
@@ -246,8 +256,9 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                         {qty > 0 && (
                           <>
                             <button
+                              aria-label={`Remove one ${item.name}`}
                               onClick={() => adjustCart(item.id, -1)}
-                              className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 flex items-center justify-center text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors text-sm font-bold"
+                              className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 flex items-center justify-center text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors text-sm font-bold"
                             >
                               −
                             </button>
@@ -255,9 +266,10 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                           </>
                         )}
                         <button
+                          aria-label={`Add one ${item.name}`}
                           onClick={() => adjustCart(item.id, 1)}
                           className={cn(
-                            "w-6 h-6 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors",
+                            "w-8 h-8 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors",
                             qty > 0
                               ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30"
                               : "bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700"
