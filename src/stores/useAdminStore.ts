@@ -661,6 +661,11 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
   },
 
   archiveOrder: async (orderId) => {
+    // an order with an unpaid bill stays active until it is paid or settled by staff
+    if (get().activeOrders.find((o) => o.id === orderId)?.paymentStatus === 'PENDING') {
+      toast.error('The bill is still unpaid. Mark it paid (or settle it) before archiving.')
+      return
+    }
     set((s) => {
       const nextOrders = s.activeOrders.map((o) =>
         o.id === orderId

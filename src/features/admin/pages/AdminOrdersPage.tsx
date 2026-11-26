@@ -530,6 +530,10 @@ export function AdminOrdersPage() {
                           <button
                             type="button"
                             onClick={async () => {
+                              if (order.paymentStatus === "PENDING") {
+                                toast.error("The bill is still unpaid. Mark it paid before completing this delivery.")
+                                return
+                              }
                               try {
                                 await api.orders.updateStatus(order.id, "COMPLETED")
                                 fetchArchivedOrders()
@@ -578,7 +582,7 @@ export function AdminOrdersPage() {
                           </button>
                         )}
 
-                        {activeTab === "active" && (
+                        {activeTab === "active" && order.paymentStatus !== "PENDING" && (
                           <button
                             type="button"
                             onClick={async () => {

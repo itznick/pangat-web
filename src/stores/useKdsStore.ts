@@ -219,11 +219,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         const updated = s.tickets.map((t) =>
           t.id === orderId ? { ...t, orderStatus: status } : t
         )
-        const becameReady = status === 'READY'
-        return {
-          tickets: updated,
-          chimeCount: becameReady && s.soundEnabled && s.alertReady ? s.chimeCount + 1 : s.chimeCount,
-        }
+        // The kitchen display never chimes for READY: the cook just tapped it. The ready chime is for front-of-house (admin board).
+        return { tickets: updated }
       })
     })
 
@@ -238,7 +235,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
   addTicket: (order) =>
     set((s) => ({
       tickets: [order, ...s.tickets],
-      chimeCount: s.soundEnabled ? s.chimeCount + 1 : s.chimeCount,
+      chimeCount: s.soundEnabled && s.alertNewOrders ? s.chimeCount + 1 : s.chimeCount,
     })),
 
   sendBackTicket: async (orderId: string, targetStatus: OrderStatus, reason: string) => {
@@ -269,11 +266,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         return { ...t, orderStatus: nextStatus }
       })
       const filtered = tickets.filter((t) => t.orderStatus !== 'COMPLETED')
-      const becameReady = nextStatus === 'READY'
-      return {
-        tickets: filtered,
-        chimeCount: becameReady && s.soundEnabled ? s.chimeCount + 1 : s.chimeCount,
-      }
+      return { tickets: filtered }
     })
 
     try {
@@ -284,6 +277,12 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
   },
 
   archiveTicket: async (orderId) => {
+    // a ticket with an unpaid bill stays on the board until the bill is settled
+    const t = get().tickets.find((x) => x.id === orderId)
+    if (t?.paymentStatus === 'PENDING') {
+      toast.error('The bill is still unpaid. It can be archived once it is paid or settled by the cashier.')
+      return
+    }
     set((s) => ({
       tickets: s.tickets.filter((t) => t.id !== orderId),
     }))
