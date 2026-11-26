@@ -178,6 +178,20 @@ apiClient.interceptors.response.use(
   }
 )
 
+export interface GoLiveStep {
+  key: string
+  label: string
+  required: boolean
+  status: 'DONE' | 'TODO' | 'ATTENTION'
+  source: 'AUTO' | 'MANUAL'
+  hint: string
+  link: string
+  confirmedAt?: string
+  /** For owner-attested steps: the key to send to confirmStep() */
+  confirmKey?: string
+}
+export interface GoLiveReadiness { steps: GoLiveStep[]; done: number; total: number; ready: boolean; blocking: string[] }
+
 export interface PublicMenuResponse {
   restaurant: Restaurant
   categories: MenuCategory[]
@@ -363,6 +377,9 @@ export const api = {
       apiClient.get(`/restaurants/${slug}`),
     updateSettings: (slug: string, settings: Partial<Restaurant>): Promise<Restaurant> =>
       apiClient.patch(`/restaurants/${slug}/settings`, settings),
+    readiness: (outletId: string): Promise<GoLiveReadiness> => apiClient.get(`/restaurants/${outletId}/readiness`),
+    confirmStep: (outletId: string, step: string, done = true): Promise<GoLiveReadiness> =>
+      apiClient.post(`/restaurants/${outletId}/onboarding/confirm`, { step, done }),
     confirmUpi: (outletId: string, vpa: string): Promise<{ confirmed: boolean; confirmedAt: string }> =>
       apiClient.post(`/restaurants/${outletId}/upi/confirm`, { vpa }),
     getFeedback: (slug: string): Promise<CustomerFeedbackSummary> =>

@@ -15,6 +15,9 @@ const put = <T = any>(url: string, body?: unknown) => apiClient.put(url, body ??
 export const sa = {
   dashboard: (q: Q) => get('/admin/dashboard', q),
   events: (limit = 30) => get<Row[]>('/admin/events', { limit }),
+  alertHealth: () => get<Row>('/admin/alerts/health'),
+  alertDeliveries: (status?: string) => get<Row[]>('/admin/alerts/deliveries', { status, limit: 50 }),
+  retryAlert: (id: string) => post(`/admin/alerts/deliveries/${id}/retry`),
   ackEvents: (id?: string) => post('/admin/events/ack', id ? { id } : {}),
 
   restaurants: (q: Q) => get<Paged>('/admin/restaurants', q),

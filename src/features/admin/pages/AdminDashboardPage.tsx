@@ -23,6 +23,7 @@ import { useKdsStore } from "@/stores/useKdsStore"
 import { api, errMsg } from "@/lib/api"
 import { keyFor, releaseKey } from "@/lib/idempotency"
 import { ZeroStateCard } from "../components/ZeroStateCard"
+import { GoLiveChecklist } from "../components/GoLiveChecklist"
 const AddOutletModal = lazy(() => import("../components/AddOutletModal").then((m) => ({ default: m.AddOutletModal })))
 import {
   TrendingUp,
@@ -405,6 +406,7 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
 
 export function AdminDashboardPage() {
   const restaurant = useAdminStore((s) => s.restaurant)
+  const authUser = useAuthStore((s) => s.user)
   const todaySales = useAdminStore((s) => s.todaySales)
   const tables = useAdminStore((s) => s.tables)
   const activeOrders = useAdminStore((s) => s.activeOrders)
@@ -544,6 +546,8 @@ export function AdminDashboardPage() {
           </div>
         ) : (
           <>
+            {restaurant?.id && <GoLiveChecklist outletId={restaurant.id} role={authUser?.role} />}
+
             {/* ── Metric Cards ──────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <MetricCard
