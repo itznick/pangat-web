@@ -92,6 +92,8 @@ export function OrderTrackingView({
                     orderStatus: fresh.orderStatus,
                     paymentStatus: fresh.paymentStatus,
                     settledAt: fresh.settledAt || s.order.settledAt,
+                    // the order created at checkout has no payee; the server adds it (or null) on every fetch
+                    payee: fresh.payee ?? null,
                   }
                 : fresh,
             }

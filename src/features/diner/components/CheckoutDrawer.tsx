@@ -248,7 +248,7 @@ export function CheckoutDrawer({
                     "w-full h-10 px-3 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all",
                     hasAttemptedSubmit && !isTableValid
                       ? "border-rose-500/80 bg-rose-950/10"
-                      : "border-zinc-750 focus:border-emerald-500/70"
+                      : "border-zinc-700 focus:border-emerald-500/70"
                   )}
                 />
                 {hasAttemptedSubmit && !isTableValid && (
@@ -275,7 +275,7 @@ export function CheckoutDrawer({
                   "w-full h-10 px-3 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all",
                   hasAttemptedSubmit && !isNameValid
                     ? "border-rose-500/80 bg-rose-950/10"
-                    : "border-zinc-750 focus:border-emerald-500/70"
+                    : "border-zinc-700 focus:border-emerald-500/70"
                 )}
               />
             </div>
@@ -295,7 +295,7 @@ export function CheckoutDrawer({
                       "w-full p-2.5 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all resize-none",
                       hasAttemptedSubmit && !isAddressValid
                         ? "border-rose-500/80 bg-rose-950/10"
-                        : "border-zinc-750 focus:border-emerald-500/70"
+                        : "border-zinc-700 focus:border-emerald-500/70"
                     )}
                   />
                 </div>
@@ -308,7 +308,7 @@ export function CheckoutDrawer({
                     placeholder="e.g. Leave with security, gate code 1234"
                     value={deliveryInstructions}
                     onChange={(e) => setDeliveryInstructions(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl bg-zinc-900 border border-zinc-750 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/70"
+                    className="w-full h-10 px-3 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/70"
                   />
                 </div>
               </>
@@ -580,12 +580,12 @@ export function CheckoutDrawer({
 
         {/* Mobile Number Input Section */}
         <div className="space-y-2 pt-1">
-          <label className="flex items-center justify-between text-xs font-semibold text-zinc-300">
-            <span className="flex items-center gap-1.5">
+          <label className="flex flex-col gap-0.5 text-xs font-semibold text-zinc-300">
+            <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
               <Smartphone className="h-3.5 w-3.5 text-emerald-400" />
               Mobile Number {orderType === "DELIVERY" ? <span className="text-rose-400">*</span> : <span className="text-zinc-500 font-normal">(Optional)</span>}
             </span>
-            <span className="text-[11px] text-zinc-500 font-normal">
+            <span className="text-[11px] leading-snug text-zinc-500 font-normal pl-5">
               {orderType === "DELIVERY" ? "Required for delivery agent" : "Optional: only used if the restaurant needs to reach you about this order"}
             </span>
           </label>
@@ -604,7 +604,7 @@ export function CheckoutDrawer({
                 "w-full h-12 pl-13 pr-4 rounded-xl bg-zinc-900 border text-sm text-zinc-100 placeholder:text-zinc-600 font-medium tracking-wide focus:outline-none transition-all",
                 hasAttemptedSubmit && !isMobileValid
                   ? "border-rose-500/80 focus:ring-1 focus:ring-rose-500/40 bg-rose-950/10"
-                  : "border-zinc-750 focus:border-emerald-500/70 focus:ring-1 focus:ring-emerald-500/40"
+                  : "border-zinc-700 focus:border-emerald-500/70 focus:ring-1 focus:ring-emerald-500/40"
               )}
             />
           </div>
