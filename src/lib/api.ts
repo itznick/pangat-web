@@ -363,6 +363,8 @@ export const api = {
       apiClient.get(`/restaurants/${slug}`),
     updateSettings: (slug: string, settings: Partial<Restaurant>): Promise<Restaurant> =>
       apiClient.patch(`/restaurants/${slug}/settings`, settings),
+    confirmUpi: (outletId: string, vpa: string): Promise<{ confirmed: boolean; confirmedAt: string }> =>
+      apiClient.post(`/restaurants/${outletId}/upi/confirm`, { vpa }),
     getFeedback: (slug: string): Promise<CustomerFeedbackSummary> =>
       apiClient.get(`/restaurants/${slug}/feedback`),
     submitFeedback: (

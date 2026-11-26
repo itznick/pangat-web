@@ -20,7 +20,8 @@ import {
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { useKdsStore } from "@/stores/useKdsStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
+import { keyFor, releaseKey } from "@/lib/idempotency"
 import { ZeroStateCard } from "../components/ZeroStateCard"
 const AddOutletModal = lazy(() => import("../components/AddOutletModal").then((m) => ({ default: m.AddOutletModal })))
 import {
@@ -108,6 +109,8 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
   const currentOutlet = useAuthStore((s) => s.currentOutlet)
   const [selectedTable, setSelectedTable] = useState<string>("")
   const [cart, setCart] = useState<Record<string, number>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const vacantTables = tables.filter((t) => t.status === "VACANT")
 
@@ -129,39 +132,44 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
   }
 
   const handleConfirm = async () => {
+    if (submitting) return // a second click while the first is in flight must not create a second order
     const targetTable = tables.find((t) => t.id === selectedTable)
     if (!targetTable) return
+    if (!currentOutlet?.slug) {
+      setError("No outlet is selected, so the order was not placed. Choose an outlet and try again.")
+      return
+    }
 
     const orderItems = Object.entries(cart).map(([id, qty]) => {
       const item = menuItems.find((m) => m.id === id)!
-      return {
-        menuItemId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: qty,
-      }
+      return { menuItemId: item.id, name: item.name, price: item.price, quantity: qty }
     })
 
+    const scope = `walkin:${currentOutlet.slug}`
+    const body = {
+      restaurantSlug: currentOutlet.slug,
+      orderType: 'DINE_IN' as const,
+      tableNumber: targetTable.tableNumber,
+      paymentMethod: 'PAY_AT_COUNTER' as any,
+      items: orderItems,
+    }
+    setSubmitting(true)
+    setError(null)
     try {
-      const created = await api.orders.create(
-        {
-          restaurantSlug: currentOutlet?.slug || 'pangat',
-          orderType: 'DINE_IN',
-          tableNumber: targetTable.tableNumber,
-          paymentMethod: 'PAY_AT_COUNTER' as any,
-          items: orderItems,
-        },
-        `idemp-walkin-${Date.now()}`
-      )
+      // the same attempt (retry after a timeout) reuses the key, so the server returns the original order, not a duplicate
+      const created = await api.orders.create(body, keyFor(scope, body))
+      releaseKey(scope)
       useAdminStore.getState().addOrder(created)
       useAdminStore.getState().updateTableStatus(targetTable.id, 'PREPPING')
+      // close only on success; the form is kept on failure so nothing has to be re-entered
+      onClose()
+      setSelectedTable("")
+      setCart({})
     } catch (err) {
-      console.error('Failed to place walk-in order:', err)
+      setError(errMsg(err, "The order could not be placed. Nothing was sent to the kitchen. Check the details and try again."))
+    } finally {
+      setSubmitting(false)
     }
-
-    onClose()
-    setSelectedTable("")
-    setCart({})
   }
 
   return (
@@ -274,6 +282,9 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           )}
         </div>
 
+        {error && (
+          <p role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300">{error}</p>
+        )}
         <DialogFooter>
           <button
             onClick={onClose}
@@ -283,11 +294,11 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!selectedTable || itemCount === 0}
+            disabled={!selectedTable || itemCount === 0 || submitting}
             className="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white border border-emerald-500/50 transition-colors shadow-lg shadow-emerald-900/30 flex items-center gap-2"
           >
             <Zap className="h-3.5 w-3.5" />
-            Fire to Kitchen
+            {submitting ? "Sending…" : "Fire to Kitchen"}
           </button>
         </DialogFooter>
       </DialogContent>

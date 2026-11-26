@@ -26,11 +26,11 @@ export function RoleGuard({
 }: RoleGuardProps) {
   const user = useAuthStore((s) => s.user)
   const currentOutlet = useAuthStore((s) => s.currentOutlet)
-  const outletSlug = currentOutlet?.slug || user?.restaurantSlug || 'pangat'
+  const outletSlug = currentOutlet?.slug || user?.restaurantSlug || ''
 
   // If user role is CHEF and accessing an owner/manager screen, redirect directly to KDS station
   if (user?.role === 'CHEF') {
-    return <Navigate to={`/kds/${outletSlug}`} replace />
+    return <Navigate to={outletSlug ? `/kds/${outletSlug}` : '/login'} replace />
   }
 
   // If no role restrictions are defined, allow access

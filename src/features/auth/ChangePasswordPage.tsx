@@ -29,7 +29,7 @@ export function ChangePasswordPage() {
       const r = await api.auth.changePassword({ currentPassword: current, newPassword: next })
       setSession(r.accessToken, { ...user, mustChangePassword: false }, organization, outlets, currentOutlet ?? undefined)
       const role = user.role
-      navigate(role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : role === 'CHEF' ? `/kds/${user.restaurantSlug || 'pangat'}` : '/admin', { replace: true })
+      navigate(role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : role === 'CHEF' ? (user.restaurantSlug ? `/kds/${user.restaurantSlug}` : '/login') : '/admin', { replace: true })
     } catch (err) {
       setError(errMsg(err))
     } finally {

@@ -139,7 +139,6 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
         outletName: brand ? `${brand} · Main` : '',
         branchArea: initialLead.city || '',
         slug: s,
-        upiVpa: s ? `${s}@icici` : '',
         indoor: Number.isFinite(n) ? Math.max(4, Math.min(30, n)) : 12,
       })
     } else {
@@ -155,7 +154,6 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
         brandName: v,
         slug: s,
         outletName: p.outletName && p.outletName !== `${p.brandName} · Main` ? p.outletName : v ? `${v} · Main` : '',
-        upiVpa: p.upiVpa && !p.upiVpa.endsWith('@icici') ? p.upiVpa : s ? `${s}@icici` : '',
       }
     })
   }
@@ -170,7 +168,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
     if (f.password && f.password.length < 10) e.password = 'Use at least 10 characters, or leave blank so the owner chooses their own by email'
     if (f.outletName.trim().length < 2) e.outletName = 'Enter the outlet name'
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug) || f.slug.length < 3) e.slug = 'Lowercase letters, numbers and dashes, 3+ characters'
-    if (!/^[\w.-]{2,}@[a-zA-Z][\w]{1,}$/.test(f.upiVpa.trim())) e.upiVpa = 'Enter a valid UPI ID, like name@bank'
+    if (f.upiVpa.trim() && !/^[a-zA-Z0-9._-]{2,64}@[a-zA-Z0-9]{2,32}$/.test(f.upiVpa.trim())) e.upiVpa = 'Enter a valid UPI ID, like name@bank, or leave it blank'
     if (f.gstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(f.gstin.trim().toUpperCase())) e.gstin = 'GSTIN should be 15 characters'
     if (f.gstPercentage < 0 || f.gstPercentage > 28) e.gstPercentage = 'Enter a rate between 0 and 28'
     return e
@@ -430,8 +428,8 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
                       <Field label="Area" optional>
                         <input className={field} value={f.branchArea} onChange={(e) => set('branchArea', e.target.value)} placeholder="Koregaon Park, Pune" />
                       </Field>
-                      <Field label="UPI ID for settlements" error={show('upiVpa')} hint="Guests pay this ID directly. Pangat takes no commission.">
-                        <input className={`${field} font-mono`} value={f.upiVpa} onChange={(e) => set('upiVpa', e.target.value)} onBlur={blur('upiVpa')} placeholder="roasttoast@icici" autoCapitalize="none" />
+                      <Field label="UPI ID for settlements" error={show('upiVpa')} hint="Optional. The owner confirms it in Settings before guests see UPI.">
+                        <input className={`${field} font-mono`} value={f.upiVpa} onChange={(e) => set('upiVpa', e.target.value)} onBlur={blur('upiVpa')} placeholder="Leave blank: the owner adds and confirms their own UPI ID" autoCapitalize="none" />
                       </Field>
                       <div className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_140px]">
                         <Field label="GSTIN" optional error={show('gstin')}>
@@ -512,7 +510,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
                         ['Password', f.password ? 'Custom' : 'Auto-generated', 0],
                         ['Outlet', f.outletName, 1],
                         ['URL', `/r/${f.slug}`, 1],
-                        ['Settlement UPI', f.upiVpa, 1],
+                        ['Settlement UPI', f.upiVpa || 'Not set: owner adds and confirms it', 1],
                         ['GST', `${f.gstPercentage}%${f.gstin ? ` · ${f.gstin}` : ''}`, 1],
                         ['Tables', `${f.indoor} indoor + ${f.outdoor} outdoor`, 2],
                         ['Menu', PRESETS.find((p) => p.key === f.menuPreset)?.title, 3],

@@ -212,7 +212,8 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
-  initSocketSync: (slug = 'pangat') => {
+  initSocketSync: (slug) => {
+    if (!slug) return
     joinKdsRoom(slug)
     joinAdminRoom(slug)
     if (socketListening) return
@@ -483,7 +484,9 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     })
   },
 
-  updateSettings: async (settings, slug = useAuthStore.getState().currentOutlet?.slug ?? 'pangat') => {
+  updateSettings: async (settings, slug = useAuthStore.getState().currentOutlet?.slug) => {
+    // never guess an outlet: saving settings to the wrong restaurant is worse than refusing to save
+    if (!slug) throw new Error('No outlet is selected, so nothing was saved. Choose an outlet and try again.')
     const previous = get().restaurant
     set((s) => ({
       restaurant: { ...s.restaurant, ...settings },

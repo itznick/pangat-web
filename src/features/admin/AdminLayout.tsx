@@ -395,7 +395,7 @@ export function AdminLayout() {
                 name: o.name,
                 slug: o.slug,
                 branchArea: o.branchArea || undefined,
-                upiVpa: o.upiVpa || 'counter@icici',
+                upiVpa: o.upiVpa || '',
                 gstPercentage: o.gstPercentage || 5,
                 isVegOnly: false,
               }))

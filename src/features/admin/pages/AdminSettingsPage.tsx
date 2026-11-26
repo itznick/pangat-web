@@ -10,6 +10,7 @@ import { DAY_ORDER, HHMM, resolveOps } from "../settings/operations"
 import { Card, Field, Input, Switch } from "../settings/parts"
 import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import { TeamSection } from "../settings/TeamSection"
+import { UpiConfirmation } from "../settings/UpiConfirmation"
 import { AccountSection } from "../settings/AccountSection"
 import { ActivitySection, PlatformAccessCard, SignInActivityCard } from "../settings/ActivitySection"
 import "@/features/landing/landing.css"
@@ -324,12 +325,13 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
                 </Field>
               </Card>
               <Card title="Settlement" desc="Where guest payments land.">
-                <Field label="UPI ID" error={problems.upi} hint={isOwner ? "Guests pay this ID directly. Pangat takes no commission." : "Only the owner can change the settlement account."}>
+                <Field label="UPI ID" error={problems.upi} hint={isOwner ? "Guests pay this ID directly and Pangat takes no commission. Your cashier confirms each payment." : "Only the owner can change the settlement account."}>
                   <div className="relative">
                     <Input value={form.upiVpa} onChange={(v) => set("upiVpa", v)} disabled={!isOwner} className="font-mono" autoCapitalize="none" />
                     {!isOwner && <Lock className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />}
                   </div>
                 </Field>
+                <UpiConfirmation savedVpa={restaurant.upiVpa || ""} typedVpa={form.upiVpa} confirmedAt={restaurant.upiVpaConfirmedAt} outletId={restaurant.id} isOwner={isOwner} />
               </Card>
               <Card title="Receipts" desc="Printed at the bottom of every customer receipt.">
                 <Field label="Footer message" optional hint="e.g. Thank you for dining with us. Follow us @yourcafe.">

@@ -44,7 +44,7 @@ export function LoginPage() {
   // Already signed in: don't make people sign in again, send them where they work
   if (existingUser && existingToken && !isLoading) {
     const role = existingUser.role
-    const home = role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : role === 'CHEF' ? `/kds/${existingUser.restaurantSlug || 'pangat'}` : '/admin'
+    const home = role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : role === 'CHEF' ? (existingUser.restaurantSlug ? `/kds/${existingUser.restaurantSlug}` : '/login') : '/admin'
     return <Navigate to={home} replace />
   }
 
@@ -120,7 +120,8 @@ export function LoginPage() {
           activeOutlet
         )
 
-        const targetSlug = outletSlug.trim() || activeOutlet?.slug || res.user?.restaurantSlug || 'pangat'
+        const targetSlug = outletSlug.trim() || activeOutlet?.slug || res.user?.restaurantSlug || ''
+        if (!targetSlug) { setErrorMsg('Enter the restaurant code for your kitchen station.'); return }
         navigate(`/kds/${targetSlug}`, { replace: true })
         return
       }

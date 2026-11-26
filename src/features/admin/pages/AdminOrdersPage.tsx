@@ -1,4 +1,5 @@
 import { BillView } from "../components/BillView"
+import { keyFor, releaseKey } from "@/lib/idempotency"
 import { resolveOps } from "../settings/operations"
 import { useState, useEffect, useMemo } from "react"
 import { toast } from "@/components/ui/toast"
@@ -1147,12 +1148,11 @@ export function AdminOrdersPage() {
               onClick={async () => {
                 if (refundOrder && refundAmount && refundReason.trim()) {
                   try {
-                    await processRefund(refundOrder.id, {
-                      refundMethod,
-                      amount: Number(refundAmount),
-                      reason: refundReason.trim(),
-                      idempotencyKey: `refund_${refundOrder.id}_${Date.now()}`,
-                    })
+                    const refundScope = `refund:${refundOrder.id}`
+                    const refundBody = { refundMethod, amount: Number(refundAmount), reason: refundReason.trim() }
+                    // same refund retried (double-click, timeout) reuses the key; the server returns the original credit note
+                    await processRefund(refundOrder.id, { ...refundBody, idempotencyKey: keyFor(refundScope, refundBody) })
+                    releaseKey(refundScope)
                     setRefundOrder(null)
                   } catch (e) {
                     toast.error(errMsg(e, 'Failed to process refund'))

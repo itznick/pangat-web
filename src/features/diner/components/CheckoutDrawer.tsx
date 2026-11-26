@@ -584,7 +584,7 @@ export function CheckoutDrawer({
               Mobile Number {orderType === "DELIVERY" ? <span className="text-rose-400">*</span> : <span className="text-zinc-500 font-normal">(Optional)</span>}
             </span>
             <span className="text-[11px] text-zinc-500 font-normal">
-              {orderType === "DELIVERY" ? "Required for delivery agent" : "For digital WhatsApp receipt"}
+              {orderType === "DELIVERY" ? "Required for delivery agent" : "Optional: only used if the restaurant needs to reach you about this order"}
             </span>
           </label>
           <div className="relative">

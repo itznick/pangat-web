@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
+import { keyFor, releaseKey } from "@/lib/idempotency"
 import { useParams, useNavigate } from "react-router"
 import { Search, X, ChefHat, ArrowRight, Clock } from "lucide-react"
 import { DinerTopBar } from "./components/DinerTopBar"
@@ -181,9 +182,11 @@ export function DinerMenuPage() {
     consentAccepted?: boolean
   }) => {
     const orderItems = toOrderItems()
-    const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const finalTableNumber =
       data.orderType === "DINE_IN" ? (data.tableNumber || tableId || "01") : undefined
+    // one key per distinct order: a retry of the same cart reuses it (server returns the original order), an edited cart gets a new one
+    const idemScope = `order:${restaurantSlug}`
+    const idempotencyKey = keyFor(idemScope, { data, items: orderItems, finalTableNumber })
 
     setIsSubmittingOrder(true)
     setOrderError(null)
@@ -206,6 +209,7 @@ export function DinerMenuPage() {
         idempotencyKey,
       )
 
+      releaseKey(idemScope)
       // 2. Set in diner tracking store (persisted to localStorage)
       placeOrder(placedOrder)
 
