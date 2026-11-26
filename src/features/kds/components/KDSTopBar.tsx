@@ -139,10 +139,10 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
           className={cn(
             "flex items-center gap-1.5 px-2 sm:px-2.5 py-1 min-h-8 rounded-full text-[11px] sm:text-xs font-semibold border transition-colors",
             wakeLock === "active"
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+              ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-400 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
               : wakeLock === "blocked" || wakeLock === "unsupported"
-                ? "bg-amber-500/10 border-amber-500/40 text-amber-300"
-                : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600"
+                ? "bg-amber-50 dark:bg-amber-500/10 border-amber-500 dark:border-amber-500/40 text-amber-800 dark:text-amber-300"
+                : "bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-400 hover:border-zinc-500"
           )}
           onClick={() => void setWakeLock(wakeLock !== "active")}
           disabled={wakeLock === "unsupported"}

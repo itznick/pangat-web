@@ -125,7 +125,7 @@ export function KDSPage() {
 
       {/* Not live: say so plainly, with how stale the list may be */}
       {(connStatus === "offline" || connStatus === "reconnecting") && (
-        <div role="alert" data-testid="offline-banner" className="flex items-center gap-2 bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs sm:text-sm font-medium text-amber-200 shrink-0">
+        <div role="alert" data-testid="offline-banner" className="flex items-center gap-2 bg-amber-100 dark:bg-amber-500/15 border-b border-amber-300 dark:border-amber-500/30 px-4 py-2 text-xs sm:text-sm font-medium text-amber-900 dark:text-amber-200 shrink-0">
           <WifiOff className="h-4 w-4 shrink-0" />
           <span>
             {connStatus === "offline" ? "No internet." : "Lost the live connection."} New orders may not appear. Do not rely on this screen
@@ -136,9 +136,9 @@ export function KDSPage() {
 
       {/* Sound is locked until someone taps: never pretend it is on */}
       {soundEnabled && !audioReady && (
-        <div role="alert" data-testid="enable-sound-banner" className="flex flex-wrap items-center gap-3 bg-rose-500/15 border-b border-rose-500/30 px-4 py-2.5 shrink-0">
-          <VolumeX className="h-4 w-4 text-rose-300 shrink-0" />
-          <span className="text-xs sm:text-sm font-medium text-rose-100 flex-1 min-w-48">Kitchen sound is OFF until you tap the button. New orders will be silent.</span>
+        <div role="alert" data-testid="enable-sound-banner" className="flex flex-wrap items-center gap-3 bg-rose-100 dark:bg-rose-500/15 border-b border-rose-300 dark:border-rose-500/30 px-4 py-2.5 shrink-0">
+          <VolumeX className="h-4 w-4 text-rose-600 dark:text-rose-300 shrink-0" />
+          <span className="text-xs sm:text-sm font-medium text-rose-900 dark:text-rose-100 flex-1 min-w-48">Kitchen sound is OFF until you tap the button. New orders will be silent.</span>
           <Button size="sm" onClick={() => void enableAudio()} className="min-h-10 bg-rose-500 hover:bg-rose-400 text-white font-semibold" data-testid="enable-sound">
             Enable kitchen sound
           </Button>

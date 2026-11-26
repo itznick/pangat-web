@@ -56,3 +56,11 @@ describe('owner UPI confirmation state', () => {
     assert.equal(upiState({ saved: 'a@b1', typed: 'A@B1', confirmedAt: '2026-11-26T00:00:00Z' }), 'confirmed')
   })
 })
+
+describe('refund wording does not promise automatic money movement', () => {
+  it('the refund dialog never says the gateway refunds automatically', () => {
+    const t = readFileSync('src/features/admin/pages/AdminOrdersPage.tsx', 'utf8')
+    assert.ok(!/Verified Provider Gateway Refund/.test(t))
+    assert.match(t, /does not send money/)
+  })
+})

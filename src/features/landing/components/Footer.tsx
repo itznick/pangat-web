@@ -97,7 +97,7 @@ export function Footer({ onOpenPilot }: FooterProps) {
             <p className="mt-4 max-w-[19rem] text-[0.95rem] leading-relaxed text-zinc-500">
               Modern dining speed, rooted in timeless hospitality. Table ordering and kitchen orchestration for independent cafes.
             </p>
-            <a href="mailto:hello@pangat.app" className="mt-5 inline-flex items-center gap-2 text-[13px] text-zinc-400 transition-colors hover:text-white">
+            <a href="mailto:hello@pangat.app" className="mt-4 inline-flex min-h-8 items-center gap-2 text-[13px] text-zinc-400 transition-colors hover:text-white">
               <Mail className="h-3.5 w-3.5" /> hello@pangat.app
             </a>
           </div>
@@ -129,7 +129,7 @@ export function Footer({ onOpenPilot }: FooterProps) {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             © 2026 Pangat Technologies · Made in Pune, Maharashtra
           </span>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-1" aria-label="Legal">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-0 [&>a]:inline-flex [&>a]:min-h-8 [&>a]:items-center" aria-label="Legal">
             <a href="/privacy" className="transition-colors hover:text-zinc-300">Privacy Policy</a>
             <a href="/terms" className="transition-colors hover:text-zinc-300">Terms</a>
             <a href="/privacy#request" className="transition-colors hover:text-zinc-300">Your data rights</a>
@@ -168,7 +168,7 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
   return (
     <div>
       <p className="mb-4 text-[13px] font-medium text-white">{title}</p>
-      <div className="flex flex-col items-start gap-3 text-[0.95rem] text-zinc-500 [&>a]:transition-colors [&>a]:hover:text-white [&>button]:cursor-pointer [&>button]:transition-colors [&>button]:hover:text-white">
+      <div className="flex flex-col items-start gap-1 text-[0.95rem] text-zinc-500 [&>a]:inline-flex [&>a]:min-h-8 [&>a]:items-center [&>button]:min-h-8 [&>a]:transition-colors [&>a]:hover:text-white [&>button]:cursor-pointer [&>button]:transition-colors [&>button]:hover:text-white">
         {children}
       </div>
     </div>

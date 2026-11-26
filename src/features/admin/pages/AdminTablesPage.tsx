@@ -297,8 +297,9 @@ export function AdminTablesPage() {
                     <button
                       onClick={() => handleDelete(table.id, displayName)}
                       disabled={deletingId === table.id}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 -mr-1 -mt-1 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                      className="md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 flex h-9 w-9 items-center justify-center -mr-2 -mt-2 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
                       title="Delete table"
+                      aria-label={`Delete table ${displayName}`}
                     >
                       {deletingId === table.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin text-rose-400" />

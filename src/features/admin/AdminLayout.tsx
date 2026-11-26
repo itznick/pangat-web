@@ -360,7 +360,7 @@ function LiveConnectionBanner() {
   const connStatus = useConnectionStore((s) => s.status)
   if (connStatus !== "offline" && connStatus !== "reconnecting") return null
   return (
-    <div role="alert" data-testid="admin-offline-banner" className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">
+    <div role="alert" data-testid="admin-offline-banner" className="mb-3 rounded-xl border border-amber-500/40 bg-amber-100 dark:bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-900 dark:text-amber-200">
       {connStatus === "offline" ? "No internet." : "Lost the live connection."} New orders and payments may not show here until it returns. This page refreshes by itself.
     </div>
   )

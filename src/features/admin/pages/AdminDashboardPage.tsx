@@ -296,7 +296,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
         </div>
 
         {error && (
-          <p role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300">{error}</p>
+          <p role="alert" className="rounded-xl border border-rose-500/40 bg-rose-100 dark:bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-800 dark:text-rose-300">{error}</p>
         )}
         <DialogFooter>
           <button
