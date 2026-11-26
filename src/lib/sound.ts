@@ -3,18 +3,66 @@
 
 let audioCtx: AudioContext | null = null
 
-function getAudioContext(): AudioContext | null {
+function makeContext(): AudioContext | null {
   if (typeof window === "undefined") return null
   if (!audioCtx) {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     if (AudioCtx) {
       audioCtx = new AudioCtx()
+      audioCtx.onstatechange = () => audioListeners.forEach((f) => f(isAudioReady()))
     }
   }
-  if (audioCtx && audioCtx.state === "suspended") {
-    audioCtx.resume()
-  }
   return audioCtx
+}
+
+const audioListeners = new Set<(ready: boolean) => void>()
+/** Told when the browser really starts/stops allowing sound (e.g. it suspends the context again). */
+export function onAudioReadyChange(f: (ready: boolean) => void): () => void {
+  audioListeners.add(f)
+  return () => audioListeners.delete(f)
+}
+
+/** Any first tap/key on the page also unlocks sound (browsers count it as the required gesture). Resolves the same way as unlockAudio, silently. */
+export function armAudioUnlock(): () => void {
+  if (typeof window === "undefined") return () => {}
+  const unlock = () => {
+    const ctx = makeContext()
+    if (ctx && ctx.state !== "running") void ctx.resume().catch(() => {})
+  }
+  window.addEventListener("pointerdown", unlock, { passive: true })
+  window.addEventListener("keydown", unlock)
+  return () => {
+    window.removeEventListener("pointerdown", unlock)
+    window.removeEventListener("keydown", unlock)
+  }
+}
+
+/** True only when the browser will really play sound now (an AudioContext that is running). Browsers keep it suspended until a tap. */
+export function isAudioReady(): boolean {
+  return !!audioCtx && audioCtx.state === "running"
+}
+
+/**
+ * Must be called from a user tap ("Enable kitchen sound"). Resumes the audio context and plays a short confirmation chime so staff hear
+ * that it works. Resolves to the REAL outcome: never "ready" unless the context is running.
+ */
+export async function unlockAudio(): Promise<"ready" | "blocked" | "unsupported"> {
+  const ctx = makeContext()
+  if (!ctx) return "unsupported"
+  try {
+    if (ctx.state !== "running") await ctx.resume()
+  } catch {
+    return "blocked"
+  }
+  if (ctx.state !== "running") return "blocked"
+  playKitchenChime()
+  return "ready"
+}
+
+function getAudioContext(): AudioContext | null {
+  const ctx = makeContext()
+  if (ctx && ctx.state === "suspended") void ctx.resume().catch(() => {}) // may succeed after any earlier tap; this chime is lost either way
+  return ctx && ctx.state === "running" ? ctx : null
 }
 
 /**

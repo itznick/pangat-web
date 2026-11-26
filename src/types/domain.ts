@@ -209,6 +209,8 @@ export interface OrderQueryParams {
 
 export interface Order {
   id: string
+  /** Last change on the server: used to ignore stale live events and to merge a refetch */
+  updatedAt?: string
   trackingToken?: string
   /** Where a guest may pay by UPI (this outlet's own, owner-confirmed ID), or null/absent when UPI is not available. Never a default. */
   payee?: { vpa: string; name: string } | null

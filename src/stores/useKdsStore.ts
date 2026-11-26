@@ -9,6 +9,10 @@ import { api, errMsg } from '@/lib/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { getSocket, joinKdsRoom } from '@/lib/socket'
 import { toast } from '@/components/ui/toast'
+import { useConnectionStore } from '@/lib/connection'
+import { reconcileTickets, isStaleEvent } from '@/lib/kdsMerge'
+import { createWakeLock, browserEnv, type WakeLockState } from '@/lib/wakeLock'
+import { unlockAudio, isAudioReady } from '@/lib/sound'
 
 export type KdsTicketStatus = Extract<OrderStatus, 'RECEIVED' | 'PREPARING' | 'READY' | 'DISPATCHED'>
 
@@ -25,7 +29,12 @@ export function getNextKdsStatus(order: Order): OrderStatus {
 interface KdsStore {
   tickets: Order[]
   soundEnabled: boolean
-  wakeLockActive: boolean
+  /** The browser will really play sound (tablet was tapped). False after a reload until "Enable kitchen sound" is tapped. */
+  audioReady: boolean
+  wakeLock: WakeLockState
+  wakeLockDetail?: string
+  /** The server refused the kitchen feed (plan / switch): the page shows the upgrade notice */
+  accessDenied: boolean
   chimeCount: number
   outOfStockIds: Set<string>
   isLoading: boolean
@@ -38,6 +47,8 @@ interface KdsStore {
 
   // ── Async API sync ─────────────────────────────────────────────────────────
   fetchTickets: (slug?: string) => Promise<void>
+  /** Re-read the authoritative list after a gap (reconnect, wake, online). Never empties the board if the read fails. */
+  resync: (slug?: string) => Promise<void>
   initSocketSync: (slug?: string) => void
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -47,7 +58,8 @@ interface KdsStore {
   archiveTicket: (orderId: string) => Promise<void>
   toggleOutOfStock: (menuItemId: string) => Promise<void>
   setSoundEnabled: (v: boolean) => void
-  setWakeLockActive: (v: boolean) => void
+  enableAudio: () => Promise<void>
+  setWakeLock: (on: boolean) => Promise<void>
 
   // ── Selectors ──────────────────────────────────────────────────────────────
   ticketsByStatus: (status: KdsTicketStatus) => Order[]
@@ -57,6 +69,10 @@ interface KdsStore {
 const recentWindowStart = () => new Date(Date.now() - 3 * 86_400_000).toISOString()
 
 let kdsSocketListening = false
+/** when each ticket last arrived over the socket: lets a refetch keep tickets newer than its snapshot */
+const arrivedAt: Record<string, number> = {}
+let resyncInFlight: Promise<void> | null = null
+let wakeLockCtl: ReturnType<typeof createWakeLock> | null = null
 
 /** The kitchen's tap did not reach the server: say so and reload the real queue (never show a fake state). */
 function undoKds(err: unknown, what: string) {
@@ -68,7 +84,9 @@ function undoKds(err: unknown, what: string) {
 export const useKdsStore = create<KdsStore>((set, get) => ({
   tickets: [],
   soundEnabled: true,
-  wakeLockActive: false,
+  audioReady: isAudioReady(),
+  wakeLock: 'inactive' as WakeLockState,
+  accessDenied: false,
   chimeCount: 0,
   outOfStockIds: new Set<string>(),
   isLoading: false,
@@ -84,10 +102,12 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     }
     if (get().isLoading) return
     set({ isLoading: true })
+    useConnectionStore.getState().syncStarted()
     try {
       const outlet = await api.restaurants.get(slug).catch(() => null)
       const [orders, menuItems] = await Promise.all([
-        api.orders.list(slug, { startDate: recentWindowStart(), limit: 100 }).catch(() => []),
+        // not swallowed: if the order list cannot be read the board must say so, not show an empty kitchen
+        api.orders.list(slug, { startDate: recentWindowStart(), limit: 100 }),
         outlet?.id ? api.menu.getItems(outlet.id).catch(() => []) : Promise.resolve([]),
       ])
 
@@ -106,11 +126,58 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         prepTargetMinutes: outlet?.operations?.avgPrepMinutes ?? 10,
       })
 
+      useConnectionStore.getState().syncFinished(true)
       get().initSocketSync(slug)
     } catch (err) {
       console.error('Failed to fetch KDS tickets:', err)
+      if ((err as { status?: number })?.status === 403 || (err as { status?: number })?.status === 402) set({ accessDenied: true })
+      useConnectionStore.getState().syncFinished(false)
       set({ isLoading: false })
+      get().initSocketSync(slug) // still join the live room: events that arrive are real
     }
+  },
+
+  resync: (slug?: string) => {
+    const target = slug || useAuthStore.getState().currentOutlet?.slug || useAuthStore.getState().user?.restaurantSlug
+    if (!target) return Promise.resolve()
+    if (resyncInFlight) return resyncInFlight // overlapping triggers (reconnect + online + visible) collapse into one read
+    const conn = useConnectionStore.getState()
+    conn.syncStarted()
+    const startedAt = Date.now()
+    resyncInFlight = (async () => {
+      try {
+        joinKdsRoom(target) // make sure the live room is joined again with the current token
+        // NOT swallowed: a failed read must leave the board as it is and say so, never show an empty kitchen
+        const orders = await api.orders.list(target, { startDate: recentWindowStart(), limit: 100 })
+        const list = Array.isArray(orders) ? orders : []
+        set((s) => {
+          const r = reconcileTickets(s.tickets, list, startedAt, arrivedAt)
+          const ring = r.missedNew.length > 0 && s.soundEnabled && s.alertNewOrders
+          return { tickets: r.tickets, accessDenied: false, chimeCount: ring ? s.chimeCount + 1 : s.chimeCount }
+        })
+        useConnectionStore.getState().syncFinished(true)
+      } catch (err) {
+        const status = (err as { status?: number })?.status
+        // 401 is handled globally (sign-out); 403/402 means the kitchen feed was withdrawn: show the notice, keep the last known board
+        if (status === 403 || status === 402) set({ accessDenied: true })
+        useConnectionStore.getState().syncFinished(false)
+      } finally {
+        resyncInFlight = null
+      }
+    })()
+    return resyncInFlight
+  },
+
+  enableAudio: async () => {
+    const r = await unlockAudio()
+    set({ audioReady: r === 'ready' })
+    if (r !== 'ready') toast.error(r === 'unsupported' ? 'This browser cannot play kitchen sounds.' : 'The browser blocked sound. Tap the screen once and try again.')
+  },
+
+  setWakeLock: async (on) => {
+    wakeLockCtl ??= createWakeLock(browserEnv(), (state, detail) => set({ wakeLock: state, wakeLockDetail: detail }))
+    if (on) await wakeLockCtl.enable()
+    else await wakeLockCtl.disable()
   },
 
   initSocketSync: (slug?: string) => {
@@ -122,10 +189,14 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     const socket = getSocket()
 
     socket.on('order:new', (order: Order) => {
-      set((s) => ({
-        tickets: [order, ...s.tickets.filter((t) => t.id !== order.id)],
-        chimeCount: s.soundEnabled && s.alertNewOrders ? s.chimeCount + 1 : s.chimeCount,
-      }))
+      arrivedAt[order.id] = Date.now()
+      set((s) => {
+        const already = s.tickets.some((t) => t.id === order.id) // a replayed event must not ring the kitchen twice
+        return {
+          tickets: [order, ...s.tickets.filter((t) => t.id !== order.id)],
+          chimeCount: !already && s.soundEnabled && s.alertNewOrders ? s.chimeCount + 1 : s.chimeCount,
+        }
+      })
     })
 
     socket.on('menu:availability', (p: { id: string; name: string; isAvailable: boolean; auto: boolean }) => {
@@ -157,9 +228,10 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     })
 
     socket.on('order:updated', (order: Order) => {
-      set((s) => ({
-        tickets: s.tickets.map((t) => (t.id === order.id ? { ...t, ...order } : t)),
-      }))
+      set((s) => {
+        if (isStaleEvent(s.tickets.find((t) => t.id === order.id), order)) return {} // older than what we already show
+        return { tickets: s.tickets.map((t) => (t.id === order.id ? { ...t, ...order } : t)) }
+      })
     })
   },
 
@@ -245,7 +317,6 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
   },
 
   setSoundEnabled: (v) => set({ soundEnabled: v }),
-  setWakeLockActive: (v) => set({ wakeLockActive: v }),
 
   ticketsByStatus: (status) =>
     get().tickets.filter((t) => t.orderStatus === status),

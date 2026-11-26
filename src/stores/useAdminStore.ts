@@ -3,6 +3,7 @@
 // Real-time table states, menu manager, orders ledger, and sales summary.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useConnectionStore } from '@/lib/connection'
 import { create } from 'zustand'
 import type {
   Restaurant,
@@ -98,6 +99,8 @@ interface AdminStore {
 
   // ── Async Data Load ────────────────────────────────────────────────────────
   fetchDashboardData: (slug?: string) => Promise<void>
+  /** Re-read open orders after a connection gap. A failed read keeps what is on screen and is reported through the connection state. */
+  resyncOrders: (slug?: string) => Promise<void>
   initSocketSync: (slug?: string) => void
 
   // ── Table floor management ─────────────────────────────────────────────────
@@ -135,6 +138,21 @@ interface AdminStore {
 }
 
 let socketListening = false
+
+function syncTablesWithOrders(tables: Table[], orders: Order[]): Table[] {
+  return tables.map((t) => {
+    const openOrders = orders.filter((o) => isSameTableNumber(o.tableNumber, t.tableNumber) && o.orderStatus !== 'COMPLETED')
+    if (openOrders.length > 0) {
+      const hasCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING')
+      if (hasCooking) return { ...t, status: 'PREPPING' as TableStatus }
+      const hasUnpaid = openOrders.some((o) => o.paymentStatus === 'PENDING')
+      return { ...t, status: (hasUnpaid ? 'OCCUPIED' : 'SERVED') as TableStatus }
+    }
+    if (t.status === 'PREPPING') return { ...t, status: 'VACANT' as TableStatus }
+    return t
+  })
+}
+let adminResync: Promise<void> | null = null
 
 export const useAdminStore = create<AdminStore>((set, get) => ({
   restaurant: DEFAULT_RESTAURANT,
@@ -180,20 +198,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       const catMap = Object.fromEntries(categoriesList.map((c) => [c.id, c.name]))
 
       // Synchronize table status with real live orders to prevent stale 'PREPPING' flags
-      const synchronizedTables = tablesData.map((t) => {
-        const tableOrders = ordersData.filter((o) => isSameTableNumber(o.tableNumber, t.tableNumber))
-        const openOrders = tableOrders.filter((o) => o.orderStatus !== 'COMPLETED')
-        if (openOrders.length > 0) {
-          const hasCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING')
-          if (hasCooking) return { ...t, status: 'PREPPING' as TableStatus }
-          const hasUnpaid = openOrders.some((o) => o.paymentStatus === 'PENDING')
-          return { ...t, status: (hasUnpaid ? 'OCCUPIED' : 'SERVED') as TableStatus }
-        }
-        if (t.status === 'PREPPING') {
-          return { ...t, status: 'VACANT' as TableStatus }
-        }
-        return t
-      })
+      const synchronizedTables = syncTablesWithOrders(tablesData, ordersData)
 
       set({
         restaurant: restaurantData || publicMenuData.restaurant || DEFAULT_RESTAURANT,
@@ -210,6 +215,27 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     } catch (err: any) {
       set({ error: err.message, isLoading: false })
     }
+  },
+
+  resyncOrders: (slug) => {
+    const target = slug || useAuthStore.getState().currentOutlet?.slug
+    if (!target) return Promise.resolve()
+    if (adminResync) return adminResync
+    useConnectionStore.getState().syncStarted()
+    adminResync = (async () => {
+      try {
+        joinAdminRoom(target)
+        const orders = await api.orders.list(target, { startDate: new Date(Date.now() - 3 * 86_400_000).toISOString(), limit: 100 })
+        const list = Array.isArray(orders) ? orders : []
+        set((s) => ({ activeOrders: list, todaySales: computeSalesSummary(list), tables: syncTablesWithOrders(s.tables, list) }))
+        useConnectionStore.getState().syncFinished(true)
+      } catch {
+        useConnectionStore.getState().syncFinished(false)
+      } finally {
+        adminResync = null
+      }
+    })()
+    return adminResync
   },
 
   initSocketSync: (slug) => {

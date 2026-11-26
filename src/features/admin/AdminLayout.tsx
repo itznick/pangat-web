@@ -56,6 +56,8 @@ import { ConsoleOverlays } from "@/components/console/ConsoleOverlays"
 import { useConsoleUi } from "@/components/console/useConsoleUi"
 import type { CommandItem } from "@/components/console/types"
 import type { Restaurant } from "@/types/domain"
+import { watchConnection, useConnectionStore } from "@/lib/connection"
+import { getSocket } from "@/lib/socket"
 
 /** Which plan feature each page needs. Whether it is available is decided by the API (billing.isLocked), never by a plan name here. */
 const NAV_FEATURE: Record<string, string> = { "/admin/reports": "ANALYTICS", "/admin/inventory": "INVENTORY" }
@@ -121,6 +123,13 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const openOrders = activeOrders.filter((o) => o.orderStatus !== "COMPLETED" && o.orderStatus !== "CANCELLED").length
   const occupied = tables.filter((t) => t.status !== "VACANT").length
   const badgeFor = (path: string) => (path === "/admin/orders" ? openOrders : path === "/admin/tables" ? occupied : 0)
+
+  // After any connection gap (socket reconnect, network back, device woke) re-read the open orders so the board never stays wrong
+  const liveSlug = currentOutlet?.slug
+  useEffect(() => {
+    if (!liveSlug) return
+    return watchConnection(getSocket(), () => void useAdminStore.getState().resyncOrders(liveSlug))
+  }, [liveSlug])
 
   const setSettings = useConsoleUi((s) => s.setSettings)
   const setBilling = useConsoleUi((s) => s.setBilling)
@@ -343,6 +352,16 @@ function SubscriptionBanner({ onManage }: { onManage: () => void }) {
       <button type="button" onClick={onManage} className="h-9 shrink-0 rounded-lg border border-current/30 px-3 font-medium hover:bg-slate-900/10 dark:hover:bg-white/10">
         {lapsed ? "Renew now" : "View plans"}
       </button>
+    </div>
+  )
+}
+
+function LiveConnectionBanner() {
+  const connStatus = useConnectionStore((s) => s.status)
+  if (connStatus !== "offline" && connStatus !== "reconnecting") return null
+  return (
+    <div role="alert" data-testid="admin-offline-banner" className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">
+      {connStatus === "offline" ? "No internet." : "Lost the live connection."} New orders and payments may not show here until it returns. This page refreshes by itself.
     </div>
   )
 }
@@ -644,6 +663,7 @@ export function AdminLayout() {
         )}
         <AnnouncementBanner />
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <LiveConnectionBanner />
           <Outlet />
         </div>
       </SidebarInset>

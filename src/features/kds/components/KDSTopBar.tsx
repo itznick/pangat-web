@@ -8,13 +8,14 @@ import {
   Clock,
   Volume2,
   VolumeX,
-  Wifi,
+  MonitorSmartphone,
   LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
+import { ConnectionBadge } from "./ConnectionBadge"
 
 function useLiveClock() {
   const [time, setTime] = useState(new Date())
@@ -37,8 +38,10 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
 
   const soundEnabled = useKdsStore((s) => s.soundEnabled)
   const setSoundEnabled = useKdsStore((s) => s.setSoundEnabled)
-  const wakeLockActive = useKdsStore((s) => s.wakeLockActive)
-  const setWakeLockActive = useKdsStore((s) => s.setWakeLockActive)
+  const wakeLock = useKdsStore((s) => s.wakeLock)
+  const wakeLockDetail = useKdsStore((s) => s.wakeLockDetail)
+  const setWakeLock = useKdsStore((s) => s.setWakeLock)
+  const resync = useKdsStore((s) => s.resync)
   const time = useLiveClock()
 
   const timeStr = time.toLocaleTimeString("en-IN", {
@@ -128,20 +131,30 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
           <Switch checked={soundEnabled} onCheckedChange={setSoundEnabled} />
         </div>
 
-        {/* Wake Lock indicator */}
-        <div
+        <ConnectionBadge onRetry={() => void resync(restaurantSlug)} />
+
+        {/* Screen Wake Lock: reflects what the browser actually granted */}
+        <button
+          type="button"
           className={cn(
-            "flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold border cursor-pointer transition-colors",
-            wakeLockActive
+            "flex items-center gap-1.5 px-2 sm:px-2.5 py-1 min-h-8 rounded-full text-[11px] sm:text-xs font-semibold border transition-colors",
+            wakeLock === "active"
               ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-              : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-600"
+              : wakeLock === "blocked" || wakeLock === "unsupported"
+                ? "bg-amber-500/10 border-amber-500/40 text-amber-300"
+                : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600"
           )}
-          onClick={() => setWakeLockActive(!wakeLockActive)}
-          title="Toggle Screen Wake Lock"
+          onClick={() => void setWakeLock(wakeLock !== "active")}
+          disabled={wakeLock === "unsupported"}
+          title={wakeLockDetail || (wakeLock === "active" ? "The screen will stay on while this page is open" : "Keep the screen on")}
+          data-testid="wake-lock"
+          data-state={wakeLock}
         >
-          <Wifi className="h-3 w-3" />
-          <span>{wakeLockActive ? "Active" : "Idle"}</span>
-        </div>
+          <MonitorSmartphone className="h-3 w-3" />
+          <span>
+            {wakeLock === "active" ? "Screen stays on" : wakeLock === "unsupported" ? "Set tablet to never sleep" : wakeLock === "blocked" ? "Screen may sleep: retry" : "Keep screen on"}
+          </span>
+        </button>
       </div>
     </div>
   )
