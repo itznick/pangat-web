@@ -16,19 +16,20 @@ export function qrDataUrl(value: string, width = 640) {
 }
 
 export function useQrDataUrl(value: string, width = 640) {
-  const [url, setUrl] = React.useState("")
+  // the result is stored with the inputs it was made for, so a changed input shows nothing (not a stale code) until the new one is ready
+  const key = `${width}|${value}`
+  const [made, setMade] = React.useState({ key: "", url: "" })
   React.useEffect(() => {
-    let alive = true
-    setUrl("")
     if (!value) return
+    let alive = true
     qrDataUrl(value, width)
-      .then((u) => alive && setUrl(u))
+      .then((u) => alive && setMade({ key, url: u }))
       .catch((e) => console.error("QR generation failed", e))
     return () => {
       alive = false
     }
-  }, [value, width])
-  return url
+  }, [key, value, width])
+  return made.key === key ? made.url : ""
 }
 
 interface StandeeProps {

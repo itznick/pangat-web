@@ -23,9 +23,12 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select } from "@/components/ui/select"
 import { useAdminStore } from "@/stores/useAdminStore"
+import { useAuthStore } from "@/stores/useAuthStore"
+import { MenuImportDialog } from "../components/MenuImportDialog"
 import {
   Search,
   Plus,
+  FileUp,
   Pencil,
   Leaf,
   Drumstick,
@@ -76,7 +79,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
     updateGroup(groupIndex, { options: nextOptions })
   }
 
-  const updateOption = (groupIndex: number, optIndex: number, field: keyof ModifierOption, val: any) => {
+  const updateOption = (groupIndex: number, optIndex: number, field: keyof ModifierOption, val: string | number) => {
     const group = modifiers[groupIndex]
     const nextOptions = group.options.map((opt, i) =>
       i === optIndex ? { ...opt, [field]: val } : opt
@@ -225,6 +228,9 @@ export function AdminMenuPage() {
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const outletId = useAuthStore((s) => s.currentOutlet?.id)
+  const outletSlug = useAuthStore((s) => s.currentOutlet?.slug)
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false)
@@ -383,6 +389,14 @@ export function AdminMenuPage() {
             <span>Category</span>
           </Button>
 
+          <Button
+            variant="outline"
+            onClick={() => setShowImport(true)}
+            className="flex-1 sm:flex-none gap-1.5 text-xs font-bold min-h-[36px] cursor-pointer"
+          >
+            <FileUp className="h-3.5 w-3.5" />
+            <span>Import CSV</span>
+          </Button>
           <Button
             onClick={() => {
               if (!newDish.categoryId && categories.length > 0) {
@@ -733,6 +747,14 @@ export function AdminMenuPage() {
       </Dialog>
 
       {/* Add New Dish Dialog */}
+      {outletId && (
+        <MenuImportDialog
+          open={showImport}
+          onClose={() => setShowImport(false)}
+          restaurantId={outletId}
+          onImported={() => { if (outletSlug) void useAdminStore.getState().fetchDashboardData(outletSlug) }}
+        />
+      )}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl w-full max-h-[90dvh] overflow-y-auto">
           <DialogHeader>

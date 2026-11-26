@@ -178,6 +178,28 @@ apiClient.interceptors.response.use(
   }
 )
 
+export interface MenuImportResult {
+  dryRun: boolean
+  summary: { create: number; update: number; skip: number; errors: number; newCategories: number }
+  rows: { line: number; category: string; name: string; price: number; action: 'create' | 'update' | 'skip'; reason?: string }[]
+  errors: { line: number; message: string }[]
+  newCategories: string[]
+}
+
+export interface GoLiveStep {
+  key: string
+  label: string
+  required: boolean
+  status: 'DONE' | 'TODO' | 'ATTENTION'
+  source: 'AUTO' | 'MANUAL'
+  hint: string
+  link: string
+  confirmedAt?: string
+  /** For owner-attested steps: the key to send to confirmStep() */
+  confirmKey?: string
+}
+export interface GoLiveReadiness { steps: GoLiveStep[]; done: number; total: number; ready: boolean; blocking: string[] }
+
 export interface PublicMenuResponse {
   restaurant: Restaurant
   categories: MenuCategory[]
@@ -233,6 +255,9 @@ export interface PrivacyRequestPayload {
   /** honeypot field: always empty for real people */
   website?: string
 }
+
+/** Who Pangat's tax invoices are addressed to, and the state that decides CGST+SGST versus IGST. */
+export interface BillingProfile { legalName: string | null; address: string | null; stateCode: string | null; gstin: string | null; supplierStateCode: string }
 
 export const api = {
   privacy: {
@@ -360,6 +385,11 @@ export const api = {
       apiClient.get(`/restaurants/${slug}`),
     updateSettings: (slug: string, settings: Partial<Restaurant>): Promise<Restaurant> =>
       apiClient.patch(`/restaurants/${slug}/settings`, settings),
+    readiness: (outletId: string): Promise<GoLiveReadiness> => apiClient.get(`/restaurants/${outletId}/readiness`),
+    confirmStep: (outletId: string, step: string, done = true): Promise<GoLiveReadiness> =>
+      apiClient.post(`/restaurants/${outletId}/onboarding/confirm`, { step, done }),
+    confirmUpi: (outletId: string, vpa: string): Promise<{ confirmed: boolean; confirmedAt: string }> =>
+      apiClient.post(`/restaurants/${outletId}/upi/confirm`, { vpa }),
     getFeedback: (slug: string): Promise<CustomerFeedbackSummary> =>
       apiClient.get(`/restaurants/${slug}/feedback`),
     submitFeedback: (
@@ -388,6 +418,9 @@ export const api = {
   menu: {
     getPublic: (restaurantSlug: string): Promise<PublicMenuResponse> =>
       apiClient.get(`/menu/public/${restaurantSlug}`),
+    /** CSV import. dryRun (the default on the server) previews; dryRun:false imports. */
+    importCsv: (body: { restaurantId: string; csv: string; dryRun: boolean; updatePrices?: boolean }): Promise<MenuImportResult> =>
+      apiClient.post('/menu/import', body),
     getItems: (restaurantId?: string): Promise<MenuItem[]> =>
       apiClient.get('/menu/items', { params: { restaurantId } }),
     updateAvailability: (id: string, isAvailable: boolean): Promise<MenuItem> =>
@@ -616,6 +649,8 @@ export const api = {
       apiClient.post('/subscriptions/admin/plans', data),
     updatePlan: (id: string, data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> =>
       apiClient.patch(`/subscriptions/admin/plans/${id}`, data),
+    billingProfile: (): Promise<BillingProfile> => apiClient.get('/subscriptions/billing-profile'),
+    updateBillingProfile: (data: Partial<Omit<BillingProfile, 'supplierStateCode'>>): Promise<BillingProfile> => apiClient.patch('/subscriptions/billing-profile', data),
     cancel: (): Promise<unknown> => apiClient.post('/subscriptions/cancel'),
     resume: (): Promise<unknown> => apiClient.post('/subscriptions/resume'),
     requestChange: (planCode: string, message?: string): Promise<{ requested: boolean; plan: string }> =>

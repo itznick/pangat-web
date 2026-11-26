@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useQuery } from "@/hooks/useQuery"
 import { Loader2, RefreshCw } from "lucide-react"
 import { api, errMsg } from "@/lib/api"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -26,34 +27,19 @@ export function AdminReportsPage() {
   const slug = useAuthStore((s) => s.currentOutlet?.slug)
   const [preset, setPreset] = useState<(typeof PRESETS)[number]["id"] | "custom">("7d")
   const today = useMemo(() => localDay(new Date()), [])
-  const [from, setFrom] = useState(localDay(new Date(Date.now() - 6 * 86_400_000)))
+  const [from, setFrom] = useState(() => localDay(new Date(new Date().getTime() - 6 * 86_400_000)))
   const [to, setTo] = useState(today)
-  const [data, setData] = useState<SalesReport | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<{ message: string; plan: boolean } | null>(null)
-
-  const load = useCallback(async () => {
-    if (!slug) return
-    setLoading(true)
-    try {
-      setData(await api.reports.summary(slug, from, to))
-      setError(null)
-    } catch (e) {
-      setError({ message: errMsg(e), plan: isPlanError(e) })
-    } finally {
-      setLoading(false)
-    }
-  }, [slug, from, to])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const report = useQuery(() => api.reports.summary(slug as string, from, to), `${slug}|${from}|${to}`, { enabled: !!slug })
+  const data: SalesReport | null = report.data ?? report.lastData ?? null
+  const loading = report.loading
+  const error = report.error ? { message: errMsg(report.error), plan: isPlanError(report.error) } : null
+  const load = report.reload
 
   const choose = (id: (typeof PRESETS)[number]["id"]) => {
     const p = PRESETS.find((x) => x.id === id)!
     setPreset(id)
     setTo(today)
-    setFrom(localDay(new Date(Date.now() - p.days * 86_400_000)))
+    setFrom(localDay(new Date(new Date().getTime() - p.days * 86_400_000))) // a click handler: reading the clock here is correct
   }
 
   const maxDaily = Math.max(1, ...(data?.daily.map((d) => d.sales) ?? [1]))
@@ -66,7 +52,7 @@ export function AdminReportsPage() {
         crumb="Reports"
         title="Reports"
         actions={
-          <button type="button" onClick={() => void load()} disabled={loading} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 hover:bg-white/[0.06] disabled:opacity-50">
+          <button type="button" onClick={load} disabled={loading} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 hover:bg-white/[0.06] disabled:opacity-50">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
           </button>
         }

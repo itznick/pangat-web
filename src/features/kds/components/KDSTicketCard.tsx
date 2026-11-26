@@ -143,6 +143,7 @@ function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTick
 
   return (
     <div
+      data-order-id={ticket.id}
       className={cn(
         "rounded-2xl border overflow-hidden flex flex-col transition-all duration-300",
         config.border,

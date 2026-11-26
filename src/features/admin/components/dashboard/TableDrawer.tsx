@@ -55,7 +55,9 @@ export function TableDrawer({ table, onClose }: TableDrawerProps) {
       }
       try {
         await api.orders.updateStatus(o.id, "COMPLETED")
-      } catch (e) {}
+      } catch {
+        // best effort: the order may already be closed; the table is vacated either way
+      }
     }
     await updateTableStatus(table.id, "VACANT")
     onClose()

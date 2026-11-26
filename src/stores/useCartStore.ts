@@ -139,7 +139,13 @@ export const useCartStore = create<CartStore>()(
       },
 
       toOrderItems: (): OrderItem[] =>
-        get().entries.map(({ _localId, isVeg, ...rest }) => rest),
+        get().entries.map((entry) => {
+          // the server needs the order line, not the client-only bookkeeping fields
+          const line: Record<string, unknown> = { ...entry }
+          delete line._localId
+          delete line.isVeg
+          return line as unknown as OrderItem
+        }),
     }),
     {
       name: 'pangat_diner_cart',

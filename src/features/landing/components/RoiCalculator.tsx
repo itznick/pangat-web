@@ -59,8 +59,8 @@ export function RoiCalculator({ onOpenPilot }: RoiCalculatorProps) {
                 marks={["₹150 chai", "₹600 roastery", "₹1,200 dining"]}
               />
               <p className="border-t border-white/[0.07] pt-6 text-[13px] leading-relaxed text-zinc-500">
-                Estimate based on 14 minutes recovered per table turn — about 6 waiting for a menu and 8 for the bill — and 22% more
-                peak-hour tables. Your results will vary.
+                An illustrative model, not a measurement or a guarantee: it assumes 14 minutes recovered per table turn (about 6 waiting for a menu and 8 for the bill) and 22% more
+                peak-hour tables. Your results will vary and Pangat does not promise any revenue uplift.
               </p>
             </div>
 
@@ -85,7 +85,7 @@ export function RoiCalculator({ onOpenPilot }: RoiCalculatorProps) {
                 onClick={onOpenPilot}
                 className="group mt-9 inline-flex items-center gap-2 text-[0.95rem] font-medium text-white"
               >
-                <span className="border-b border-white/30 pb-0.5 transition-colors group-hover:border-white">Test it in your cafe, free for 7 days</span>
+                <span className="border-b border-white/30 pb-0.5 transition-colors group-hover:border-white">Test it in your restaurant, free for 14 days</span>
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </button>
             </div>

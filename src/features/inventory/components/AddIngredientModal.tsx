@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
 import { Loader2, Plus, AlertCircle } from "lucide-react"
 import type { Ingredient, UnitOfMeasure } from "@/types/domain"
 
@@ -74,8 +74,8 @@ export function AddIngredientModal({
       setOpeningStock("0")
       setMinimumStock("0")
       setCostPerUnit("0")
-    } catch (err: any) {
-      setError(err.message || "Failed to create ingredient")
+    } catch (err) {
+      setError(errMsg(err, "Failed to create ingredient"))
     } finally {
       setLoading(false)
     }

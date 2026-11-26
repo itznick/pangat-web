@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import {
   BellRing,
   Check,
@@ -99,7 +100,7 @@ export function DinerMenuScreen({ cartCount = 0, adding = -1 }: { cartCount?: nu
       <StatusBar />
       <div className="flex items-center justify-between px-4 pb-2 pt-3">
         <div>
-          <p className="text-[8px] uppercase tracking-[0.14em] text-zinc-500">Roast & Toast Cafe</p>
+          <p className="text-[8px] uppercase tracking-[0.14em] text-zinc-500">Sample Cafe</p>
           <p className="text-[13px] font-semibold text-white">Table 04</p>
         </div>
         <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[8px] text-zinc-300">
@@ -237,12 +238,12 @@ export function DinerCustomizeScreen({ selected = 0 }: { selected?: number }) {
   )
 }
 
-export function DinerPayScreen({ paid = false }: { paid?: boolean }) {
+export function DinerOrderScreen({ placed = false }: { placed?: boolean }) {
   return (
     <div className="relative flex h-full flex-col bg-zinc-950">
       <StatusBar />
       <div className="px-4 pb-2 pt-3">
-        <p className="text-[13px] font-semibold text-white">Checkout</p>
+        <p className="text-[13px] font-semibold text-white">Your order</p>
         <p className="text-[9px] text-zinc-500">Table 04 · 2 items</p>
       </div>
       <div className="mx-3 space-y-0 rounded-2xl border border-zinc-800 bg-zinc-900 p-3">
@@ -263,44 +264,29 @@ export function DinerPayScreen({ paid = false }: { paid?: boolean }) {
         <span className="text-zinc-400">Total</span>
         <span className="text-[14px] font-bold text-white">₹520</span>
       </div>
-
-      <div className="mx-3 mt-3 grid grid-cols-4 gap-1.5">
-        {[
-          ["G", "GPay", "#4285f4"],
-          ["Pe", "PhonePe", "#7c3aed"],
-          ["Pt", "Paytm", "#00b9f1"],
-          ["C", "CRED", "#e4e4e7"],
-        ].map(([g, n, c]) => (
-          <div key={n} className="rounded-xl border border-zinc-800 bg-zinc-900 py-2 text-center">
-            <span
-              className="mx-auto flex h-5 w-5 items-center justify-center rounded-full text-[8px] font-bold text-white"
-              style={{ background: c, color: n === "CRED" ? "#000" : "#fff" }}
-            >
-              {g}
-            </span>
-            <p className="mt-1 text-[7.5px] text-zinc-400">{n}</p>
-          </div>
-        ))}
+      <div className="mx-3 mt-3 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+        <p className="text-[7.5px] uppercase tracking-[0.12em] text-zinc-500">Payment</p>
+        <p className="mt-0.5 text-[10px] font-semibold text-zinc-100">Pay at the counter</p>
       </div>
 
       <div className="mt-auto p-3">
         <div
           className={`flex items-center justify-center gap-1.5 rounded-xl py-3 text-[11px] font-bold text-white transition-all duration-500 ${
-            paid ? "bg-emerald-600 shadow-lg shadow-emerald-600/40" : "bg-white text-zinc-950"
+            placed ? "bg-emerald-600 shadow-lg shadow-emerald-600/40" : "bg-white text-zinc-950"
           }`}
-          style={paid ? undefined : { color: "#0a0a0b" }}
+          style={placed ? undefined : { color: "#0a0a0b" }}
         >
-          {paid ? (
+          {placed ? (
             <>
-              <Check className="lp-pop h-3.5 w-3.5" strokeWidth={3.5} /> Paid · Sent to kitchen
+              <Check className="lp-pop h-3.5 w-3.5" strokeWidth={3.5} /> Order sent to kitchen
             </>
           ) : (
-            <>Pay ₹520 with UPI</>
+            <>Place order · ₹520</>
           )}
         </div>
       </div>
 
-      {paid && (
+      {placed && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span className="absolute h-24 w-24 rounded-full bg-emerald-500/30" style={{ animation: "lp-ping 1.4s ease-out" }} />
         </div>
@@ -433,11 +419,11 @@ const STAGES = {
 
 function useElapsed(active: boolean, start = 0) {
   const [s, setS] = React.useState(start)
+  useOnChange(active, (isActive) => {
+    if (!isActive) setS(start) // stopping resets the clock
+  })
   React.useEffect(() => {
-    if (!active) {
-      setS(start)
-      return
-    }
+    if (!active) return
     const id = setInterval(() => setS((v) => v + 1), 1000)
     return () => clearInterval(id)
   }, [active, start])
@@ -565,27 +551,27 @@ export function KdsScreen({ stage = "new", chime = false }: { stage?: KdsStage; 
   )
 }
 
-/* ── WhatsApp closing summary ────────────────────────────────────────────── */
+/* ── Dashboard "today" summary (the dashboard figures every plan shows) ─────────────────── */
 
-export function WhatsAppDigest({ className = "" }: { className?: string }) {
+export function DaySummary({ className = "" }: { className?: string }) {
   return (
-    <div className={`w-[290px] overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0b141a] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] ${className}`}>
-      <div className="flex items-center gap-2.5 bg-[#1f2c34] px-3.5 py-2.5">
+    <div className={`w-[290px] overflow-hidden rounded-[1.6rem] border border-white/10 bg-zinc-950 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] ${className}`}>
+      <div className="flex items-center gap-2.5 border-b border-white/5 bg-zinc-900 px-3.5 py-2.5">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white">P</span>
         <div>
-          <p className="text-[12px] font-semibold text-white">Pangat</p>
-          <p className="text-[9px] text-emerald-400">Daily closing summary</p>
+          <p className="text-[12px] font-semibold text-white">Dashboard</p>
+          <p className="text-[9px] text-emerald-400">Today at a glance · sample data</p>
         </div>
       </div>
-      <div className="space-y-2 p-3" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px)", backgroundSize: "14px 14px" }}>
-        <div className="max-w-[92%] rounded-2xl rounded-tl-sm bg-[#1f2c34] p-3 text-[11px] leading-relaxed text-zinc-100">
-          <p className="font-semibold text-white">Roast & Toast Cafe · Today</p>
+      <div className="space-y-2 p-3">
+        <div className="rounded-2xl bg-zinc-900 p-3 text-[11px] leading-relaxed text-zinc-100">
+          <p className="font-semibold text-white">Sample Cafe · Today</p>
           <div className="mt-2 space-y-1.5 text-[10.5px]">
             {[
-              ["Tables served", "118"],
-              ["Collected via UPI", "₹44,820"],
-              ["Avg. table turn", "22 min"],
-              ["Commission", "₹0"],
+              ["Today's revenue", "₹44,820"],
+              ["Covers", "118"],
+              ["Avg. prep time", "9 min"],
+              ["Active kitchen tickets", "4"],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between border-b border-white/5 pb-1 last:border-0">
                 <span className="text-zinc-400">{k}</span>
@@ -593,8 +579,7 @@ export function WhatsAppDigest({ className = "" }: { className?: string }) {
               </div>
             ))}
           </div>
-          <p className="mt-2 text-[10px] text-zinc-400">Top seller: Artisanal Cold Brew ☕ · 41 sold</p>
-          <p className="mt-1 text-right text-[8.5px] text-zinc-500">11:30 PM ✓✓</p>
+          <p className="mt-2 text-[9px] text-zinc-500">Illustrative figures. Sales reports (Starter and above) add payment-method, order-type and best-seller breakdowns.</p>
         </div>
       </div>
     </div>

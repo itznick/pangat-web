@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { ConsentCheckbox } from "@/features/legal/ConsentCheckbox"
 import {
   X,
@@ -72,32 +73,33 @@ export function CheckoutDrawer({
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
   const [consent, setConsent] = useState(false)
 
-  useEffect(() => {
-    if (tableId) {
-      setTableNumber(tableId)
+  // scanning a table QR puts the guest at that table
+  useOnChange(tableId, (id) => {
+    if (id) {
+      setTableNumber(id)
       setOrderType("DINE_IN")
     }
-  }, [tableId])
+  }, { runOnMount: true })
 
   const typeAllowed = (t: OrderType) => (t === "DINE_IN" ? ops.orderTypes.dineIn : t === "TAKEAWAY" ? ops.orderTypes.takeaway : ops.orderTypes.delivery)
   const payAllowed = (m: PaymentMethod, t: OrderType) =>
     m === "UPI_INSTANT" ? ops.payments.upi : m === "COD" ? ops.payments.cod && t === "DELIVERY" : ops.payments.payAtCounter && t !== "DELIVERY"
 
-  useEffect(() => {
+  // if the outlet does not offer the chosen order type (or switches one off), move to one it does
+  useOnChange(`${JSON.stringify(operations)}|${orderType}`, () => {
     if (!typeAllowed(orderType)) {
       const next = (["DINE_IN", "TAKEAWAY", "DELIVERY"] as OrderType[]).find(typeAllowed)
       if (next) setOrderType(next)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [operations, orderType])
+  }, { runOnMount: true })
 
-  useEffect(() => {
+  // same for the payment method: never leave the guest on a method this outlet or order type does not allow
+  useOnChange(`${JSON.stringify(operations)}|${orderType}|${paymentMethod}`, () => {
     if (!payAllowed(paymentMethod, orderType)) {
       const next = (["UPI_INSTANT", orderType === "DELIVERY" ? "COD" : "PAY_AT_COUNTER"] as PaymentMethod[]).find((m) => payAllowed(m, orderType))
       if (next) setPaymentMethod(next)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [operations, orderType, paymentMethod])
+  }, { runOnMount: true })
 
   const entries = useCartStore((s) => s.entries)
   const subtotal = useCartStore((s) => s.subtotal())
@@ -584,7 +586,7 @@ export function CheckoutDrawer({
               Mobile Number {orderType === "DELIVERY" ? <span className="text-rose-400">*</span> : <span className="text-zinc-500 font-normal">(Optional)</span>}
             </span>
             <span className="text-[11px] text-zinc-500 font-normal">
-              {orderType === "DELIVERY" ? "Required for delivery agent" : "For digital WhatsApp receipt"}
+              {orderType === "DELIVERY" ? "Required for delivery agent" : "Optional: only used if the restaurant needs to reach you about this order"}
             </span>
           </label>
           <div className="relative">

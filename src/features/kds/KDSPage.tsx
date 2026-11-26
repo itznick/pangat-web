@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { playKitchenChime } from "@/lib/sound"
 import { ScrollRow } from "@/components/ui/ScrollRow"
 import { useParams } from "react-router"
-import { AlertTriangle, LayoutGrid, BellRing } from "lucide-react"
+import { AlertTriangle, LayoutGrid, BellRing, VolumeX, WifiOff } from "lucide-react"
 import { KDSTopBar } from "./components/KDSTopBar"
 import { KDSTicketCard } from "./components/KDSTicketCard"
 import { OutOfStockDrawer } from "./components/OutOfStockDrawer"
@@ -10,7 +11,9 @@ import { useKdsStore } from "@/stores/useKdsStore"
 import { Button } from "@/components/ui/button"
 import { UpgradeNotice } from "@/components/UpgradeNotice"
 import { useBilling } from "@/features/subscriptions/billing"
-import { joinKdsRoom, onAccessRevoked } from "@/lib/socket"
+import { joinKdsRoom, onAccessRevoked, getSocket } from "@/lib/socket"
+import { watchConnection, useConnectionStore } from "@/lib/connection"
+import { armAudioUnlock, onAudioReadyChange, isAudioReady } from "@/lib/sound"
 
 export function KDSPage() {
   const { restaurantSlug = "" } = useParams<{ restaurantSlug: string }>()
@@ -53,15 +56,41 @@ export function KDSPage() {
     }
   }, [restaurantSlug])
 
+  // After ANY gap (socket reconnect, network back, tablet woke, slow safety poll) re-read the real list so no order is ever missing
+  useEffect(() => {
+    if (!restaurantSlug) return
+    const stop = watchConnection(getSocket(), () => void useKdsStore.getState().resync(restaurantSlug))
+    void useKdsStore.getState().setWakeLock(true) // keep the tablet awake; the top bar shows whether the browser actually allowed it
+    return () => { stop(); void useKdsStore.getState().setWakeLock(false) }
+  }, [restaurantSlug])
+
+  // Sound: browsers keep audio locked until a tap. Show the truth and offer an explicit button; any tap also unlocks it.
+  const soundEnabled = useKdsStore((s) => s.soundEnabled)
+  const audioReady = useKdsStore((s) => s.audioReady)
+  const enableAudio = useKdsStore((s) => s.enableAudio)
+  useEffect(() => {
+    useKdsStore.setState({ audioReady: isAudioReady() })
+    const off = onAudioReadyChange((ready) => useKdsStore.setState({ audioReady: ready }))
+    const disarm = armAudioUnlock()
+    return () => { off(); disarm() }
+  }, [])
+
+  // The server withdrew the kitchen feed (seen on a refetch): show the upgrade notice instead of a board that cannot update
+  const accessDenied = useKdsStore((s) => s.accessDenied)
+  useEffect(() => { if (accessDenied) refreshBilling() }, [accessDenied, refreshBilling])
+
+  const connStatus = useConnectionStore((s) => s.status)
+  const lastSyncedAt = useConnectionStore((s) => s.lastSyncedAt)
+
   // Chime + banner when the store counts a new alert (the store already applied the sound and outlet preferences).
   // Only a change of chimeCount counts: flipping the Sound switch must not replay the last alert.
   const lastChime = useRef(chimeCount)
+  useOnChange(chimeCount, (c) => { if (c !== 0) setShowChimeToast(true) })
   useEffect(() => {
     if (chimeCount === lastChime.current) return
     lastChime.current = chimeCount
     if (chimeCount === 0) return
     playKitchenChime()
-    setShowChimeToast(true)
     const timer = setTimeout(() => setShowChimeToast(false), 2500)
     return () => clearTimeout(timer)
   }, [chimeCount])
@@ -93,6 +122,28 @@ export function KDSPage() {
   return (
     <div className="h-dvh flex flex-col bg-zinc-950 overflow-hidden relative">
       <KDSTopBar restaurantSlug={restaurantSlug} />
+
+      {/* Not live: say so plainly, with how stale the list may be */}
+      {(connStatus === "offline" || connStatus === "reconnecting") && (
+        <div role="alert" data-testid="offline-banner" className="flex items-center gap-2 bg-amber-100 dark:bg-amber-500/15 border-b border-amber-300 dark:border-amber-500/30 px-4 py-2 text-xs sm:text-sm font-medium text-amber-900 dark:text-amber-200 shrink-0">
+          <WifiOff className="h-4 w-4 shrink-0" />
+          <span>
+            {connStatus === "offline" ? "No internet." : "Lost the live connection."} New orders may not appear. Do not rely on this screen
+            {lastSyncedAt ? ` (last updated ${new Date(lastSyncedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})` : ""}. It refreshes by itself when the connection returns.
+          </span>
+        </div>
+      )}
+
+      {/* Sound is locked until someone taps: never pretend it is on */}
+      {soundEnabled && !audioReady && (
+        <div role="alert" data-testid="enable-sound-banner" className="flex flex-wrap items-center gap-3 bg-rose-100 dark:bg-rose-500/15 border-b border-rose-300 dark:border-rose-500/30 px-4 py-2.5 shrink-0">
+          <VolumeX className="h-4 w-4 text-rose-600 dark:text-rose-300 shrink-0" />
+          <span className="text-xs sm:text-sm font-medium text-rose-900 dark:text-rose-100 flex-1 min-w-48">Kitchen sound is OFF until you tap the button. New orders will be silent.</span>
+          <Button size="sm" onClick={() => void enableAudio()} className="min-h-10 bg-rose-500 hover:bg-rose-400 text-white font-semibold" data-testid="enable-sound">
+            Enable kitchen sound
+          </Button>
+        </div>
+      )}
 
       {/* Audio alert chime visual indicator */}
       {showChimeToast && (

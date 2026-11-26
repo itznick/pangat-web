@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useOnChange } from '@/hooks/useOnChange'
 import { useModal } from "@/hooks/useModal"
 import { createPortal } from 'react-dom'
 import '@/features/landing/landing.css'
@@ -79,7 +80,40 @@ const randomPassword = () => {
 const field =
   'w-full h-11 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-[15px] text-white placeholder:text-zinc-600 outline-none transition-colors focus:border-emerald-400/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-emerald-400/15'
 
-export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSuccess }: ProvisionRestaurantModalProps) {
+type ProvisionForm = {
+  brandName: string; ownerFullName: string; mobileNumber: string; email: string; password: string; outletName: string; slug: string
+  branchArea: string; upiVpa: string; gstin: string; gstPercentage: number; indoor: number; outdoor: number; menuPreset: Preset
+}
+
+/** A fresh form, prefilled from a lead when the flow is started from one. The UPI ID is never prefilled: the owner supplies and confirms their own. */
+function buildForm(lead?: Lead | null): ProvisionForm {
+  const base: ProvisionForm = {
+    brandName: '', ownerFullName: '', mobileNumber: '', email: '', password: '', outletName: '', slug: '',
+    branchArea: '', upiVpa: '', gstin: '', gstPercentage: 5, indoor: 12, outdoor: 4, menuPreset: 'pune_cafe',
+  }
+  if (!lead) return base
+  const brand = lead.restaurantName || ''
+  const n = parseInt(lead.tableCount?.match(/\d+/)?.[0] || '', 10)
+  return {
+    ...base,
+    brandName: brand,
+    ownerFullName: lead.name || '',
+    mobileNumber: lead.phone || '',
+    outletName: brand ? `${brand} · Main` : '',
+    branchArea: lead.city || '',
+    slug: slugify(brand),
+    indoor: Number.isFinite(n) ? Math.max(4, Math.min(30, n)) : 12,
+  }
+}
+
+/** Every time the flow opens (or is started for a different lead) it starts from a clean slate: a new key remounts the form. */
+export function ProvisionRestaurantModal(props: ProvisionRestaurantModalProps) {
+  const [session, setSession] = React.useState(0)
+  useOnChange(props.isOpen, (open) => { if (open) setSession((n) => n + 1) })
+  return <ProvisionRestaurantModalInner key={`${session}|${props.initialLead?.id ?? ''}`} {...props} />
+}
+
+function ProvisionRestaurantModalInner({ isOpen, onClose, initialLead, onSuccess }: ProvisionRestaurantModalProps) {
   const [step, setStep] = React.useState(0)
   const [maxStep, setMaxStep] = React.useState(0)
   const [touched, setTouched] = React.useState<Record<string, boolean>>({})
@@ -93,59 +127,10 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
   const [copied, setCopied] = React.useState<string | null>(null)
   const [confirmDiscard, setConfirmDiscard] = React.useState(false)
 
-  const [f, setF] = React.useState({
-    brandName: '',
-    ownerFullName: '',
-    mobileNumber: '',
-    email: '',
-    password: '',
-    outletName: '',
-    slug: '',
-    branchArea: '',
-    upiVpa: '',
-    gstin: '',
-    gstPercentage: 5,
-    indoor: 12,
-    outdoor: 4,
-    menuPreset: 'pune_cafe' as Preset,
-  })
+  const [f, setF] = React.useState(() => buildForm(initialLead))
   const slugEdited = React.useRef(false)
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }))
   const dirty = Boolean(f.brandName || f.ownerFullName || f.email || f.outletName)
-
-  // Reset (and prefill from a lead) whenever the flow opens
-  React.useEffect(() => {
-    if (!isOpen) return
-    slugEdited.current = false
-    setStep(0)
-    setMaxStep(0)
-    setTouched({})
-    setError(null)
-    setResult(null)
-    setConfirmDiscard(false)
-    const base = {
-      brandName: '', ownerFullName: '', mobileNumber: '', email: '', password: '', outletName: '', slug: '',
-      branchArea: '', upiVpa: '', gstin: '', gstPercentage: 5, indoor: 12, outdoor: 4, menuPreset: 'pune_cafe' as Preset,
-    }
-    if (initialLead) {
-      const brand = initialLead.restaurantName || ''
-      const s = slugify(brand)
-      const n = parseInt(initialLead.tableCount?.match(/\d+/)?.[0] || '', 10)
-      setF({
-        ...base,
-        brandName: brand,
-        ownerFullName: initialLead.name || '',
-        mobileNumber: initialLead.phone || '',
-        outletName: brand ? `${brand} · Main` : '',
-        branchArea: initialLead.city || '',
-        slug: s,
-        upiVpa: s ? `${s}@icici` : '',
-        indoor: Number.isFinite(n) ? Math.max(4, Math.min(30, n)) : 12,
-      })
-    } else {
-      setF(base)
-    }
-  }, [isOpen, initialLead])
 
   const onBrand = (v: string) => {
     setF((p) => {
@@ -155,7 +140,6 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
         brandName: v,
         slug: s,
         outletName: p.outletName && p.outletName !== `${p.brandName} · Main` ? p.outletName : v ? `${v} · Main` : '',
-        upiVpa: p.upiVpa && !p.upiVpa.endsWith('@icici') ? p.upiVpa : s ? `${s}@icici` : '',
       }
     })
   }
@@ -170,7 +154,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
     if (f.password && f.password.length < 10) e.password = 'Use at least 10 characters, or leave blank so the owner chooses their own by email'
     if (f.outletName.trim().length < 2) e.outletName = 'Enter the outlet name'
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug) || f.slug.length < 3) e.slug = 'Lowercase letters, numbers and dashes, 3+ characters'
-    if (!/^[\w.-]{2,}@[a-zA-Z][\w]{1,}$/.test(f.upiVpa.trim())) e.upiVpa = 'Enter a valid UPI ID, like name@bank'
+    if (f.upiVpa.trim() && !/^[a-zA-Z0-9._-]{2,64}@[a-zA-Z0-9]{2,32}$/.test(f.upiVpa.trim())) e.upiVpa = 'Enter a valid UPI ID, like name@bank, or leave it blank'
     if (f.gstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(f.gstin.trim().toUpperCase())) e.gstin = 'GSTIN should be 15 characters'
     if (f.gstPercentage < 0 || f.gstPercentage > 28) e.gstPercentage = 'Enter a rate between 0 and 28'
     return e
@@ -430,8 +414,8 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
                       <Field label="Area" optional>
                         <input className={field} value={f.branchArea} onChange={(e) => set('branchArea', e.target.value)} placeholder="Koregaon Park, Pune" />
                       </Field>
-                      <Field label="UPI ID for settlements" error={show('upiVpa')} hint="Guests pay this ID directly. Pangat takes no commission.">
-                        <input className={`${field} font-mono`} value={f.upiVpa} onChange={(e) => set('upiVpa', e.target.value)} onBlur={blur('upiVpa')} placeholder="roasttoast@icici" autoCapitalize="none" />
+                      <Field label="UPI ID for settlements" error={show('upiVpa')} hint="Optional. The owner confirms it in Settings before guests see UPI.">
+                        <input className={`${field} font-mono`} value={f.upiVpa} onChange={(e) => set('upiVpa', e.target.value)} onBlur={blur('upiVpa')} placeholder="Leave blank: the owner adds and confirms their own UPI ID" autoCapitalize="none" />
                       </Field>
                       <div className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_140px]">
                         <Field label="GSTIN" optional error={show('gstin')}>
@@ -512,7 +496,7 @@ export function ProvisionRestaurantModal({ isOpen, onClose, initialLead, onSucce
                         ['Password', f.password ? 'Custom' : 'Auto-generated', 0],
                         ['Outlet', f.outletName, 1],
                         ['URL', `/r/${f.slug}`, 1],
-                        ['Settlement UPI', f.upiVpa, 1],
+                        ['Settlement UPI', f.upiVpa || 'Not set: owner adds and confirms it', 1],
                         ['GST', `${f.gstPercentage}%${f.gstin ? ` · ${f.gstin}` : ''}`, 1],
                         ['Tables', `${f.indoor} indoor + ${f.outdoor} outdoor`, 2],
                         ['Menu', PRESETS.find((p) => p.key === f.menuPreset)?.title, 3],

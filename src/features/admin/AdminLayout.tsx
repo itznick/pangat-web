@@ -56,6 +56,8 @@ import { ConsoleOverlays } from "@/components/console/ConsoleOverlays"
 import { useConsoleUi } from "@/components/console/useConsoleUi"
 import type { CommandItem } from "@/components/console/types"
 import type { Restaurant } from "@/types/domain"
+import { watchConnection, useConnectionStore } from "@/lib/connection"
+import { getSocket } from "@/lib/socket"
 
 /** Which plan feature each page needs. Whether it is available is decided by the API (billing.isLocked), never by a plan name here. */
 const NAV_FEATURE: Record<string, string> = { "/admin/reports": "ANALYTICS", "/admin/inventory": "INVENTORY" }
@@ -121,6 +123,13 @@ function AdminSidebarContent({ onOpenAddOutlet }: { onOpenAddOutlet: () => void 
   const openOrders = activeOrders.filter((o) => o.orderStatus !== "COMPLETED" && o.orderStatus !== "CANCELLED").length
   const occupied = tables.filter((t) => t.status !== "VACANT").length
   const badgeFor = (path: string) => (path === "/admin/orders" ? openOrders : path === "/admin/tables" ? occupied : 0)
+
+  // After any connection gap (socket reconnect, network back, device woke) re-read the open orders so the board never stays wrong
+  const liveSlug = currentOutlet?.slug
+  useEffect(() => {
+    if (!liveSlug) return
+    return watchConnection(getSocket(), () => void useAdminStore.getState().resyncOrders(liveSlug))
+  }, [liveSlug])
 
   const setSettings = useConsoleUi((s) => s.setSettings)
   const setBilling = useConsoleUi((s) => s.setBilling)
@@ -347,6 +356,16 @@ function SubscriptionBanner({ onManage }: { onManage: () => void }) {
   )
 }
 
+function LiveConnectionBanner() {
+  const connStatus = useConnectionStore((s) => s.status)
+  if (connStatus !== "offline" && connStatus !== "reconnecting") return null
+  return (
+    <div role="alert" data-testid="admin-offline-banner" className="mb-3 rounded-xl border border-amber-500/40 bg-amber-100 dark:bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-900 dark:text-amber-200">
+      {connStatus === "offline" ? "No internet." : "Lost the live connection."} New orders and payments may not show here until it returns. This page refreshes by itself.
+    </div>
+  )
+}
+
 export function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -371,7 +390,7 @@ export function AdminLayout() {
     (!outlets || outlets.length === 0) && Boolean(user)
   )
 
-  const [impersonatingOutlet, setImpersonatingOutlet] = useState<Restaurant | null>(() => {
+  const [storedImpersonation, setImpersonatingOutlet] = useState<Restaurant | null>(() => {
     try {
       const stored = sessionStorage.getItem("pangat_impersonate_outlet")
       return stored ? JSON.parse(stored) : null
@@ -380,11 +399,15 @@ export function AdminLayout() {
     }
   })
   const [impersonationError, setImpersonationError] = useState<string | null>(null)
+  // "Viewing as" follows the link (?impersonate=... or ?outletId=...) as soon as that outlet is in the list, without waiting for an effect
+  const impersonateParam = new URLSearchParams(location.search)
+  const impersonateKey = impersonateParam.get("impersonate") || impersonateParam.get("outletId")
+  const impersonatingOutlet = (isPlatformSuperAdmin && impersonateKey ? outlets.find((o) => o.id === impersonateKey || o.slug === impersonateKey) : undefined) ?? storedImpersonation
 
   // Auto-resolve outlets if empty on mount
   useEffect(() => {
     if ((!outlets || outlets.length === 0) && user) {
-      setIsResolvingOutlets(true)
+      // (isResolvingOutlets already starts true in exactly this situation)
       const resolveOutlets = async () => {
         try {
           if (isPlatformSuperAdmin) {
@@ -395,7 +418,7 @@ export function AdminLayout() {
                 name: o.name,
                 slug: o.slug,
                 branchArea: o.branchArea || undefined,
-                upiVpa: o.upiVpa || 'counter@icici',
+                upiVpa: o.upiVpa || '',
                 gstPercentage: o.gstPercentage || 5,
                 isVegOnly: false,
               }))
@@ -426,8 +449,6 @@ export function AdminLayout() {
         }
       }
       resolveOutlets()
-    } else {
-      setIsResolvingOutlets(false)
     }
   }, [user?.id, outlets?.length, isPlatformSuperAdmin])
 
@@ -440,7 +461,6 @@ export function AdminLayout() {
       if (impersonateSlugOrId) {
         const target = outlets.find((o) => o.id === impersonateSlugOrId || o.slug === impersonateSlugOrId)
         if (target) {
-          setImpersonatingOutlet(target)
           setCurrentOutlet(target)
           sessionStorage.setItem("pangat_impersonate_outlet", JSON.stringify(target))
         } else {
@@ -554,7 +574,8 @@ export function AdminLayout() {
     navigate("/super-admin", { replace: true })
   }
 
-  if (isResolvingOutlets) {
+  // still resolving only while there really are no outlets yet
+  if (isResolvingOutlets && (!outlets || outlets.length === 0)) {
     return (
       <div className="min-h-dvh bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-white flex items-center justify-center">
         <div className="flex items-center gap-2.5 text-zinc-400 text-sm">
@@ -644,6 +665,7 @@ export function AdminLayout() {
         )}
         <AnnouncementBanner />
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <LiveConnectionBanner />
           <Outlet />
         </div>
       </SidebarInset>

@@ -31,7 +31,7 @@ export function SecurityPage() {
   }, [token])
 
   if (!token || !user) return <Navigate to="/login" replace />
-  const home = user.role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : user.role === 'CHEF' ? `/kds/${user.restaurantSlug || 'pangat'}` : '/admin'
+  const home = user.role === 'PLATFORM_SUPER_ADMIN' ? '/super-admin' : user.role === 'CHEF' ? (user.restaurantSlug ? `/kds/${user.restaurantSlug}` : '/login') : '/admin'
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true)

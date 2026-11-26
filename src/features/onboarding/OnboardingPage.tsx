@@ -112,7 +112,6 @@ export function OnboardingPage() {
         ...prev,
         outletName: val,
         slug: nextSlug,
-        upiVpa: prev.upiVpa && !prev.upiVpa.includes('my-outlet') ? prev.upiVpa : `${nextSlug}@icici`,
       }
     })
   }
@@ -125,7 +124,6 @@ export function OnboardingPage() {
         ...prev,
         branchArea: val,
         slug: nextSlug,
-        upiVpa: prev.upiVpa && !prev.upiVpa.includes('my-outlet') ? prev.upiVpa : `${nextSlug}@icici`,
       }
     })
   }
@@ -172,7 +170,7 @@ export function OnboardingPage() {
       const defaultBranchArea = formData.branchArea?.trim() || 'Hinjawadi Phase 1'
       const baseSlug = generateSlugFromText(`${defaultOutletName} ${defaultBranchArea}`) || 'my-outlet'
       const finalSlug = formData.slug.trim() || baseSlug
-      const finalUpi = formData.upiVpa.trim() || `${finalSlug}@icici`
+      const finalUpi = formData.upiVpa.trim()
 
       setFormData((prev) => ({
         ...prev,
@@ -186,15 +184,15 @@ export function OnboardingPage() {
         formData.slug.trim() ||
         generateSlugFromText(`${formData.outletName} ${formData.branchArea || ''}`) ||
         'my-outlet'
-      const effectiveUpi = formData.upiVpa.trim() || `${effectiveSlug}@icici`
+      const effectiveUpi = formData.upiVpa.trim()
 
       if (!formData.outletName.trim()) {
         setErrorMsg('Outlet branch name is required.')
         return
       }
 
-      if (!effectiveUpi) {
-        setErrorMsg('Settlement UPI VPA is required.')
+      if (effectiveUpi && !/^[a-zA-Z0-9._-]{2,64}@[a-zA-Z0-9]{2,32}$/.test(effectiveUpi)) {
+        setErrorMsg('Enter a valid UPI ID like name@bank, or leave it blank and add it later in Settings.')
         return
       }
 
@@ -1098,7 +1096,7 @@ export function OnboardingPage() {
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 uppercase font-semibold">Settlement VPA</span>
-                  <p className="text-xs font-mono font-bold text-zinc-300 truncate">{formData.upiVpa}</p>
+                  <p className="text-xs font-mono font-bold text-zinc-300 truncate">{formData.upiVpa || "Not set yet"}</p>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 uppercase font-semibold">Starter Preset</span>

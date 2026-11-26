@@ -16,12 +16,17 @@ import {
 } from "lucide-react"
 import { api } from "@/lib/api"
 
+import type { PilotIntent } from "./Pricing"
+
 interface PilotModalProps {
   isOpen: boolean
   onClose: () => void
+  /** Set when the visitor came from a plan card: an Enterprise enquiry reads differently from a free-trial request */
+  intent?: PilotIntent
 }
 
-export function PilotModal({ isOpen, onClose }: PilotModalProps) {
+export function PilotModal({ isOpen, onClose, intent }: PilotModalProps) {
+  const enterprise = intent?.kind === "enterprise"
   const [submitted, setSubmitted] = React.useState(false)
   const [submitting, setSubmitting] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
@@ -52,6 +57,8 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
         city: formData.city,
         phone: formData.phone,
         tableCount: formData.tableCount,
+        // so the team knows what the visitor asked about (free text; never used for pricing)
+        notes: intent ? `${enterprise ? "Enterprise enquiry" : "Free-trial request"}${intent.plan ? ` · ${intent.plan}` : ""}` : undefined,
         consentAccepted: consent,
       })
 
@@ -98,14 +105,14 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
         {!submitted ? (
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs text-zinc-300 mb-3 font-normal">
-              <span>On-Site Setup in Pune</span>
+              <span>{enterprise ? "Enterprise enquiry" : "Based in Pune"}</span>
             </div>
 
             <h3 className="text-2xl font-bold tracking-tight text-white font-heading">
-              Book a 15-Minute Live Demo
+              {enterprise ? "Talk to us about Enterprise" : "Start your free trial"}
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed">
-              We&apos;ll bring sample branded acrylic standees to your cafe, configure your menu live in 15 minutes, and test the audio chime alert.
+              {enterprise ? "Tell us about your outlets and we will get in touch to plan your onboarding and pricing for more than five outlets." : "Tell us about your restaurant and we will help you set up your menu and QR codes and test the kitchen chime together."}
             </p>
 
             {errorMessage && (
@@ -223,11 +230,11 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
               <div className="pt-2 text-xs text-zinc-400 space-y-1.5">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                  <span>Free on-site standee trial · Zero hardware purchase</span>
+                  <span>14-day free trial · No hardware purchase</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                  <span>Direct UPI settlement to your bank account</span>
+                  <span>No credit card needed to start</span>
                 </div>
               </div>
 
@@ -265,7 +272,7 @@ export function PilotModal({ isOpen, onClose }: PilotModalProps) {
             </h3>
 
             <p className="text-sm text-zinc-400 max-w-sm mx-auto leading-relaxed">
-              Our team will connect within <strong className="text-white">4 hours</strong> via WhatsApp to schedule your personalized live demo for{" "}
+              Our team aims to connect within <strong className="text-white">4 hours</strong> via WhatsApp to schedule your personalized live demo for{" "}
               <strong className="text-zinc-200">
                 {formData.restaurantName || "your restaurant"}
               </strong>.

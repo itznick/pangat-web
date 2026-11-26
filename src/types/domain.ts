@@ -76,6 +76,8 @@ export interface Restaurant {
   name: string
   slug: string
   branchArea?: string
+  /** When the owner confirmed the UPI ID belongs to the business (null = unconfirmed: guests are not offered UPI) */
+  upiVpaConfirmedAt?: string | null
   /** UPI Virtual Payment Address, e.g. pangat.bandra@icici */
   upiVpa: string
   /** GST percentage applied at checkout, e.g. 5 */
@@ -207,7 +209,11 @@ export interface OrderQueryParams {
 
 export interface Order {
   id: string
+  /** Last change on the server: used to ignore stale live events and to merge a refetch */
+  updatedAt?: string
   trackingToken?: string
+  /** Where a guest may pay by UPI (this outlet's own, owner-confirmed ID), or null/absent when UPI is not available. Never a default. */
+  payee?: { vpa: string; name: string } | null
   restaurantId: string
   orderType?: OrderType
   tableNumber?: string | null
@@ -554,6 +560,7 @@ export interface SubscriptionPlan {
   taxPercentage: number
   maxOutlets: number
   maxTablesPerOutlet: number
+  maxStaffPerOutlet: number
   features: string[]
   pricing: PlanPricing
   razorpayPlanId?: string | null

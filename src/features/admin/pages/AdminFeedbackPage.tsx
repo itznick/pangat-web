@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useQuery } from "@/hooks/useQuery"
 import { timeAgo } from "@/lib/time"
 import { PageHeader, PageShell } from "@/components/console/PageHeader"
 import { Check, Download, MessageSquareText, RefreshCw, Search, Star, X } from "lucide-react"
@@ -32,10 +33,15 @@ const avg = (rs: CustomerReviewItem[]) => (rs.length ? rs.reduce((s, r) => s + r
 export function AdminFeedbackPage() {
   const outlet = useAuthStore((s) => s.currentOutlet)
   const slug = outlet?.slug || ""
-  const [data, setData] = React.useState<CustomerFeedbackSummary | null>(null)
-  const [loading, setLoading] = React.useState(true)
-  const [refreshing, setRefreshing] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
+  // each result carries the moment it was fetched: that is "now" for the range filters (stable between renders, fresh on every load)
+  const fb = useQuery(async () => ({ summary: await api.restaurants.getFeedback(slug), at: Date.now() }), slug, { enabled: !!slug })
+  const shown = fb.data ?? fb.lastData
+  const data: CustomerFeedbackSummary | null = shown?.summary ?? null
+  const loading = fb.loading && !data
+  const refreshing = fb.loading && !!data
+  const error = fb.error ? (fb.error instanceof Error ? fb.error.message : "Could not load feedback") : null
+  const [mountedAt] = React.useState(() => Date.now())
+  const asOf = shown?.at ?? mountedAt
   const [range, setRange] = React.useState<Range>("30d")
   const [star, setStar] = React.useState<number | null>(null)
   const [tag, setTag] = React.useState<string | null>(null)
@@ -50,24 +56,6 @@ export function AdminFeedbackPage() {
     }
   })
 
-  const load = React.useCallback(async () => {
-    if (!slug) return
-    setError(null)
-    try {
-      setData(await api.restaurants.getFeedback(slug))
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load feedback")
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [slug])
-
-  React.useEffect(() => {
-    setLoading(true)
-    void load()
-  }, [load])
-
   const toggleHandled = (id: string) => {
     const next = new Set(handled)
     if (next.has(id)) next.delete(id)
@@ -81,7 +69,7 @@ export function AdminFeedbackPage() {
   }
 
   const all = data?.recentReviews ?? []
-  const inRange = React.useMemo(() => all.filter((r) => Date.now() - new Date(r.createdAt).getTime() <= RANGE_MS[range]), [all, range])
+  const inRange = React.useMemo(() => all.filter((r) => asOf - new Date(r.createdAt).getTime() <= RANGE_MS[range]), [all, range, asOf])
 
   // Period summary is computed from the reviews in range so the filters and the numbers agree
   const total = inRange.length
@@ -98,11 +86,11 @@ export function AdminFeedbackPage() {
     if (range === "all") return null
     const span = RANGE_MS[range]
     const prev = all.filter((r) => {
-      const age = Date.now() - new Date(r.createdAt).getTime()
+      const age = asOf - new Date(r.createdAt).getTime()
       return age > span && age <= span * 2
     })
     return prev.length >= 3 && total >= 3 ? mean - avg(prev) : null
-  }, [all, range, total, mean])
+  }, [all, range, total, mean, asOf])
 
   const tags = React.useMemo(() => {
     const m = new Map<string, number>()
@@ -150,7 +138,7 @@ export function AdminFeedbackPage() {
           <button onClick={exportCsv} disabled={feed.length === 0} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-40">
             <Download className="h-3.5 w-3.5" /> Export
           </button>
-          <button onClick={() => { setRefreshing(true); void load() }} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06]">
+          <button onClick={fb.reload} className="flex h-9 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.06]">
             <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} /> Refresh
           </button>
           </>
@@ -163,7 +151,7 @@ export function AdminFeedbackPage() {
         <div className="mx-auto mt-16 max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center">
           <p className="text-zinc-300">We couldn’t load feedback.</p>
           <p className="mt-2 break-words font-mono text-xs text-zinc-500">{error}</p>
-          <button onClick={() => { setLoading(true); void load() }} className="lp-btn lp-btn-ghost mt-5 !h-10 !px-5 !text-sm">Try again</button>
+          <button onClick={fb.reload} className="lp-btn lp-btn-ghost mt-5 !h-10 !px-5 !text-sm">Try again</button>
         </div>
       ) : loading && !data ? (
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

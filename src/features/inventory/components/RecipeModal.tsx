@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
 import { Loader2, ChefHat, Plus, Trash2, AlertCircle, History } from "lucide-react"
 import type { Ingredient, MenuItem, Recipe, UnitOfMeasure } from "@/types/domain"
 
@@ -45,14 +46,18 @@ export function RecipeModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  // closing (or no item) clears the form
+  useOnChange(`${open}|${menuItem?.id}`, () => {
     if (!open || !menuItem) {
       setCurrentRecipe(null)
       setRows([])
       setNotes("")
       setError(null)
-      return
     }
+  })
+
+  useEffect(() => {
+    if (!open || !menuItem) return
 
     const loadRecipe = async () => {
       setFetching(true)
@@ -99,9 +104,9 @@ export function RecipeModal({
     setRows(rows.filter((_, idx) => idx !== index))
   }
 
-  const handleRowChange = (index: number, field: keyof IngredientRow, value: any) => {
+  const handleRowChange = (index: number, field: keyof IngredientRow, value: string) => {
     const updated = [...rows]
-    updated[index] = { ...updated[index], [field]: value }
+    updated[index] = { ...updated[index], [field]: value } as IngredientRow
     // If ingredient changed, sync unit with that ingredient's default unit
     if (field === "ingredientId") {
       const ing = ingredients.find((i) => i.id === value)
@@ -142,8 +147,8 @@ export function RecipeModal({
 
       onRecipeSaved(saved)
       onOpenChange(false)
-    } catch (err: any) {
-      setError(err.message || "Failed to save recipe")
+    } catch (err) {
+      setError(errMsg(err, "Failed to save recipe"))
     } finally {
       setLoading(false)
     }

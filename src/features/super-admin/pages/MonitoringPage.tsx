@@ -12,11 +12,11 @@ import { ago, dateTime, num, titleCase } from '../format'
 import { DataTable, Drawer, ErrorState, FilterSelect, KV, Notice, Page, Pager, Panel, Pill, SearchBox, Skeleton, Spinner, Stat, StatusPill, Tabs, Toolbar, useAction } from '../ui/kit'
 import { BarChart, LineChart, Meter } from '../ui/charts'
 
-type Tab = 'health' | 'integrations' | 'errors' | 'webhooks' | 'jobs' | 'data'
+type Tab = 'health' | 'integrations' | 'alerts' | 'errors' | 'webhooks' | 'jobs' | 'data'
 
 export function MonitoringPage() {
   const [params] = useSearchParams()
-  const [tab, setTab] = React.useState<Tab>(() => (['health', 'integrations', 'errors', 'webhooks', 'jobs', 'data'] as Tab[]).find((t) => t === params.get('tab')) ?? 'health')
+  const [tab, setTab] = React.useState<Tab>(() => (['health', 'integrations', 'alerts', 'errors', 'webhooks', 'jobs', 'data'] as Tab[]).find((t) => t === params.get('tab')) ?? 'health')
   const live = tab === 'health' || tab === 'integrations' || tab === 'jobs'
   const health = useFetch<any>(() => sa.health(), [], { pollMs: live ? 30000 : undefined })
   return (
@@ -25,10 +25,11 @@ export function MonitoringPage() {
       description="Live probes and recorded history from the running API and database. Secrets and customer data are never shown here."
       actions={<Button variant="outline" size="icon" onClick={health.reload} aria-label="Refresh" disabled={health.loading}><RefreshCw className={`h-4 w-4 ${health.loading ? 'animate-spin' : ''}`} /></Button>}
     >
-      <Tabs<Tab> value={tab} onChange={setTab} tabs={[{ id: 'health', label: 'Health' }, { id: 'integrations', label: 'Integrations' }, { id: 'errors', label: 'Errors' }, { id: 'webhooks', label: 'Webhooks' }, { id: 'jobs', label: 'Background jobs' }, { id: 'data', label: 'Data & recovery' }]} />
+      <Tabs<Tab> value={tab} onChange={setTab} tabs={[{ id: 'health', label: 'Health' }, { id: 'integrations', label: 'Integrations' }, { id: 'alerts', label: 'Alert delivery' }, { id: 'errors', label: 'Errors' }, { id: 'webhooks', label: 'Webhooks' }, { id: 'jobs', label: 'Background jobs' }, { id: 'data', label: 'Data & recovery' }]} />
       {health.error && !health.data && <Panel><ErrorState message={health.error} onRetry={health.reload} /></Panel>}
       {tab === 'health' && <Health h={health.data} />}
       {tab === 'integrations' && <Integrations h={health.data} />}
+      {tab === 'alerts' && <Alerts />}
       {tab === 'errors' && <Errors />}
       {tab === 'webhooks' && <Webhooks />}
       {tab === 'jobs' && <Jobs h={health.data} reload={health.reload} />}
@@ -136,6 +137,57 @@ function Errors() {
         {open && <div className="space-y-4"><KV cols={1} items={[{ label: 'Error', value: open.error_name }, { label: 'Message', value: open.message }]} /><div><p className="mb-1 text-[11.5px] font-medium uppercase tracking-wider text-zinc-500">Stack (redacted)</p><pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-xl bg-zinc-500/10 p-3 text-[11.5px] leading-relaxed">{open.stack || 'No stack captured'}</pre></div></div>}
       </Drawer>
     </Panel>
+  )
+}
+
+/** Alert emails to the operators: what was tried, what failed and why, with a manual Retry. Nothing here is silent. */
+function Alerts() {
+  const { can } = usePerms()
+  const [status, setStatus] = React.useState('FAILED')
+  const health = useFetch<any>(() => sa.alertHealth(), [])
+  const list = useFetch<any[]>(() => sa.alertDeliveries(status || undefined), [status])
+  const [busy, setBusy] = React.useState<string | null>(null)
+  const retry = async (id: string) => {
+    setBusy(id)
+    try {
+      await sa.retryAlert(id)
+      toast.success('Retry attempted')
+      list.reload(); health.reload()
+    } catch (e) {
+      toast.error(errMsg(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+  const h = health.data
+  return (
+    <div className="space-y-4">
+      {h && (
+        <Notice tone={h.ok ? 'good' : 'warn'} title={h.ok ? 'Alert emails are working' : 'Alert emails need attention'}>
+          {h.ok ? `${h.sentLast7Days} sent in the last 7 days.` : h.problems.join(' ')}
+        </Notice>
+      )}
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Failed" value={num(h?.failed ?? 0)} tone={h?.failed ? 'rose' : 'zinc'} hint="need a retry" />
+        <Stat label="Waiting to retry" value={num(h?.pending ?? 0)} tone="zinc" hint="automatic back-off" />
+        <Stat label="Sent" value={num(h?.sentLast7Days ?? 0)} tone="emerald" hint="last 7 days" />
+      </div>
+      <Panel flush title="Alert email deliveries" description="New leads, plan-change requests, important support tickets and critical events. A failed delivery is retried automatically a few times, then waits here for you.">
+        <div className="px-4 pt-3 sm:px-5">
+          <FilterSelect label="Status" value={status} onChange={setStatus} options={[{ value: 'FAILED', label: 'Failed' }, { value: 'PENDING', label: 'Waiting to retry' }, { value: 'SENT', label: 'Sent' }, { value: '', label: 'All' }]} />
+        </div>
+        <div className="mt-3">
+          <DataTable rows={list.data ?? undefined} loading={list.loading} error={list.error} onRetry={list.reload} rowKey={(r: any) => r.id} emptyTitle="Nothing here" emptyHint="No deliveries match this filter."
+            columns={[
+              { key: 't', header: 'Alert', primary: true, cell: (r: any) => <div><p className="text-[13px] text-zinc-900 dark:text-zinc-50">{r.title}</p><p className="text-[11.5px] text-zinc-500">{r.recipient || 'No recipient set'} · {ago(r.created_at)}</p></div> },
+              { key: 's', header: 'Status', cell: (r: any) => <StatusPill status={r.status} /> },
+              { key: 'a', header: 'Attempts', align: 'right', hideOnMobile: true, cell: (r: any) => r.attempts },
+              { key: 'e', header: 'Reason', hideOnMobile: true, cell: (r: any) => <span className="text-[12px] text-zinc-500">{r.last_error || '—'}</span> },
+              { key: 'r', header: '', align: 'right', cell: (r: any) => (r.status === 'FAILED' || r.status === 'PENDING') && can('support.manage') ? <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => void retry(r.id)}>Retry now</Button> : null },
+            ]} />
+        </div>
+      </Panel>
+    </div>
   )
 }
 

@@ -4,7 +4,7 @@ import { playKitchenChime } from "@/lib/sound"
 import { Reveal, SplitReveal, prefersReducedMotion, useEnterProgress, useInView, useParallax } from "./motion"
 import {
   DinerMenuScreen,
-  DinerPayScreen,
+  DinerOrderScreen,
   KdsScreen,
   PhoneFrame,
   TabletFrame,
@@ -16,7 +16,7 @@ interface HeroProps {
   onOpenDemo: () => void
 }
 
-/** One 11-second loop: order → pay → kitchen chime → ready. */
+/** One 11-second loop: order → sent to kitchen → chime → ready. */
 type Beat = { cart: number; adding: number; screen: "menu" | "pay"; paid: boolean; stage: KdsStage; chime: boolean }
 const BEATS: { at: number; beat: Beat }[] = [
   { at: 0, beat: { cart: 0, adding: -1, screen: "menu", paid: false, stage: "none", chime: false } },
@@ -32,17 +32,15 @@ const LOOP_MS = 12500
 const REST: Beat = BEATS[BEATS.length - 1].beat
 
 export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
-  const [beat, setBeat] = React.useState<Beat>(BEATS[0].beat)
+  const [playing, setBeat] = React.useState<Beat>(BEATS[0].beat)
+  const reduced = prefersReducedMotion()
+  const beat = reduced ? REST : playing // reduced motion: show the finished state, no loop
   const [stageRef, visible] = useInView<HTMLDivElement>(0.1, "0px")
   const [manualChime, setManualChime] = React.useState(false)
 
   // Drive the loop only while the showcase is on screen.
   React.useEffect(() => {
-    if (prefersReducedMotion()) {
-      setBeat(REST)
-      return
-    }
-    if (!visible) return
+    if (reduced || !visible) return
     let timers: number[] = []
     const run = () => {
       BEATS.forEach(({ at, beat: b }) => timers.push(window.setTimeout(() => setBeat(b), at)))
@@ -53,7 +51,7 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
       timers.forEach(clearTimeout)
       timers = []
     }
-  }, [visible])
+  }, [visible, reduced])
 
   const chimeNow = beat.chime || manualChime
   const testChime = () => {
@@ -85,7 +83,7 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
         <div className="flex flex-col items-center text-center">
           <Reveal className="lp-glass mb-7 inline-flex items-center gap-2.5 rounded-full py-1.5 pl-2 pr-4 sm:mb-9">
             <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">New</span>
-            <span className="text-[13px] text-zinc-300">Live table ordering for modern cafes</span>
+            <span className="text-[13px] text-zinc-300">Table ordering and kitchen display for Indian restaurants</span>
           </Reveal>
 
           <h1 className="lp-display max-w-[15ch] text-[2.9rem] sm:max-w-none sm:text-[5.2rem] lg:text-[6.6rem]">
@@ -94,13 +92,13 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
           </h1>
 
           <Reveal as="p" delay={500} className="mt-7 max-w-[34rem] text-[1.0625rem] leading-[1.6] text-zinc-400 sm:mt-9 sm:text-[1.3rem] sm:leading-[1.55]">
-            Guests scan, order and pay by UPI from their seat. Your kitchen hears a chime the moment it&rsquo;s paid.
-            <span className="text-zinc-200"> No app. No printer. No commission.</span>
+            Guests scan a QR, browse your menu and send their order from their seat. Your kitchen display chimes the moment it arrives.
+            <span className="text-zinc-200"> No app. No printer. No commission from Pangat.</span>
           </Reveal>
 
           <Reveal delay={650} className="mt-9 flex w-full flex-col items-center gap-3 sm:mt-11 sm:w-auto sm:flex-row sm:gap-4">
             <button type="button" onClick={onOpenPilot} className="lp-btn lp-btn-primary w-full sm:w-auto sm:!h-[3.25rem] sm:!px-8 sm:!text-base">
-              Start free for 7 days
+              Start your free 14-day trial
               <ArrowRight className="lp-arrow h-4 w-4" />
             </button>
             <button type="button" onClick={onOpenDemo} className="lp-btn lp-btn-ghost w-full sm:w-auto sm:!h-[3.25rem] sm:!px-7 sm:!text-base">
@@ -110,7 +108,7 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
           </Reveal>
 
           <Reveal as="p" delay={800} className="mt-6 text-[13px] text-zinc-500">
-            ₹699 a month · No credit card · Set up in 15 minutes
+            Plans from ₹699 a month + GST · No credit card · We help you set up
           </Reveal>
         </div>
 
@@ -148,7 +146,7 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
                     {beat.screen === "menu" ? (
                       <DinerMenuScreen cartCount={beat.cart} adding={beat.adding} />
                     ) : (
-                      <DinerPayScreen paid={beat.paid} />
+                      <DinerOrderScreen placed={beat.paid} />
                     )}
                   </PhoneFrame>
                 </div>
@@ -164,8 +162,8 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
                   <Check className="h-4 w-4" strokeWidth={3} />
                 </span>
                 <div className="text-left">
-                  <p className="text-[12px] font-semibold text-white">₹520 received</p>
-                  <p className="text-[10.5px] text-zinc-400">Straight to your bank · 0% fee</p>
+                  <p className="text-[12px] font-semibold text-white">New order · Table 04</p>
+                  <p className="text-[10.5px] text-zinc-400">Sent to your kitchen display</p>
                 </div>
               </div>
 

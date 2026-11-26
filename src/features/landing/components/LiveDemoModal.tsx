@@ -97,7 +97,7 @@ export function LiveDemoModal({ isOpen, onClose, onClaimPilot }: LiveDemoModalPr
         {/* Instructions banner */}
         <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <span>
-            Select a milk variant on the left, then click <strong>&quot;Simulate 1-Tap UPI Pay&quot;</strong> to hear the actual kitchen chime and see the live ticket appear.
+            Select a milk variant on the left, then click <strong>&quot;Simulate placing an order&quot;</strong> to hear the actual kitchen chime and see the live ticket appear.
           </span>
           <span className="px-2.5 py-1 rounded-full bg-white/[0.06] text-zinc-300 text-[11px] shrink-0">
             Interactive Test
@@ -181,13 +181,13 @@ export function LiveDemoModal({ isOpen, onClose, onClaimPilot }: LiveDemoModalPr
                 className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-sm py-3.5 rounded-full shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
               >
                 <ShieldCheck className="w-4 h-4 text-zinc-950" />
-                <span>Simulate 1-Tap UPI Pay (₹{price})</span>
+                <span>Simulate placing an order (₹{price})</span>
               </button>
             ) : (
               <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs space-y-1 text-center">
                 <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-medium text-sm">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>UPI Payment Approved · ₹{price}</span>
+                  <span>Order placed · ₹{price}</span>
                 </div>
                 <p className="text-xs text-zinc-400">
                   Transferred directly to merchant bank VPA. Sent to kitchen display.
@@ -285,7 +285,7 @@ export function LiveDemoModal({ isOpen, onClose, onClaimPilot }: LiveDemoModalPr
                 <BellRing className="w-5 h-5 mx-auto text-zinc-500" />
                 <p className="font-medium text-zinc-300">Waiting for diner order...</p>
                 <p className="text-xs text-zinc-500">
-                  Click &quot;Simulate 1-Tap UPI Pay&quot; to test the live WebSocket alert
+                  Click &quot;Simulate placing an order&quot; to test the live WebSocket alert
                 </p>
               </div>
             )}

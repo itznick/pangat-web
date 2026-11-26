@@ -5,7 +5,6 @@ import {
   BarChart3,
   Boxes,
   CreditCard,
-  Droplets,
   LayoutGrid,
   MessageSquareHeart,
   Receipt,
@@ -21,7 +20,7 @@ export type AdminTab = "floor" | "menu" | "inventory" | "feedback" | "orders"
 const NAV: { id: AdminTab | "dash" | "sub" | "set"; label: string; icon: React.ElementType }[] = [
   { id: "dash", label: "Dashboard", icon: BarChart3 },
   { id: "floor", label: "Floor & Tables", icon: Armchair },
-  { id: "orders", label: "Orders & Settlements", icon: Receipt },
+  { id: "orders", label: "Orders & Sales", icon: Receipt },
   { id: "menu", label: "Menu & Modifiers", icon: UtensilsCrossed },
   { id: "inventory", label: "Inventory & Recipes", icon: Boxes },
   { id: "feedback", label: "Feedback & Ratings", icon: MessageSquareHeart },
@@ -82,38 +81,33 @@ function Head({ title, sub, right }: { title: string; sub: string; right?: React
 /* ── Floor ───────────────────────────────────────────────────────────────── */
 export function FloorPanel() {
   const tables = [
-    { n: "01", s: "free" }, { n: "02", s: "eating" }, { n: "03", s: "req" }, { n: "04", s: "prep" },
-    { n: "05", s: "free" }, { n: "06", s: "eating" }, { n: "07", s: "free" }, { n: "08", s: "bill" },
+    { n: "01", s: "free" }, { n: "02", s: "eating" }, { n: "03", s: "served" }, { n: "04", s: "prep" },
+    { n: "05", s: "free" }, { n: "06", s: "eating" }, { n: "07", s: "free" }, { n: "08", s: "served" },
     { n: "09", s: "prep" }, { n: "10", s: "free" }, { n: "11", s: "eating" }, { n: "12", s: "free" },
   ]
   const tone: Record<string, string> = {
     free: "border-zinc-800 bg-zinc-900/60 text-zinc-500",
     eating: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
     prep: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-    req: "border-sky-500/40 bg-sky-500/10 text-sky-300",
-    bill: "border-violet-500/30 bg-violet-500/10 text-violet-300",
+    served: "border-sky-500/40 bg-sky-500/10 text-sky-300",
   }
-  const label: Record<string, string> = { free: "Free", eating: "Dining", prep: "Preparing", req: "Water", bill: "Bill" }
+  const label: Record<string, string> = { free: "Vacant", eating: "Occupied", prep: "Preparing", served: "Served" }
   return (
     <>
-      <Head title="Floor & Tables" sub="12 tables · 7 occupied" right={<span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-medium text-emerald-400">Live</span>} />
+      <Head title="Floor & Tables" sub="Sample data · 12 tables" right={<span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-medium text-emerald-400">Live</span>} />
       <div className="grid grid-cols-4 gap-2">
         {tables.map((t, i) => (
           <div
             key={t.n}
-            className={`rounded-xl border p-2.5 text-center transition-all ${tone[t.s]} ${t.s === "req" ? "relative" : ""}`}
+            className={`rounded-xl border p-2.5 text-center transition-all ${tone[t.s]} `}
             style={{ animation: `lp-fade-up .5s var(--lp-ease) ${i * 40}ms both` }}
           >
             <p className="text-[13px] font-semibold">{t.n}</p>
             <p className="text-[8px] opacity-80">{label[t.s]}</p>
-            {t.s === "req" && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />}
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-3 py-2 text-[10px] text-sky-200">
-        <Droplets className="h-3 w-3" /> Water requested at Table 03
-        <span className="ml-auto text-[9px] text-sky-300/70">Dismiss</span>
-      </div>
+      <p className="mt-3 text-[9px] text-zinc-500">Sample data. Table status follows the real order lifecycle.</p>
     </>
   )
 }
@@ -187,13 +181,13 @@ export function InventoryPanel() {
 /* ── Feedback ────────────────────────────────────────────────────────────── */
 export function FeedbackPanel() {
   const reviews = [
-    [5, "Table 06", "Ordered in 20 seconds. The toastie was perfect."],
-    [5, "Table 11", "No waiting for the bill. Genuinely loved this."],
-    [4, "Table 02", "Great coffee. Chai could be a touch hotter."],
+    [5, "Sample 1", "Sample comment — this is placeholder text."],
+    [4, "Sample 2", "Sample comment — this is placeholder text."],
+    [5, "Sample 3", "Sample comment — this is placeholder text."],
   ] as const
   return (
     <>
-      <Head title="Feedback & Ratings" sub="Hear it from the table, not from a review site" right={<div className="text-right"><p className="text-[18px] font-semibold leading-none text-white">4.8</p><p className="text-[8px] text-zinc-500">avg · 214 reviews</p></div>} />
+      <Head title="Feedback & Ratings" sub="Sample entries for illustration, not customer reviews" right={<div className="text-right"><p className="text-[18px] font-semibold leading-none text-white">4.8</p><p className="text-[8px] text-zinc-500">avg · 214 reviews</p></div>} />
       <div className="space-y-2">
         {reviews.map(([r, t, c], i) => (
           <div key={t} className="rounded-xl border border-white/5 bg-white/[0.025] px-3 py-2.5" style={{ animation: `lp-fade-up .5s var(--lp-ease) ${i * 90}ms both` }}>
@@ -218,16 +212,16 @@ export function OrdersPanel() {
   const bars = [38, 52, 44, 68, 80, 62, 92]
   return (
     <>
-      <Head title="Orders & Settlements" sub="Today · every rupee reconciled" />
+      <Head title="Orders & Sales" sub="Sample data for illustration" />
       <div className="mb-3 grid grid-cols-3 gap-2">
         {[
           ["Revenue", "₹44,820"],
           ["Orders", "186"],
-          ["Commission", "₹0"],
+          ["Avg. order", "₹241"],
         ].map(([k, v]) => (
           <div key={k} className="rounded-xl border border-white/5 bg-white/[0.025] p-2.5">
             <p className="text-[8.5px] text-zinc-500">{k}</p>
-            <p className={`text-[14px] font-semibold tabular-nums ${k === "Commission" ? "text-emerald-400" : "text-white"}`}>{v}</p>
+            <p className={`text-[14px] font-semibold tabular-nums ${"text-white"}`}>{v}</p>
           </div>
         ))}
       </div>
@@ -242,7 +236,7 @@ export function OrdersPanel() {
         ))}
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {["GPay 54%", "PhonePe 31%", "Paytm 11%", "Other 4%"].map((p) => (
+        {["Pay at counter 62%", "UPI (cashier confirmed) 38%"].map((p) => (
           <span key={p} className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[9px] text-zinc-300">{p}</span>
         ))}
       </div>

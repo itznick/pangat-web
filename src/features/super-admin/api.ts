@@ -15,6 +15,9 @@ const put = <T = any>(url: string, body?: unknown) => apiClient.put(url, body ??
 export const sa = {
   dashboard: (q: Q) => get('/admin/dashboard', q),
   events: (limit = 30) => get<Row[]>('/admin/events', { limit }),
+  alertHealth: () => get<Row>('/admin/alerts/health'),
+  alertDeliveries: (status?: string) => get<Row[]>('/admin/alerts/deliveries', { status, limit: 50 }),
+  retryAlert: (id: string) => post(`/admin/alerts/deliveries/${id}/retry`),
   ackEvents: (id?: string) => post('/admin/events/ack', id ? { id } : {}),
 
   restaurants: (q: Q) => get<Paged>('/admin/restaurants', q),
@@ -33,7 +36,9 @@ export const sa = {
   resetOwnerPassword: (orgId: string) => post(`/admin/organizations/${orgId}/reset-password`),
 
   subscriptions: (q: Q) => get<Paged>('/admin/subscriptions', q),
-  plans: () => get<{ plans: Row[]; features: Row[] }>('/admin/subscription-plans'),
+  plans: () => get<{ plans: Row[]; features: Row[]; trial?: Row }>('/admin/subscription-plans'),
+  capacity: () => get<Row[]>('/admin/subscriptions/capacity'),
+  founding: () => get<{ slotsTotal: number; slotsUsed: number; grants: Row[] }>('/admin/subscriptions/founding'),
   createPlan: (d: any) => post('/subscriptions/admin/plans', d),
   updatePlan: (id: string, d: any) => patch(`/subscriptions/admin/plans/${id}`, d),
   subHistory: (id: string) => get(`/admin/restaurants/${id}/subscription-history`),

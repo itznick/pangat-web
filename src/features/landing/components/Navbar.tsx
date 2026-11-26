@@ -200,7 +200,7 @@ export function Navbar({ onOpenPilot }: NavbarProps) {
               }}
               className="lp-btn lp-btn-primary w-full"
             >
-              Start free for 7 days
+              Start free for 14 days
             </button>
             <a href="/login" className="lp-btn lp-btn-ghost w-full">
               Sign in

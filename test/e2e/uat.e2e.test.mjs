@@ -35,6 +35,11 @@ async function seed() {
     }),
   })
   assert.ok([201, 400, 409].includes(res.status), `seed failed: ${res.status}`) // 400/409: already onboarded
+  // Guests are offered UPI only after the OWNER confirms the outlet's own UPI ID (pilot safety rule), exactly as a real owner would in Settings
+  const login = await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(OWNER) })
+  const d = (await login.json()).data
+  const confirm = await fetch(`${API}/restaurants/${d.outlets[0].id}/upi/confirm`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${d.accessToken}` }, body: JSON.stringify({ vpa: 'uat@upi' }) })
+  assert.ok([200, 201].includes(confirm.status), `UPI confirmation failed: ${confirm.status}`)
 }
 
 async function openPage(viewport, path, { signedIn = false } = {}) {
@@ -371,14 +376,20 @@ describe('UAT · owner runs the team (settings → team)', () => {
     await page.getByLabel('Full name').fill('Chitra Cashier')
     await page.getByLabel('Email (their login)').fill(staffEmail)
     await page.locator('form').getByLabel('Role').selectOption('CASHIER')
-    await page.getByLabel('Starting password').fill('Cashier-pass-1')
+    await page.getByLabel('Starting password').fill('Lotus-Bell-Pune-77') // a starting password is temporary and must not contain the person's name
     await page.getByRole('button', { name: 'Add member' }).click()
     await page.getByText(staffEmail).waitFor()
+
+    // a starting password is temporary: the cashier must choose their own before anything else works (here via the API, as the change-password screen does)
+    const first = await apiLogin(staffEmail, 'Lotus-Bell-Pune-77')
+    assert.equal(first.user.mustChangePassword, true, 'a password typed by the owner is temporary')
+    const chosen = await apiAs(first.accessToken)('POST', '/auth/change-password', { currentPassword: 'Lotus-Bell-Pune-77', newPassword: 'Mango-Tree-Kothrud-31' })
+    assert.equal(chosen.status, 200, JSON.stringify(chosen.json))
 
     // the new cashier, in a fresh browser session
     const cp = await openPage(DESKTOP, '/login')
     await cp.getByLabel('Email', { exact: true }).fill(staffEmail)
-    await cp.getByLabel('Password', { exact: true }).fill('Cashier-pass-1')
+    await cp.getByLabel('Password', { exact: true }).fill('Mango-Tree-Kothrud-31')
     await cp.getByRole('button', { name: /^Sign in/ }).click()
     await cp.waitForURL('**/admin/**')
     assert.equal(await cp.getByRole('link', { name: /^Floor & Tables/ }).isVisible(), true)
@@ -460,15 +471,20 @@ describe('UAT · account, passwords & the kitchen', () => {
     const as = apiAs(owner.accessToken)
     const hired = await as('POST', `/restaurants/${owner.outlets[0].id}/staff`, { name: 'Pat Manager', email, password: 'First-pass-123', role: 'STORE_MANAGER' })
     assert.equal(hired.status, 201)
+    // the owner-typed password is temporary; the manager chooses their own first (as the forced change-password screen does)
+    const temp = await apiLogin(email, 'First-pass-123')
+    assert.equal(temp.user.mustChangePassword, true)
+    const own = await apiAs(temp.accessToken)('POST', '/auth/change-password', { currentPassword: 'First-pass-123', newPassword: 'Mid-pass-4567' })
+    assert.equal(own.status, 200, JSON.stringify(own.json))
 
     const page = await openPage(DESKTOP, '/login')
     await page.getByLabel('Email', { exact: true }).fill(email)
-    await page.getByLabel('Password', { exact: true }).fill('First-pass-123')
+    await page.getByLabel('Password', { exact: true }).fill('Mid-pass-4567')
     await page.getByRole('button', { name: /^Sign in/ }).click()
     await page.waitForURL('**/admin/**')
     await page.goto(WEB + '/admin/settings')
     await settingsTab(page, 'My account')
-    await page.getByLabel(/^Current password/).fill('First-pass-123')
+    await page.getByLabel(/^Current password/).fill('Mid-pass-4567')
     await page.getByLabel(/^New password/).fill('Second-pass-456')
     await page.getByLabel(/^Repeat new password/).fill('Second-pass-456')
     await page.getByRole('button', { name: 'Update password' }).click()

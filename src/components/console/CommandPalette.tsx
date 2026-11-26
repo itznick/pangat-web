@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { useModal } from "@/hooks/useModal"
 import { CornerDownLeft, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -22,12 +23,12 @@ export function CommandPalette({ open, onClose, items }: { open: boolean; onClos
 
   const modalRef = useModal(open, onClose)
 
-  React.useEffect(() => {
-    if (open) {
+  useOnChange(open, (isOpen) => {
+    if (isOpen) {
       setQuery("")
       setActive(0)
     }
-  }, [open])
+  })
 
   const results = React.useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -38,7 +39,7 @@ export function CommandPalette({ open, onClose, items }: { open: boolean; onClos
       .map((r) => r.i)
   }, [items, query])
 
-  React.useEffect(() => setActive(0), [query])
+  useOnChange(query, () => setActive(0))
   React.useEffect(() => {
     listRef.current?.querySelector<HTMLElement>(`[data-idx="${active}"]`)?.scrollIntoView({ block: "nearest" })
   }, [active])

@@ -3,6 +3,7 @@
 // Real-time table states, menu manager, orders ledger, and sales summary.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useConnectionStore } from '@/lib/connection'
 import { create } from 'zustand'
 import type {
   Restaurant,
@@ -11,6 +12,7 @@ import type {
   MenuItem,
   MenuCategory,
   Order,
+  OrderStatus,
   PaymentStatus,
 } from '@/types/domain'
 import { api } from '@/lib/api'
@@ -98,6 +100,8 @@ interface AdminStore {
 
   // ── Async Data Load ────────────────────────────────────────────────────────
   fetchDashboardData: (slug?: string) => Promise<void>
+  /** Re-read open orders after a connection gap. A failed read keeps what is on screen and is reported through the connection state. */
+  resyncOrders: (slug?: string) => Promise<void>
   initSocketSync: (slug?: string) => void
 
   // ── Table floor management ─────────────────────────────────────────────────
@@ -123,8 +127,8 @@ interface AdminStore {
   settleOrder: (orderId: string, paymentStatus: PaymentStatus) => Promise<void>
   archiveOrder: (orderId: string) => Promise<void>
   cancelOrder: (orderId: string, reason: string) => Promise<void>
-  editOrderItems: (orderId: string, items: any[]) => Promise<void>
-  processRefund: (orderId: string, refundData: any) => Promise<void>
+  editOrderItems: (orderId: string, items: EditOrderItems) => Promise<void>
+  processRefund: (orderId: string, refundData: RefundRequest) => Promise<void>
 
   // ── Outlet switching ───────────────────────────────────────────────────────
   setRestaurantName: (name: string) => void
@@ -134,7 +138,25 @@ interface AdminStore {
   categoryNameMap: Record<string, string>
 }
 
+type EditOrderItems = Parameters<typeof api.orders.editItems>[1]['items']
+type RefundRequest = Parameters<typeof api.orders.processRefund>[1]
+
 let socketListening = false
+
+function syncTablesWithOrders(tables: Table[], orders: Order[]): Table[] {
+  return tables.map((t) => {
+    const openOrders = orders.filter((o) => isSameTableNumber(o.tableNumber, t.tableNumber) && o.orderStatus !== 'COMPLETED')
+    if (openOrders.length > 0) {
+      const hasCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING')
+      if (hasCooking) return { ...t, status: 'PREPPING' as TableStatus }
+      const hasUnpaid = openOrders.some((o) => o.paymentStatus === 'PENDING')
+      return { ...t, status: (hasUnpaid ? 'OCCUPIED' : 'SERVED') as TableStatus }
+    }
+    if (t.status === 'PREPPING') return { ...t, status: 'VACANT' as TableStatus }
+    return t
+  })
+}
+let adminResync: Promise<void> | null = null
 
 export const useAdminStore = create<AdminStore>((set, get) => ({
   restaurant: DEFAULT_RESTAURANT,
@@ -180,20 +202,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       const catMap = Object.fromEntries(categoriesList.map((c) => [c.id, c.name]))
 
       // Synchronize table status with real live orders to prevent stale 'PREPPING' flags
-      const synchronizedTables = tablesData.map((t) => {
-        const tableOrders = ordersData.filter((o) => isSameTableNumber(o.tableNumber, t.tableNumber))
-        const openOrders = tableOrders.filter((o) => o.orderStatus !== 'COMPLETED')
-        if (openOrders.length > 0) {
-          const hasCooking = openOrders.some((o) => o.orderStatus === 'RECEIVED' || o.orderStatus === 'PREPARING')
-          if (hasCooking) return { ...t, status: 'PREPPING' as TableStatus }
-          const hasUnpaid = openOrders.some((o) => o.paymentStatus === 'PENDING')
-          return { ...t, status: (hasUnpaid ? 'OCCUPIED' : 'SERVED') as TableStatus }
-        }
-        if (t.status === 'PREPPING') {
-          return { ...t, status: 'VACANT' as TableStatus }
-        }
-        return t
-      })
+      const synchronizedTables = syncTablesWithOrders(tablesData, ordersData)
 
       set({
         restaurant: restaurantData || publicMenuData.restaurant || DEFAULT_RESTAURANT,
@@ -207,12 +216,34 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       })
 
       get().initSocketSync(targetSlug)
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false })
+    } catch (err) {
+      set({ error: errMsg(err), isLoading: false })
     }
   },
 
-  initSocketSync: (slug = 'pangat') => {
+  resyncOrders: (slug) => {
+    const target = slug || useAuthStore.getState().currentOutlet?.slug
+    if (!target) return Promise.resolve()
+    if (adminResync) return adminResync
+    useConnectionStore.getState().syncStarted()
+    adminResync = (async () => {
+      try {
+        joinAdminRoom(target)
+        const orders = await api.orders.list(target, { startDate: new Date(Date.now() - 3 * 86_400_000).toISOString(), limit: 100 })
+        const list = Array.isArray(orders) ? orders : []
+        set((s) => ({ activeOrders: list, todaySales: computeSalesSummary(list), tables: syncTablesWithOrders(s.tables, list) }))
+        useConnectionStore.getState().syncFinished(true)
+      } catch {
+        useConnectionStore.getState().syncFinished(false)
+      } finally {
+        adminResync = null
+      }
+    })()
+    return adminResync
+  },
+
+  initSocketSync: (slug) => {
+    if (!slug) return
     joinKdsRoom(slug)
     joinAdminRoom(slug)
     if (socketListening) return
@@ -241,7 +272,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       }
     })
 
-    socket.on('order:status', ({ orderId, status }: { orderId: string; status: any }) => {
+    socket.on('order:status', ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
       if (status === 'READY' && get().restaurant.orderReadyChime !== false) {
         const o = get().activeOrders.find((x) => x.id === orderId)
         playKitchenChime()
@@ -483,7 +514,9 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     })
   },
 
-  updateSettings: async (settings, slug = useAuthStore.getState().currentOutlet?.slug ?? 'pangat') => {
+  updateSettings: async (settings, slug = useAuthStore.getState().currentOutlet?.slug) => {
+    // never guess an outlet: saving settings to the wrong restaurant is worse than refusing to save
+    if (!slug) throw new Error('No outlet is selected, so nothing was saved. Choose an outlet and try again.')
     const previous = get().restaurant
     set((s) => ({
       restaurant: { ...s.restaurant, ...settings },
@@ -591,7 +624,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
-  editOrderItems: async (orderId: string, items: any[]) => {
+  editOrderItems: async (orderId: string, items: EditOrderItems) => {
     try {
       const updated = await api.orders.editItems(orderId, { items })
       set((s) => {
@@ -609,7 +642,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
-  processRefund: async (orderId: string, refundData: any) => {
+  processRefund: async (orderId: string, refundData: RefundRequest) => {
     try {
       const updated = await api.orders.processRefund(orderId, refundData)
       set((s) => {

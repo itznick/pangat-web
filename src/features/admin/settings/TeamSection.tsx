@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useQuery } from "@/hooks/useQuery"
 import { Ban, Copy, KeyRound, Loader2, Plus, RotateCcw, UserPlus } from "lucide-react"
 import { api, errMsg } from "@/lib/api"
 import { toast } from "@/components/ui/toast"
@@ -20,24 +21,14 @@ export function TeamSection() {
   const outlet = useAuthStore((s) => s.currentOutlet)
   const me = useAuthStore((s) => s.user)
   const isOwner = me?.role === "SUPER_OWNER"
-  const [rows, setRows] = React.useState<StaffMember[] | null>(null)
-  const [error, setError] = React.useState<string | null>(null)
+  const team = useQuery<StaffMember[]>(() => api.staff.list(outlet?.id as string), outlet?.id ?? "", { enabled: !!outlet?.id })
+  const rows: StaffMember[] | null = team.data ?? team.lastData ?? null // same outlet only (see useQuery)
+  const error: string | null = team.error ? errMsg(team.error) : null
   const [busy, setBusy] = React.useState<string | null>(null)
   const [adding, setAdding] = React.useState(false)
   const [temp, setTemp] = React.useState<{ email: string; password: string } | null>(null)
 
-  const load = React.useCallback(async () => {
-    if (!outlet?.id) return
-    try {
-      setRows(await api.staff.list(outlet.id))
-      setError(null)
-    } catch (e) {
-      setError(errMsg(e))
-    }
-  }, [outlet?.id])
-  React.useEffect(() => {
-    void load()
-  }, [load])
+  const load = async () => team.reload()
 
   const act = async (id: string, fn: () => Promise<unknown>, ok: string) => {
     setBusy(id)

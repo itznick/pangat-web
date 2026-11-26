@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from "react"
+import { useOnChange } from "@/hooks/useOnChange"
+import { keyFor, releaseKey } from "@/lib/idempotency"
 import { useParams, useNavigate } from "react-router"
 import { Search, X, ChefHat, ArrowRight, Clock } from "lucide-react"
 import { DinerTopBar } from "./components/DinerTopBar"
@@ -10,7 +12,7 @@ import { CheckoutDrawer } from "./components/CheckoutDrawer"
 import { toast } from "@/components/ui/toast"
 import { useCartStore, useOrderTrackingStore } from "@/stores/useCartStore"
 import { useKdsStore } from "@/stores/useKdsStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
 import type {
   MenuItem,
   MenuCategory,
@@ -55,8 +57,8 @@ export function DinerMenuPage() {
   const { order: activeOrder, placeOrder } = useOrderTrackingStore()
 
   // Load public menu from NestJS backend API
+  useOnChange(restaurantSlug, () => setIsLoading(true))
   useEffect(() => {
-    setIsLoading(true)
     api.menu.getPublic(restaurantSlug)
       .then((data) => {
         if (data.restaurant) setRestaurant(data.restaurant)
@@ -181,9 +183,11 @@ export function DinerMenuPage() {
     consentAccepted?: boolean
   }) => {
     const orderItems = toOrderItems()
-    const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const finalTableNumber =
       data.orderType === "DINE_IN" ? (data.tableNumber || tableId || "01") : undefined
+    // one key per distinct order: a retry of the same cart reuses it (server returns the original order), an edited cart gets a new one
+    const idemScope = `order:${restaurantSlug}`
+    const idempotencyKey = keyFor(idemScope, { data, items: orderItems, finalTableNumber })
 
     setIsSubmittingOrder(true)
     setOrderError(null)
@@ -206,6 +210,7 @@ export function DinerMenuPage() {
         idempotencyKey,
       )
 
+      releaseKey(idemScope)
       // 2. Set in diner tracking store (persisted to localStorage)
       placeOrder(placedOrder)
 
@@ -213,13 +218,9 @@ export function DinerMenuPage() {
       clearCart()
       setShowCheckout(false)
       navigate(`/r/${restaurantSlug}/order/${placedOrder.id}?token=${placedOrder.trackingToken || ""}`)
-    } catch (err: any) {
+    } catch (err) {
       console.error("Order placement to backend failed:", err)
-      const msg =
-        err.response?.data?.message ||
-        err.message ||
-        "Could not fire order to kitchen. Please check network connection."
-      const formattedMsg = Array.isArray(msg) ? msg.join(", ") : String(msg)
+      const formattedMsg = errMsg(err, "Could not fire order to kitchen. Please check network connection.")
       setOrderError(formattedMsg)
     } finally {
       setIsSubmittingOrder(false)

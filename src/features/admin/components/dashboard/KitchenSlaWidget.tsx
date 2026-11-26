@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect } from "react"
+import { useNow } from "@/lib/time"
 import { AlertTriangle, Clock, ChefHat, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useKdsStore } from "@/stores/useKdsStore"
@@ -22,7 +23,7 @@ export function KitchenSlaWidget() {
   // Use kdsTickets or fallback to non-completed activeOrders from admin store
   const tickets = kdsTickets.length > 0 ? kdsTickets : activeOrders.filter((o) => o.orderStatus !== "COMPLETED")
 
-  const now = Date.now()
+  const now = useNow() // ticks from one shared timer, so ages stay current without an impure call during render
 
   const alerts = tickets
     .map((t) => {

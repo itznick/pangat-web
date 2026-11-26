@@ -20,8 +20,10 @@ import {
 import { useAdminStore } from "@/stores/useAdminStore"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { useKdsStore } from "@/stores/useKdsStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
+import { keyFor, releaseKey } from "@/lib/idempotency"
 import { ZeroStateCard } from "../components/ZeroStateCard"
+import { GoLiveChecklist } from "../components/GoLiveChecklist"
 const AddOutletModal = lazy(() => import("../components/AddOutletModal").then((m) => ({ default: m.AddOutletModal })))
 import {
   TrendingUp,
@@ -108,6 +110,9 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
   const currentOutlet = useAuthStore((s) => s.currentOutlet)
   const [selectedTable, setSelectedTable] = useState<string>("")
   const [cart, setCart] = useState<Record<string, number>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [dishSearch, setDishSearch] = useState("")
+  const [error, setError] = useState<string | null>(null)
 
   const vacantTables = tables.filter((t) => t.status === "VACANT")
 
@@ -129,39 +134,44 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
   }
 
   const handleConfirm = async () => {
+    if (submitting) return // a second click while the first is in flight must not create a second order
     const targetTable = tables.find((t) => t.id === selectedTable)
     if (!targetTable) return
+    if (!currentOutlet?.slug) {
+      setError("No outlet is selected, so the order was not placed. Choose an outlet and try again.")
+      return
+    }
 
     const orderItems = Object.entries(cart).map(([id, qty]) => {
       const item = menuItems.find((m) => m.id === id)!
-      return {
-        menuItemId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: qty,
-      }
+      return { menuItemId: item.id, name: item.name, price: item.price, quantity: qty }
     })
 
+    const scope = `walkin:${currentOutlet.slug}`
+    const body = {
+      restaurantSlug: currentOutlet.slug,
+      orderType: 'DINE_IN' as const,
+      tableNumber: targetTable.tableNumber,
+      paymentMethod: 'PAY_AT_COUNTER' as const,
+      items: orderItems,
+    }
+    setSubmitting(true)
+    setError(null)
     try {
-      const created = await api.orders.create(
-        {
-          restaurantSlug: currentOutlet?.slug || 'pangat',
-          orderType: 'DINE_IN',
-          tableNumber: targetTable.tableNumber,
-          paymentMethod: 'PAY_AT_COUNTER' as any,
-          items: orderItems,
-        },
-        `idemp-walkin-${Date.now()}`
-      )
+      // the same attempt (retry after a timeout) reuses the key, so the server returns the original order, not a duplicate
+      const created = await api.orders.create(body, keyFor(scope, body))
+      releaseKey(scope)
       useAdminStore.getState().addOrder(created)
       useAdminStore.getState().updateTableStatus(targetTable.id, 'PREPPING')
+      // close only on success; the form is kept on failure so nothing has to be re-entered
+      onClose()
+      setSelectedTable("")
+      setCart({})
     } catch (err) {
-      console.error('Failed to place walk-in order:', err)
+      setError(errMsg(err, "The order could not be placed. Nothing was sent to the kitchen. Check the details and try again."))
+    } finally {
+      setSubmitting(false)
     }
-
-    onClose()
-    setSelectedTable("")
-    setCart({})
   }
 
   return (
@@ -198,6 +208,8 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                 vacantTables.map((t) => (
                   <button
                     key={t.id}
+                    aria-pressed={selectedTable === t.id}
+                    aria-label={`Table ${t.tableNumber}`}
                     onClick={() => setSelectedTable(t.id)}
                     className={cn(
                       "h-10 rounded-xl border text-sm font-bold transition-all",
@@ -215,13 +227,20 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
 
           {/* Menu quick-add */}
           <div>
-            <label className="text-xs font-semibold text-zinc-400 mb-2 block">
+            <label htmlFor="walkin-dish-search" className="text-xs font-semibold text-zinc-400 mb-2 block">
               Add Items
             </label>
+            <input
+              id="walkin-dish-search"
+              type="search"
+              value={dishSearch}
+              onChange={(e) => setDishSearch(e.target.value)}
+              placeholder="Search dishes"
+              className="mb-2 h-9 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-transparent px-3 text-xs text-slate-900 dark:text-zinc-100 placeholder:text-zinc-500"
+            />
             <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
               {menuItems
-                .filter((m) => m.isAvailable)
-                .slice(0, 12)
+                .filter((m) => m.isAvailable && (!dishSearch.trim() || m.name.toLowerCase().includes(dishSearch.trim().toLowerCase())))
                 .map((item) => {
                   const qty = cart[item.id] ?? 0
                   return (
@@ -237,8 +256,9 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                         {qty > 0 && (
                           <>
                             <button
+                              aria-label={`Remove one ${item.name}`}
                               onClick={() => adjustCart(item.id, -1)}
-                              className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 flex items-center justify-center text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors text-sm font-bold"
+                              className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 flex items-center justify-center text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors text-sm font-bold"
                             >
                               −
                             </button>
@@ -246,9 +266,10 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
                           </>
                         )}
                         <button
+                          aria-label={`Add one ${item.name}`}
                           onClick={() => adjustCart(item.id, 1)}
                           className={cn(
-                            "w-6 h-6 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors",
+                            "w-8 h-8 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors",
                             qty > 0
                               ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30"
                               : "bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700"
@@ -274,6 +295,9 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           )}
         </div>
 
+        {error && (
+          <p role="alert" className="rounded-xl border border-rose-500/40 bg-rose-100 dark:bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-800 dark:text-rose-300">{error}</p>
+        )}
         <DialogFooter>
           <button
             onClick={onClose}
@@ -283,11 +307,11 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!selectedTable || itemCount === 0}
+            disabled={!selectedTable || itemCount === 0 || submitting}
             className="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white border border-emerald-500/50 transition-colors shadow-lg shadow-emerald-900/30 flex items-center gap-2"
           >
             <Zap className="h-3.5 w-3.5" />
-            Fire to Kitchen
+            {submitting ? "Sending…" : "Fire to Kitchen"}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -394,6 +418,7 @@ function StockTogglePanel({ open, onClose }: StockTogglePanelProps) {
 
 export function AdminDashboardPage() {
   const restaurant = useAdminStore((s) => s.restaurant)
+  const authUser = useAuthStore((s) => s.user)
   const todaySales = useAdminStore((s) => s.todaySales)
   const tables = useAdminStore((s) => s.tables)
   const activeOrders = useAdminStore((s) => s.activeOrders)
@@ -533,6 +558,8 @@ export function AdminDashboardPage() {
           </div>
         ) : (
           <>
+            {restaurant?.id && <GoLiveChecklist outletId={restaurant.id} role={authUser?.role} />}
+
             {/* ── Metric Cards ──────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <MetricCard

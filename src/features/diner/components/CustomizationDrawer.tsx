@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { X, Minus, Plus, ChefHat } from "lucide-react"
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter } from "@/components/ui/drawer"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,14 +21,14 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
   const [quantity, setQuantity] = useState(1)
 
   // Start fresh every time the sheet opens (stale picks from a dismissed sheet must not leak into the next item)
-  useEffect(() => {
+  useOnChange(`${open}|${item?.id}`, () => {
     if (open) {
       setSelectedSingle({})
       setSelectedMulti({})
       setNotes("")
       setQuantity(1)
     }
-  }, [open, item?.id])
+  })
 
   if (!item) return null
 

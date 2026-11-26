@@ -1,6 +1,8 @@
 import { BillView } from "../components/BillView"
+import { useQuery } from "@/hooks/useQuery"
+import { keyFor, releaseKey } from "@/lib/idempotency"
 import { resolveOps } from "../settings/operations"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { toast } from "@/components/ui/toast"
 import { TimeAgo } from "@/components/TimeAgo"
 import { errMsg } from "@/lib/api"
@@ -106,6 +108,8 @@ const PAYMENT_CONFIG: Record<
   },
 }
 
+const NO_ORDERS: Order[] = []
+
 export function AdminOrdersPage() {
   const activeOrders = useAdminStore((s) => s.activeOrders)
   const settleOrder = useAdminStore((s) => s.settleOrder)
@@ -126,8 +130,6 @@ export function AdminOrdersPage() {
   // Archived Tab Date filters
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
-  const [archivedOrders, setArchivedOrders] = useState<Order[]>([])
-  const [loadingArchived, setLoadingArchived] = useState(false)
 
   // Modals state
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<Order | null>(null)
@@ -139,33 +141,22 @@ export function AdminOrdersPage() {
   const [refundReason, setRefundReason] = useState("")
   const [refundMethod, setRefundMethod] = useState<'COUNTER_CASH' | 'GATEWAY_VERIFIED'>('COUNTER_CASH')
 
-  // Fetch Archived Orders from API
-  const fetchArchivedOrders = async () => {
-    setLoadingArchived(true)
-    try {
-      const orders = await api.orders.list(outletSlug, {
-        status: "ARCHIVED",
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      })
-      setArchivedOrders(orders)
-    } catch (err) {
-      console.warn("Failed to fetch archived orders from API:", err)
-      // Fallback: use active orders filtered strictly by completed
-      const fallback = activeOrders.filter(
-        (o) => o.orderStatus === "COMPLETED"
-      )
-      setArchivedOrders(fallback)
-    } finally {
-      setLoadingArchived(false)
-    }
-  }
-
-  useEffect(() => {
-    if (activeTab === "archived") {
-      fetchArchivedOrders()
-    }
-  }, [activeTab, outletSlug, startDate, endDate])
+  // Archived orders from the API, only while that tab is open. If the API cannot be reached, fall back to what this screen already knows.
+  const archivedQuery = useQuery(
+    async () => {
+      try {
+        return await api.orders.list(outletSlug, { status: "ARCHIVED", startDate: startDate || undefined, endDate: endDate || undefined })
+      } catch (err) {
+        console.warn("Failed to fetch archived orders from API:", err)
+        return activeOrders.filter((o) => o.orderStatus === "COMPLETED")
+      }
+    },
+    `${outletSlug}|${startDate}|${endDate}`,
+    { enabled: activeTab === "archived" },
+  )
+  const archivedOrders: Order[] = archivedQuery.data ?? archivedQuery.lastData ?? NO_ORDERS
+  const loadingArchived = archivedQuery.loading
+  const fetchArchivedOrders = archivedQuery.reload
 
   // Active orders filtered: strictly exclude COMPLETED and CANCELLED
   const activeFiltered = useMemo(() => {
@@ -523,7 +514,7 @@ export function AdminOrdersPage() {
                               try {
                                 await api.orders.updateStatus(order.id, "DISPATCHED")
                                 fetchArchivedOrders()
-                              } catch (e: any) {
+                              } catch (e) {
                                 toast.error(errMsg(e, "Failed to dispatch order"))
                               }
                             }}
@@ -542,7 +533,7 @@ export function AdminOrdersPage() {
                               try {
                                 await api.orders.updateStatus(order.id, "COMPLETED")
                                 fetchArchivedOrders()
-                              } catch (e: any) {
+                              } catch (e) {
                                 toast.error(errMsg(e, "Failed to mark delivered"))
                               }
                             }}
@@ -775,7 +766,7 @@ export function AdminOrdersPage() {
                           try {
                             await api.orders.updateStatus(order.id, "DISPATCHED")
                             fetchArchivedOrders()
-                          } catch (e: any) {
+                          } catch (e) {
                             toast.error(errMsg(e, "Failed to dispatch order"))
                           }
                         }}
@@ -793,7 +784,7 @@ export function AdminOrdersPage() {
                           try {
                             await api.orders.updateStatus(order.id, "COMPLETED")
                             fetchArchivedOrders()
-                          } catch (e: any) {
+                          } catch (e) {
                             toast.error(errMsg(e, "Failed to mark delivered"))
                           }
                         }}
@@ -1120,12 +1111,13 @@ export function AdminOrdersPage() {
               <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 block mb-1">Refund Settlement Method</label>
               <select
                 value={refundMethod}
-                onChange={(e) => setRefundMethod(e.target.value as any)}
+                onChange={(e) => setRefundMethod(e.target.value as 'COUNTER_CASH' | 'GATEWAY_VERIFIED')}
                 className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-200 focus:outline-none"
               >
-                <option value="COUNTER_CASH">Counter Cash Refund</option>
-                <option value="GATEWAY_VERIFIED">Verified Provider Gateway Refund</option>
+                <option value="COUNTER_CASH">Cash returned at the counter</option>
+                <option value="GATEWAY_VERIFIED">Returned by UPI or bank transfer (you send it yourself)</option>
               </select>
+              <p className="mt-1 text-[11px] text-zinc-500">Pangat records the refund and issues the credit note. It does not send money: return it to the guest yourself.</p>
             </div>
             <div>
               <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 block mb-1">Refund Reason</label>
@@ -1147,12 +1139,11 @@ export function AdminOrdersPage() {
               onClick={async () => {
                 if (refundOrder && refundAmount && refundReason.trim()) {
                   try {
-                    await processRefund(refundOrder.id, {
-                      refundMethod,
-                      amount: Number(refundAmount),
-                      reason: refundReason.trim(),
-                      idempotencyKey: `refund_${refundOrder.id}_${Date.now()}`,
-                    })
+                    const refundScope = `refund:${refundOrder.id}`
+                    const refundBody = { refundMethod, amount: Number(refundAmount), reason: refundReason.trim() }
+                    // same refund retried (double-click, timeout) reuses the key; the server returns the original credit note
+                    await processRefund(refundOrder.id, { ...refundBody, idempotencyKey: keyFor(refundScope, refundBody) })
+                    releaseKey(refundScope)
                     setRefundOrder(null)
                   } catch (e) {
                     toast.error(errMsg(e, 'Failed to process refund'))

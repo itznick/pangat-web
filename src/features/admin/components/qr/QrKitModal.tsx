@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { useModal } from "@/hooks/useModal"
 import { createPortal } from "react-dom"
 import { Check, ChevronLeft, ChevronRight, Copy, Download, Printer, QrCode, X } from "lucide-react"
@@ -52,9 +53,9 @@ export function QrKitModal({ open, onClose, outletName, outletSlug, upiVpa, tabl
   const [busy, setBusy] = React.useState(false)
   const modalRef = useModal(open && !printJob, onClose)
 
-  React.useEffect(() => {
+  useOnChange(`${open}|${initial}|${tables.length}`, () => {
     if (open) setIdx(Math.min(Math.max(initial, 0), Math.max(tables.length - 1, 0)))
-  }, [open, initial, tables.length])
+  })
 
   const update = (patch: Partial<typeof prefs>) =>
     setPrefs((p) => {

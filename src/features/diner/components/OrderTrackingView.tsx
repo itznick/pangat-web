@@ -27,6 +27,7 @@ import { toast } from "@/components/ui/toast"
 import { getSocket, joinOrderRoom } from "@/lib/socket"
 import type { OrderStatus } from "@/types/domain"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { buildUpiUri, payeeOf } from "../upi"
 import { QrCodeImage } from "@/components/ui/QrCodeImage"
 
 interface OrderTrackingViewProps {
@@ -177,10 +178,13 @@ export function OrderTrackingView({
   const [showUpiModal, setShowUpiModal] = useState(false)
   const [copiedVpa, setCopiedVpa] = useState(false)
 
-  const vpa = "pangat@icici"
-  const upiUri = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(restaurantSlug || "Pangat Restaurant")}&am=${Number(order?.totalAmount || 0).toFixed(2)}&cu=INR&tr=${order?.id || ""}`
+  // The destination comes from the server for THIS outlet and only once the owner has confirmed it; null means UPI is not available (no screen, QR, link or copy button)
+  const payee = payeeOf(order)
+  const vpa = payee?.vpa ?? ""
+  const upiUri = payee ? buildUpiUri({ payee, amount: Number(order?.totalAmount || 0), orderId: order?.id || "" }) : ""
 
   const handlePayOnlineUpi = () => {
+    if (!payee) return
     setShowUpiModal(true)
     if (typeof window !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
       try {
@@ -195,6 +199,7 @@ export function OrderTrackingView({
   }
 
   const handleCopyVpa = async () => {
+    if (!payee) return
     try {
       await navigator.clipboard.writeText(vpa)
       setCopiedVpa(true)
@@ -669,12 +674,12 @@ export function OrderTrackingView({
                 <span className="text-[11px] text-zinc-400">
                   {order.paymentMethod === "PAY_AT_COUNTER"
                     ? "Receipt closed by steward"
-                    : "Instant payment verified"} · Total ₹{Number(order.totalAmount || 0).toFixed(2)}
+                    : "Payment confirmed by the restaurant"} · Total ₹{Number(order.totalAmount || 0).toFixed(2)}
                 </span>
               </div>
             </div>
             <span className="text-[11px] font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-500/30">
-              Verified ✓
+              Confirmed ✓
             </span>
           </div>
         )}
@@ -717,6 +722,7 @@ export function OrderTrackingView({
               Your order is sent to the kitchen. Please present your token to the cashier when settling your bill before leaving, or clear it right now from your table:
             </p>
 
+            {payee && (
             <button
               onClick={handlePayOnlineUpi}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
@@ -724,6 +730,7 @@ export function OrderTrackingView({
               <QrCode className="h-4 w-4" />
               Pay Online via UPI QR (₹{Number(order.totalAmount || 0).toFixed(2)})
             </button>
+            )}
           </div>
         )}
 
@@ -744,6 +751,7 @@ export function OrderTrackingView({
             <p className="text-xs text-zinc-400 leading-relaxed">
               Your delivery order is being prepared. Please keep cash ready or scan the delivery partner's UPI QR upon arrival. You can also pay online now:
             </p>
+            {payee && (
             <button
               onClick={handlePayOnlineUpi}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
@@ -751,6 +759,7 @@ export function OrderTrackingView({
               <QrCode className="h-4 w-4" />
               Pay Online via UPI QR (₹{Number(order.totalAmount || 0).toFixed(2)})
             </button>
+            )}
           </div>
         )}
 
@@ -769,8 +778,11 @@ export function OrderTrackingView({
               </span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Your order is sent to the kitchen. Tap below to scan the UPI QR code or open your UPI payment app:
+              {payee
+                ? `Your order is sent to the kitchen. You can pay ${payee.name} by UPI below, then show the cashier. Your order is marked paid only when the restaurant confirms the money has arrived.`
+                : "Your order is sent to the kitchen. UPI payment is not available right now: please pay at the counter."}
             </p>
+            {payee && (
             <button
               onClick={handlePayOnlineUpi}
               className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 border border-emerald-500/50 transition-all active:scale-[0.98]"
@@ -778,6 +790,7 @@ export function OrderTrackingView({
               <QrCode className="h-4 w-4" />
               Show UPI QR / Open App (₹{Number(order.totalAmount || 0).toFixed(2)})
             </button>
+            )}
           </div>
         )}
 
@@ -850,7 +863,7 @@ export function OrderTrackingView({
                   <Zap className="h-4 w-4 text-emerald-400" />
                   Scan to Pay via UPI
                 </DialogTitle>
-                <p className="text-xs text-zinc-400 mt-0.5">Instant settlement to restaurant</p>
+                <p className="text-xs text-zinc-400 mt-0.5">Pay {payee?.name}. The restaurant confirms receipt.</p>
               </div>
               <button
                 type="button"
@@ -869,6 +882,14 @@ export function OrderTrackingView({
                 ₹{Number(order?.totalAmount || 0).toFixed(2)}
               </span>
             </div>
+
+            {payee && (
+              <div className="rounded-xl bg-zinc-950 border border-zinc-800 px-3.5 py-2.5 text-left">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">You are paying</p>
+                <p className="text-sm font-bold text-zinc-100">{payee.name}</p>
+                <p className="mt-1 text-[11px] leading-snug text-zinc-400">Before you confirm, check that your UPI app shows this name. Paying does not mark your order paid: the restaurant does that once the money arrives.</p>
+              </div>
+            )}
 
             {/* Dynamic Scannable QR Code */}
             <div className="flex justify-center p-3 bg-white rounded-2xl shadow-inner mx-auto w-fit">
