@@ -12,15 +12,13 @@ export const prefersReducedMotion = () =>
 /** Fires once when the element enters the viewport. */
 export function useInView<T extends HTMLElement>(threshold = 0.2, rootMargin = "0px 0px -8% 0px") {
   const ref = React.useRef<T>(null)
-  const [inView, setInView] = React.useState(false)
+  // without IntersectionObserver there is nothing to wait for: treat it as already in view
+  const [inView, setInView] = React.useState(() => typeof IntersectionObserver === "undefined")
 
   React.useEffect(() => {
     const el = ref.current
     if (!el) return
-    if (typeof IntersectionObserver === "undefined") {
-      setInView(true)
-      return
-    }
+    if (typeof IntersectionObserver === "undefined") return
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -165,13 +163,12 @@ export function CountUp({
   duration?: number
 }) {
   const [ref, inView] = useInView<HTMLSpanElement>(0.5)
-  const [val, setVal] = React.useState(0)
+  const [counted, setVal] = React.useState(0)
+  const reduced = prefersReducedMotion()
+  // reduced motion: show the final number at once, no counting
+  const val = reduced && inView ? to : counted
   React.useEffect(() => {
-    if (!inView) return
-    if (prefersReducedMotion()) {
-      setVal(to)
-      return
-    }
+    if (!inView || reduced) return
     let raf = 0
     const t0 = performance.now()
     const tick = (t: number) => {

@@ -55,9 +55,11 @@ export function AdminSubscriptionPage() {
   const plan = b.plan
   const gstin = restaurant.gstin || outlet?.gstin
 
+  const [asOf] = React.useState(() => Date.now()) // stable between renders; the page reloads its data on visit
+
   // Trial / period progress
   const total = b.periodStart && b.periodEnd ? Math.max(1, new Date(b.periodEnd).getTime() - new Date(b.periodStart).getTime()) : 0
-  const elapsed = total ? Math.min(100, Math.round(((Date.now() - new Date(b.periodStart!).getTime()) / total) * 100)) : 0
+  const elapsed = total ? Math.min(100, Math.round(((asOf - new Date(b.periodStart!).getTime()) / total) * 100)) : 0
 
   const visiblePlans = b.plans.filter((p) => p.billingInterval === interval)
   const hasYearly = b.plans.some((p) => p.billingInterval === "YEARLY")

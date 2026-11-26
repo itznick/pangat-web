@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
 import { Loader2, SlidersHorizontal, AlertCircle, TrendingUp, TrendingDown } from "lucide-react"
 import type { Ingredient } from "@/types/domain"
 
@@ -82,8 +82,8 @@ export function AdjustStockModal({
       onOpenChange(false)
       setAmount("")
       setCustomNote("")
-    } catch (err: any) {
-      setError(err.message || "Failed to adjust stock")
+    } catch (err) {
+      setError(errMsg(err, "Failed to adjust stock"))
     } finally {
       setLoading(false)
     }

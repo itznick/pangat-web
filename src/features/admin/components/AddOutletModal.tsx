@@ -3,6 +3,7 @@
 // Creates the outlet on the server (no local fake fallback): errors such as a taken slug or a plan limit are shown as-is.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useOnChange } from '@/hooks/useOnChange'
 import * as React from 'react'
 import { Check, Loader2, MapPin, Minus, Plus, QrCode, Store, X, AlertCircle } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -63,21 +64,22 @@ export function AddOutletModal({ open, onClose }: AddOutletModalProps) {
   const [tried, setTried] = React.useState(false)
 
   // Fresh form every time the dialog opens; GST starts from the outlet you are in
-  React.useEffect(() => {
+  useOnChange(`${open}|${current?.gstPercentage}|${maxTables}`, () => {
     if (!open) return
     setName(''); setArea(''); setSlug(''); setSlugTouched(false); setUpi(''); setTables(Math.min(12, maxTables))
     setGst(String(current?.gstPercentage ?? 5)); setSlugState('idle'); setServerError(null); setTried(false)
-  }, [open, current?.gstPercentage, maxTables])
+  })
 
   // The link follows the name until the owner types their own
-  React.useEffect(() => {
+  useOnChange(`${name}|${area}|${slugTouched}`, () => {
     if (!slugTouched) setSlug(slugify(`${name} ${area}`))
-  }, [name, area, slugTouched])
+  })
 
   // Live "is this link free?" check
+  const slugValid = !!slug && SLUG_RE.test(slug)
+  useOnChange(slug, () => setSlugState(slugValid ? 'checking' : 'idle'))
   React.useEffect(() => {
-    if (!slug || !SLUG_RE.test(slug)) return setSlugState('idle')
-    setSlugState('checking')
+    if (!slugValid) return
     let alive = true
     const t = window.setTimeout(() => {
       api.restaurants.get(slug).then(

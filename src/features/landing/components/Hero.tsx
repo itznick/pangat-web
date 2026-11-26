@@ -32,17 +32,15 @@ const LOOP_MS = 12500
 const REST: Beat = BEATS[BEATS.length - 1].beat
 
 export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
-  const [beat, setBeat] = React.useState<Beat>(BEATS[0].beat)
+  const [playing, setBeat] = React.useState<Beat>(BEATS[0].beat)
+  const reduced = prefersReducedMotion()
+  const beat = reduced ? REST : playing // reduced motion: show the finished state, no loop
   const [stageRef, visible] = useInView<HTMLDivElement>(0.1, "0px")
   const [manualChime, setManualChime] = React.useState(false)
 
   // Drive the loop only while the showcase is on screen.
   React.useEffect(() => {
-    if (prefersReducedMotion()) {
-      setBeat(REST)
-      return
-    }
-    if (!visible) return
+    if (reduced || !visible) return
     let timers: number[] = []
     const run = () => {
       BEATS.forEach(({ at, beat: b }) => timers.push(window.setTimeout(() => setBeat(b), at)))
@@ -53,7 +51,7 @@ export function Hero({ onOpenPilot, onOpenDemo }: HeroProps) {
       timers.forEach(clearTimeout)
       timers = []
     }
-  }, [visible])
+  }, [visible, reduced])
 
   const chimeNow = beat.chime || manualChime
   const testChime = () => {

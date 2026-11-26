@@ -13,16 +13,12 @@ const LiveDemoModal = React.lazy(() => import("../components/LiveDemoModal").the
 import "../landing.css"
 
 export function LandingPage() {
-  const [pilotModalOpen, setPilotModalOpen] = React.useState(false)
+  // A link with ?demo=true or #book-demo opens the lead form straight away
+  const [pilotModalOpen, setPilotModalOpen] = React.useState(
+    () => typeof window !== "undefined" && (window.location.search.includes("demo=true") || window.location.hash === "#book-demo"),
+  )
   const [pilotIntent, setPilotIntent] = React.useState<PilotIntent | undefined>(undefined)
   const [demoModalOpen, setDemoModalOpen] = React.useState(false)
-
-  React.useEffect(() => {
-    // If URL has ?demo=true or #book-demo, open lead modal automatically
-    if (window.location.search.includes("demo=true") || window.location.hash === "#book-demo") {
-      setPilotModalOpen(true)
-    }
-  }, [])
 
   // plan cards pass an intent; every other call site opens the plain free-trial form
   const openPilot = React.useCallback((intent?: PilotIntent) => { setPilotIntent(intent && typeof intent === "object" && "kind" in intent ? intent : undefined); setPilotModalOpen(true) }, [])

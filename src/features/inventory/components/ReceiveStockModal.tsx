@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
 import { Loader2, PackagePlus, Plus, Trash2, AlertCircle } from "lucide-react"
 import type { Ingredient } from "@/types/domain"
 
@@ -104,8 +104,8 @@ export function ReceiveStockModal({
       setSupplierName("")
       setInvoiceNumber("")
       setRows([{ ingredientId: ingredients[0]?.id || "", quantity: "1", costPerUnit: "", notes: "" }])
-    } catch (err: any) {
-      setError(err.message || "Failed to receive supplier shipment")
+    } catch (err) {
+      setError(errMsg(err, "Failed to receive supplier shipment"))
     } finally {
       setLoading(false)
     }

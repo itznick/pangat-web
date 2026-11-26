@@ -1,7 +1,7 @@
 import { timeAgo } from "@/lib/time"
-import { useState, useEffect } from "react"
 import { Star, ThumbsUp, RefreshCw } from "lucide-react"
 import { api } from "@/lib/api"
+import { useQuery } from "@/hooks/useQuery"
 import type { CustomerFeedbackSummary } from "@/types/domain"
 import { cn } from "@/lib/utils"
 
@@ -15,25 +15,8 @@ export function CustomerFeedbackWidget({
   restaurantSlug,
   className,
 }: CustomerFeedbackWidgetProps) {
-  const [data, setData] = useState<CustomerFeedbackSummary | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const loadFeedback = async () => {
-    if (!restaurantSlug) return
-    setLoading(true)
-    try {
-      const res = await api.restaurants.getFeedback(restaurantSlug)
-      setData(res)
-    } catch (err) {
-      console.warn("Failed to fetch customer feedback:", err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadFeedback()
-  }, [restaurantSlug])
+  const { data: loaded, loading, reload } = useQuery(() => api.restaurants.getFeedback(restaurantSlug as string), restaurantSlug ?? "", { enabled: !!restaurantSlug })
+  const data: CustomerFeedbackSummary | null = loaded ?? null
 
   const averageRating = data?.averageRating || 0
   const totalCount = data?.totalCount || 0
@@ -90,7 +73,7 @@ export function CustomerFeedbackWidget({
 
           <button
             type="button"
-            onClick={loadFeedback}
+            onClick={reload}
             title="Refresh Feedback"
             className="p-2 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >

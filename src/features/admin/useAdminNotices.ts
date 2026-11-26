@@ -17,7 +17,7 @@ export function useAdminNotices(navigate: (to: string) => void) {
   const setBilling = useConsoleUi((s) => s.setBilling)
   const billing = useBilling()
 
-  const [alerts, setAlerts] = React.useState<InventoryAlerts | null>(null)
+  const [loadedAlerts, setAlerts] = React.useState<InventoryAlerts | null>(null)
   const [feedback, setFeedback] = React.useState<CustomerFeedbackSummary | null>(null)
   const [inbox, setInbox] = React.useState<{ id: string; subject: string; body: string; read_at: string | null }[]>([])
 
@@ -27,14 +27,13 @@ export function useAdminNotices(navigate: (to: string) => void) {
   // folded into entitlements). Until that is known, or when it is not available, nothing is requested: no wasted call, no upgrade toast.
   // Polling for them starts the moment availability is confirmed (the interval is null, i.e. off, otherwise).
   const inventoryAllowed = billing.entitlements?.features.INVENTORY?.allowed === true
+  // when Inventory is not available there is nothing to show, whatever was loaded before
+  const alerts = inventoryAllowed ? loadedAlerts : null
   const loadStockAlerts = React.useCallback(() => {
     if (!outletId) return
     api.inventory.getAlerts(outletId, { background: true }).then(setAlerts).catch(() => {})
   }, [outletId])
   usePolling(loadStockAlerts, inventoryAllowed && outletId ? 120000 : null, { immediate: true })
-  React.useEffect(() => {
-    if (!inventoryAllowed) setAlerts(null)
-  }, [inventoryAllowed])
 
   const loadOutletSignals = React.useCallback(() => {
     if (!outletSlug) return

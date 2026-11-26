@@ -151,7 +151,7 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
       restaurantSlug: currentOutlet.slug,
       orderType: 'DINE_IN' as const,
       tableNumber: targetTable.tableNumber,
-      paymentMethod: 'PAY_AT_COUNTER' as any,
+      paymentMethod: 'PAY_AT_COUNTER' as const,
       items: orderItems,
     }
     setSubmitting(true)

@@ -100,6 +100,7 @@ export function useBilling(): Billing {
   const tables = useAdminStore((s) => s.tables)
   const outlets = useAuthStore((s) => s.outlets)
 
+  const [asOf, setAsOf] = React.useState(() => Date.now()) // when the subscription was read: "days left" is relative to this
   const load = React.useCallback(async (force = false) => {
     setLoading(true)
     setFailed(false)
@@ -108,6 +109,7 @@ export function useBilling(): Billing {
       const { mine, all } = await fetchBilling(force)
       setDetails(mine)
       setPlans(all)
+      setAsOf(Date.now())
     } catch (e) {
       setFailed(true)
       setError(e instanceof Error ? e.message : "Unknown error")
@@ -116,14 +118,20 @@ export function useBilling(): Billing {
     }
   }, [])
 
+  // First load (loading starts true). State is only set once the response has arrived; `load(true)` is the manual refresh.
   React.useEffect(() => {
-    void load()
-  }, [load])
+    let alive = true
+    fetchBilling(false).then(
+      ({ mine, all }) => { if (alive) { setDetails(mine); setPlans(all); setAsOf(Date.now()); setFailed(false); setError(null); setLoading(false) } },
+      (e) => { if (alive) { setFailed(true); setError(e instanceof Error ? e.message : "Unknown error"); setLoading(false) } },
+    )
+    return () => { alive = false }
+  }, [])
 
   const sub = details?.subscription
   const plan = details?.plan || sub?.plan
   const end = sub?.status === "TRIAL" ? sub?.trialEndsAt || sub?.currentPeriodEnd : sub?.currentPeriodEnd
-  const daysLeft = end ? Math.max(0, Math.ceil((new Date(end).getTime() - Date.now()) / 86400000)) : null
+  const daysLeft = end ? Math.max(0, Math.ceil((new Date(end).getTime() - asOf) / 86400000)) : null
 
   return {
     loading,

@@ -12,6 +12,7 @@ import type {
   MenuItem,
   MenuCategory,
   Order,
+  OrderStatus,
   PaymentStatus,
 } from '@/types/domain'
 import { api } from '@/lib/api'
@@ -126,8 +127,8 @@ interface AdminStore {
   settleOrder: (orderId: string, paymentStatus: PaymentStatus) => Promise<void>
   archiveOrder: (orderId: string) => Promise<void>
   cancelOrder: (orderId: string, reason: string) => Promise<void>
-  editOrderItems: (orderId: string, items: any[]) => Promise<void>
-  processRefund: (orderId: string, refundData: any) => Promise<void>
+  editOrderItems: (orderId: string, items: EditOrderItems) => Promise<void>
+  processRefund: (orderId: string, refundData: RefundRequest) => Promise<void>
 
   // ── Outlet switching ───────────────────────────────────────────────────────
   setRestaurantName: (name: string) => void
@@ -136,6 +137,9 @@ interface AdminStore {
   tableByNumber: (tableNumber: string) => Table | undefined
   categoryNameMap: Record<string, string>
 }
+
+type EditOrderItems = Parameters<typeof api.orders.editItems>[1]['items']
+type RefundRequest = Parameters<typeof api.orders.processRefund>[1]
 
 let socketListening = false
 
@@ -212,8 +216,8 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       })
 
       get().initSocketSync(targetSlug)
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false })
+    } catch (err) {
+      set({ error: errMsg(err), isLoading: false })
     }
   },
 
@@ -268,7 +272,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       }
     })
 
-    socket.on('order:status', ({ orderId, status }: { orderId: string; status: any }) => {
+    socket.on('order:status', ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
       if (status === 'READY' && get().restaurant.orderReadyChime !== false) {
         const o = get().activeOrders.find((x) => x.id === orderId)
         playKitchenChime()
@@ -620,7 +624,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
-  editOrderItems: async (orderId: string, items: any[]) => {
+  editOrderItems: async (orderId: string, items: EditOrderItems) => {
     try {
       const updated = await api.orders.editItems(orderId, { items })
       set((s) => {
@@ -638,7 +642,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
-  processRefund: async (orderId: string, refundData: any) => {
+  processRefund: async (orderId: string, refundData: RefundRequest) => {
     try {
       const updated = await api.orders.processRefund(orderId, refundData)
       set((s) => {

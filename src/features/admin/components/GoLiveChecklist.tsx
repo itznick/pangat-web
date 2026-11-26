@@ -16,15 +16,17 @@ export function GoLiveChecklist({ outletId, role }: { outletId: string; role?: s
   const [busy, setBusy] = React.useState<string | null>(null)
   const [open, setOpen] = React.useState(true)
 
-  const load = React.useCallback(async () => {
-    try {
-      setData(await api.restaurants.readiness(outletId))
-      setError(null)
-    } catch (e) {
-      setError(errMsg(e, "Could not load the go-live checklist."))
-    }
-  }, [outletId])
-  React.useEffect(() => { void load() }, [load])
+  // reload trigger: bump to re-read; the read itself lives inside the effect so state is only set after the response arrives
+  const [reloadKey, setReloadKey] = React.useState(0)
+  React.useEffect(() => {
+    let alive = true
+    api.restaurants.readiness(outletId).then(
+      (d) => { if (alive) { setData(d); setError(null) } },
+      (e) => { if (alive) setError(errMsg(e, "Could not load the go-live checklist.")) },
+    )
+    return () => { alive = false }
+  }, [outletId, reloadKey])
+  const load = () => setReloadKey((k) => k + 1)
 
   const canEdit = role === "SUPER_OWNER" || role === "STORE_MANAGER"
   const attest = async (key: string, done: boolean) => {
@@ -38,7 +40,7 @@ export function GoLiveChecklist({ outletId, role }: { outletId: string; role?: s
     }
   }
 
-  if (error) return <p role="alert" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">{error} <button className="underline" onClick={() => void load()}>Try again</button></p>
+  if (error) return <p role="alert" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">{error} <button className="underline" onClick={load}>Try again</button></p>
   if (!data) return null
   // Once everything required is genuinely done, stay out of the way (a collapsed, reassuring line)
   const showAll = open && !data.ready
@@ -91,7 +93,7 @@ export function GoLiveChecklist({ outletId, role }: { outletId: string; role?: s
           })}
         </ul>
       )}
-      <button type="button" onClick={() => void load()} className="mt-3 text-[11px] text-zinc-500 underline">Refresh</button>
+      <button type="button" onClick={load} className="mt-3 text-[11px] text-zinc-500 underline">Refresh</button>
     </section>
   )
 }

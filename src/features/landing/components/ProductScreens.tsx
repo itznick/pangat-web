@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import {
   BellRing,
   Check,
@@ -418,11 +419,11 @@ const STAGES = {
 
 function useElapsed(active: boolean, start = 0) {
   const [s, setS] = React.useState(start)
+  useOnChange(active, (isActive) => {
+    if (!isActive) setS(start) // stopping resets the clock
+  })
   React.useEffect(() => {
-    if (!active) {
-      setS(start)
-      return
-    }
+    if (!active) return
     const id = setInterval(() => setS((v) => v + 1), 1000)
     return () => clearInterval(id)
   }, [active, start])

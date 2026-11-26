@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { keyFor, releaseKey } from "@/lib/idempotency"
 import { useParams, useNavigate } from "react-router"
 import { Search, X, ChefHat, ArrowRight, Clock } from "lucide-react"
@@ -11,7 +12,7 @@ import { CheckoutDrawer } from "./components/CheckoutDrawer"
 import { toast } from "@/components/ui/toast"
 import { useCartStore, useOrderTrackingStore } from "@/stores/useCartStore"
 import { useKdsStore } from "@/stores/useKdsStore"
-import { api } from "@/lib/api"
+import { api, errMsg } from "@/lib/api"
 import type {
   MenuItem,
   MenuCategory,
@@ -56,8 +57,8 @@ export function DinerMenuPage() {
   const { order: activeOrder, placeOrder } = useOrderTrackingStore()
 
   // Load public menu from NestJS backend API
+  useOnChange(restaurantSlug, () => setIsLoading(true))
   useEffect(() => {
-    setIsLoading(true)
     api.menu.getPublic(restaurantSlug)
       .then((data) => {
         if (data.restaurant) setRestaurant(data.restaurant)
@@ -217,13 +218,9 @@ export function DinerMenuPage() {
       clearCart()
       setShowCheckout(false)
       navigate(`/r/${restaurantSlug}/order/${placedOrder.id}?token=${placedOrder.trackingToken || ""}`)
-    } catch (err: any) {
+    } catch (err) {
       console.error("Order placement to backend failed:", err)
-      const msg =
-        err.response?.data?.message ||
-        err.message ||
-        "Could not fire order to kitchen. Please check network connection."
-      const formattedMsg = Array.isArray(msg) ? msg.join(", ") : String(msg)
+      const formattedMsg = errMsg(err, "Could not fire order to kitchen. Please check network connection.")
       setOrderError(formattedMsg)
     } finally {
       setIsSubmittingOrder(false)

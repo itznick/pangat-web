@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useQuery } from "@/hooks/useQuery"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
@@ -45,30 +46,27 @@ interface Props {
   restaurantId: string
 }
 
+const NO_MOVEMENTS: StockMovement[] = []
+
 export function StockMovementsLedger({ restaurantId }: Props) {
-  const [movements, setMovements] = useState<StockMovement[]>([])
-  const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
   const [typeFilter, setTypeFilter] = useState<string>("ALL")
 
-  const fetchMovements = async () => {
-    setLoading(true)
-    try {
-      const res = await api.inventory.listMovements(restaurantId, {
-        type: typeFilter === "ALL" ? undefined : (typeFilter as StockMovementType),
-        limit: 50,
-      })
-      setMovements(res.items || [])
-    } catch (err) {
-      console.error("Failed to fetch stock movements ledger", err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchMovements()
-  }, [restaurantId, typeFilter])
+  const ledger = useQuery(
+    async () => {
+      try {
+        const res = await api.inventory.listMovements(restaurantId, { type: typeFilter === "ALL" ? undefined : (typeFilter as StockMovementType), limit: 50 })
+        return res.items || []
+      } catch (err) {
+        console.error("Failed to fetch stock movements ledger", err)
+        return [] as StockMovement[]
+      }
+    },
+    `${restaurantId}|${typeFilter}`,
+  )
+  const movements: StockMovement[] = ledger.data ?? ledger.lastData ?? NO_MOVEMENTS
+  const loading = ledger.loading
+  const fetchMovements = ledger.reload
 
   const filteredMovements = movements.filter((m) => {
     if (!search.trim()) return true

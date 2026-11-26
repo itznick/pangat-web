@@ -163,9 +163,9 @@ export function AdminTablesPage() {
       const created = await addTable(newTableNum.trim())
       setAddModalOpen(false)
       showNotification(`Table ${created.tableNumber} created successfully!`)
-    } catch (err: any) {
+    } catch (err) {
       setLimitRefused(isLimitRefusal(err, "tables") ? (err.details as { limit?: number; current?: number }) : null)
-      setAddError(err.response?.data?.message || err.message || "Failed to create table")
+      setAddError(errMsg(err, "Failed to create table"))
     } finally {
       setIsAdding(false)
     }
@@ -179,7 +179,7 @@ export function AdminTablesPage() {
     try {
       await deleteTable(tableId)
       showNotification(`Table ${tableNumber} removed`)
-    } catch (err: any) {
+    } catch (err) {
       toast.error(errMsg(err, "Failed to remove table"))
     } finally {
       setDeletingId(null)

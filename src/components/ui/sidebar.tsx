@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { Tooltip } from "@/components/ui/tooltip"
 import { PanelLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -85,9 +86,9 @@ const SidebarProvider = ({ children, defaultCollapsed = false }: SidebarProvider
   }, [])
 
   // Leaving mobile width must not leave the drawer "open"
-  React.useEffect(() => {
-    if (!isMobile) setMobileOpen(false)
-  }, [isMobile])
+  useOnChange(isMobile, (mobile) => {
+    if (!mobile) setMobileOpen(false)
+  })
 
   // Lock page scroll while the drawer is open
   useScrollLock(isMobile && mobileOpen)

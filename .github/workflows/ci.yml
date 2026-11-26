@@ -26,6 +26,82 @@ jobs:
       - run: npm ci
       - run: npm run build   # runs tsc -b first, then vite build
       - run: npm test
+      - name: Lint (errors fail the build; warnings are reported)
+        run: npm run lint
+
+  browser-tests:
+    name: Real-browser tests (kitchen reliability and user journeys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: build-and-test
+    # Needs the API repository. Enable by setting the repository variable RUN_BROWSER_TESTS=true and the secret API_REPO_TOKEN
+    # (a read-only token for the pangat-api repository). Off by default so a missing token never blocks the normal pipeline.
+    if: ${{ vars.RUN_BROWSER_TESTS == 'true' }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pangat_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/pangat_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: web
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/pangat-api
+          token: ${{ secrets.API_REPO_TOKEN }}
+          path: api
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: api
+      - run: npm run build
+        working-directory: api
+      - run: npm ci
+        working-directory: web
+      - name: Install the browser (CI only; not a project dependency)
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+        working-directory: web
+      - name: Start the API on the fresh database
+        working-directory: api
+        run: |
+          export NODE_ENV=development THROTTLE_DISABLED=true PORT=4000 PLATFORM_BOOTSTRAP_SECRET="$(openssl rand -hex 16)"
+          nohup node dist/main > ../api.log 2>&1 &
+          for _ in $(seq 1 60); do curl -sf http://localhost:4000/health >/dev/null && break; sleep 1; done
+          node test/support/enable-signup.mjs
+      - name: Start the web app
+        working-directory: web
+        run: |
+          nohup npx vite --port 5173 --host 127.0.0.1 > ../vite.log 2>&1 &
+          for _ in $(seq 1 60); do curl -sf http://127.0.0.1:5173 >/dev/null && break; sleep 1; done
+      - name: User journeys
+        working-directory: web
+        run: UAT_WEB=http://127.0.0.1:5173 node --test --test-concurrency=1 test/e2e/uat.e2e.test.mjs
+      - name: Kitchen display reliability
+        working-directory: web
+        run: UAT_WEB=http://127.0.0.1:5173 node --test test/e2e/kds-reliability.e2e.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-logs
+          path: |
+            api.log
+            vite.log
+          retention-days: 7
 
   dependency-audit:
     name: Dependency vulnerabilities (production)

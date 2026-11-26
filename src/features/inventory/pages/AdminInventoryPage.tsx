@@ -56,7 +56,7 @@ export function AdminInventoryPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [alerts, setAlerts] = useState<InventoryAlerts | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(!!currentOutlet?.id) // the first read is in flight from the start
   const [search, setSearch] = useState("")
   const [stockFilter, setStockFilter] = useState<"ALL" | "HEALTHY" | "LOW" | "OUT">("ALL")
 
@@ -70,32 +70,42 @@ export function AdminInventoryPage() {
 
   const [loadError, setLoadError] = useState<{ message: string; plan: boolean } | null>(null)
 
-  const loadData = async () => {
+  type InventorySnapshot = { ings: Ingredient[]; recs: Recipe[]; alts: InventoryAlerts | null }
+  const readInventory = async (): Promise<InventorySnapshot> => {
+    const [ings, recs, alts] = await Promise.all([
+      api.inventory.listIngredients(restaurantId),
+      api.inventory.listRecipes(restaurantId).catch(() => []),
+      api.inventory.getAlerts(restaurantId).catch(() => null),
+    ])
+    return { ings: ings || [], recs: recs || [], alts }
+  }
+  const applyInventory = (r: InventorySnapshot) => {
+    setIngredients(r.ings)
+    setRecipes(r.recs)
+    setAlerts(r.alts)
+    setLoadError(null)
+    if (currentOutlet?.slug) fetchDashboardData(currentOutlet.slug)
+  }
+  const failInventory = (err: unknown) => setLoadError({ message: errMsg(err, "Could not load inventory"), plan: isPlanError(err) })
+
+  // Refresh / retry buttons
+  const loadData = () => {
     if (!restaurantId) return
     setLoading(true)
     setLoadError(null)
-    try {
-      const [ings, recs, alts] = await Promise.all([
-        api.inventory.listIngredients(restaurantId),
-        api.inventory.listRecipes(restaurantId).catch(() => []),
-        api.inventory.getAlerts(restaurantId).catch(() => null),
-      ])
-      setIngredients(ings || [])
-      setRecipes(recs || [])
-      setAlerts(alts)
-
-      if (currentOutlet?.slug) {
-        fetchDashboardData(currentOutlet.slug)
-      }
-    } catch (err) {
-      setLoadError({ message: errMsg(err, "Could not load inventory"), plan: isPlanError(err) })
-    } finally {
-      setLoading(false)
-    }
+    readInventory().then(applyInventory, failInventory).finally(() => setLoading(false))
   }
 
+  // First load, and whenever the outlet changes. State is only set once the response has arrived.
   useEffect(() => {
-    loadData()
+    if (!restaurantId) return
+    let alive = true
+    readInventory().then(
+      (r) => { if (alive) applyInventory(r) },
+      (e) => { if (alive) failInventory(e) },
+    ).finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId])
 
   if (loadError?.plan) {

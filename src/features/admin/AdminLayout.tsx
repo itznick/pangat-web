@@ -390,7 +390,7 @@ export function AdminLayout() {
     (!outlets || outlets.length === 0) && Boolean(user)
   )
 
-  const [impersonatingOutlet, setImpersonatingOutlet] = useState<Restaurant | null>(() => {
+  const [storedImpersonation, setImpersonatingOutlet] = useState<Restaurant | null>(() => {
     try {
       const stored = sessionStorage.getItem("pangat_impersonate_outlet")
       return stored ? JSON.parse(stored) : null
@@ -399,11 +399,15 @@ export function AdminLayout() {
     }
   })
   const [impersonationError, setImpersonationError] = useState<string | null>(null)
+  // "Viewing as" follows the link (?impersonate=... or ?outletId=...) as soon as that outlet is in the list, without waiting for an effect
+  const impersonateParam = new URLSearchParams(location.search)
+  const impersonateKey = impersonateParam.get("impersonate") || impersonateParam.get("outletId")
+  const impersonatingOutlet = (isPlatformSuperAdmin && impersonateKey ? outlets.find((o) => o.id === impersonateKey || o.slug === impersonateKey) : undefined) ?? storedImpersonation
 
   // Auto-resolve outlets if empty on mount
   useEffect(() => {
     if ((!outlets || outlets.length === 0) && user) {
-      setIsResolvingOutlets(true)
+      // (isResolvingOutlets already starts true in exactly this situation)
       const resolveOutlets = async () => {
         try {
           if (isPlatformSuperAdmin) {
@@ -445,8 +449,6 @@ export function AdminLayout() {
         }
       }
       resolveOutlets()
-    } else {
-      setIsResolvingOutlets(false)
     }
   }, [user?.id, outlets?.length, isPlatformSuperAdmin])
 
@@ -459,7 +461,6 @@ export function AdminLayout() {
       if (impersonateSlugOrId) {
         const target = outlets.find((o) => o.id === impersonateSlugOrId || o.slug === impersonateSlugOrId)
         if (target) {
-          setImpersonatingOutlet(target)
           setCurrentOutlet(target)
           sessionStorage.setItem("pangat_impersonate_outlet", JSON.stringify(target))
         } else {
@@ -573,7 +574,8 @@ export function AdminLayout() {
     navigate("/super-admin", { replace: true })
   }
 
-  if (isResolvingOutlets) {
+  // still resolving only while there really are no outlets yet
+  if (isResolvingOutlets && (!outlets || outlets.length === 0)) {
     return (
       <div className="min-h-dvh bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-white flex items-center justify-center">
         <div className="flex items-center gap-2.5 text-zinc-400 text-sm">

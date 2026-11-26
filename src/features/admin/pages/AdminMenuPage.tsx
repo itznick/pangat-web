@@ -76,7 +76,7 @@ function ModifierBuilder({ modifiers, onChange }: ModifierBuilderProps) {
     updateGroup(groupIndex, { options: nextOptions })
   }
 
-  const updateOption = (groupIndex: number, optIndex: number, field: keyof ModifierOption, val: any) => {
+  const updateOption = (groupIndex: number, optIndex: number, field: keyof ModifierOption, val: string | number) => {
     const group = modifiers[groupIndex]
     const nextOptions = group.options.map((opt, i) =>
       i === optIndex ? { ...opt, [field]: val } : opt

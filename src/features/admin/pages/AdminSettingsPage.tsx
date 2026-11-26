@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { ScrollRow } from "@/components/ui/ScrollRow"
 import { AlertCircle, Bell, Building2, CheckCircle2, Clock, History, Loader2, Lock, Receipt, Store, UserCircle, Users } from "lucide-react"
 import { useAdminStore } from "@/stores/useAdminStore"
@@ -80,21 +81,19 @@ export function AdminSettingsPage({ embedded = false }: { embedded?: boolean } =
 
   const [section, setSection] = React.useState<SectionId>("profile")
   const [form, setForm] = React.useState<Form>(() => fromRestaurant(restaurant))
-  const baseline = React.useRef(JSON.stringify(fromRestaurant(restaurant)))
+  const [baseline, setBaseline] = React.useState(() => JSON.stringify(fromRestaurant(restaurant)))
   const [saving, setSaving] = React.useState(false)
   const [status, setStatus] = React.useState<"idle" | "saved" | "error">("idle")
   const [error, setError] = React.useState<string | null>(null)
 
   // Re-sync when the outlet (or a successful save) changes the source of truth, unless the user is mid-edit
-  React.useEffect(() => {
+  useOnChange(restaurant, () => {
     const fresh = fromRestaurant(restaurant)
-    const freshJson = JSON.stringify(fresh)
-    if (JSON.stringify(form) === baseline.current) setForm(fresh)
-    baseline.current = freshJson
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurant])
+    if (JSON.stringify(form) === baseline) setForm(fresh)
+    setBaseline(JSON.stringify(fresh))
+  })
 
-  const dirty = JSON.stringify(form) !== baseline.current
+  const dirty = JSON.stringify(form) !== baseline
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }))
   const setOps = (patch: Partial<OutletOperations>) => setForm((f) => ({ ...f, ops: { ...f.ops, ...patch } }))
 

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { AlertTriangle, Loader2, ShieldAlert } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -37,9 +38,9 @@ export function LimitOverrideDialog({ open, onClose, what, onConfirm }: Props) {
   const [ack, setAck] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  React.useEffect(() => {
-    if (open) { setReason(""); setAck(false); setBusy(false); setError(null) }
-  }, [open])
+  useOnChange(open, (isOpen) => {
+    if (isOpen) { setReason(""); setAck(false); setBusy(false); setError(null) }
+  })
   const valid = reason.trim().length >= OVERRIDE_REASON_MIN && ack
 
   const submit = async (e: React.FormEvent) => {

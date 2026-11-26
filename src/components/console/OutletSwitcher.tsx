@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { createPortal } from "react-dom"
 import { Check, ChevronsUpDown, Plus, Search } from "lucide-react"
 import { useEscapeKey } from "@/hooks/useEscapeKey"
@@ -72,11 +73,12 @@ export function OutletSwitcher({ outlets, current, fallbackName, onSelect, onAdd
     return q ? outlets.filter((o) => `${o.name} ${o.branchArea ?? ""} ${o.slug}`.toLowerCase().includes(q)) : outlets
   }, [outlets, query])
 
-  React.useEffect(() => {
+  // when the list opens or its contents change, highlight the current outlet (or the first)
+  useOnChange(`${open}|${query}|${outlets.length}|${current?.slug}`, () => {
     if (!open) return
     const i = shown.findIndex((o) => o.slug === current?.slug)
     setActive(i >= 0 ? i : 0)
-  }, [open, shown, current?.slug])
+  })
 
   const choose = (o: Restaurant) => {
     setOpen(false)

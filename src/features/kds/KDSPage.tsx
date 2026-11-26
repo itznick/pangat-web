@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react"
+import { useOnChange } from "@/hooks/useOnChange"
 import { playKitchenChime } from "@/lib/sound"
 import { ScrollRow } from "@/components/ui/ScrollRow"
 import { useParams } from "react-router"
@@ -84,12 +85,12 @@ export function KDSPage() {
   // Chime + banner when the store counts a new alert (the store already applied the sound and outlet preferences).
   // Only a change of chimeCount counts: flipping the Sound switch must not replay the last alert.
   const lastChime = useRef(chimeCount)
+  useOnChange(chimeCount, (c) => { if (c !== 0) setShowChimeToast(true) })
   useEffect(() => {
     if (chimeCount === lastChime.current) return
     lastChime.current = chimeCount
     if (chimeCount === 0) return
     playKitchenChime()
-    setShowChimeToast(true)
     const timer = setTimeout(() => setShowChimeToast(false), 2500)
     return () => clearTimeout(timer)
   }, [chimeCount])
