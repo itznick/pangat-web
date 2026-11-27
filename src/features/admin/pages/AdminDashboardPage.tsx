@@ -1,6 +1,6 @@
 import { useEscapeKey } from "@/hooks/useEscapeKey"
 import { elapsedMs, minutesLabel, useNow } from "@/lib/time"
-import { lazy, Suspense, useState, useCallback, useMemo } from "react"
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -113,6 +113,9 @@ function WalkInDialog({ open, onClose }: WalkInDialogProps) {
   const [submitting, setSubmitting] = useState(false)
   const [dishSearch, setDishSearch] = useState("")
   const [error, setError] = useState<string | null>(null)
+
+  // A previous failure must not greet the next walk-in: clear it whenever the dialog is (re)opened
+  useEffect(() => { if (open) setError(null) }, [open])
 
   const vacantTables = tables.filter((t) => t.status === "VACANT")
 
