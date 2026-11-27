@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useOnChange } from "@/hooks/useOnChange"
 import { keyFor, releaseKey } from "@/lib/idempotency"
 import { useParams, useNavigate } from "react-router"
-import { Search, X, ChefHat, ArrowRight, Clock } from "lucide-react"
+import { Search, X, ChefHat, ArrowRight, Clock, WifiOff } from "lucide-react"
 import { DinerTopBar } from "./components/DinerTopBar"
 import { CategoryNav } from "./components/CategoryNav"
 import { MenuItemCard } from "./components/MenuItemCard"
@@ -32,10 +32,12 @@ const DEFAULT_RESTAURANT: Restaurant = {
 }
 
 export function DinerMenuPage() {
-  const { restaurantSlug = "", tableId } = useParams<{
+  const { restaurantSlug = "", tableId: rawTableId } = useParams<{
     restaurantSlug: string
     tableId?: string
   }>()
+  // a link such as /t/takeaway is "no table", not a table called "takeaway"
+  const tableId = rawTableId && !/^(takeaway|delivery|parcel|none)$/i.test(rawTableId.trim()) ? rawTableId : undefined
   const navigate = useNavigate()
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>("all")
@@ -51,16 +53,23 @@ export function DinerMenuPage() {
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   const outOfStockIds = useKdsStore((s) => s.outOfStockIds)
   const { dietaryFilter, addItem, toOrderItems, clearCart } = useCartStore()
   const { order: activeOrder, placeOrder } = useOrderTrackingStore()
 
   // Load public menu from NestJS backend API
-  useOnChange(restaurantSlug, () => setIsLoading(true))
+  useOnChange(`${restaurantSlug}|${reloadKey}`, () => {
+    setIsLoading(true)
+    setLoadFailed(false)
+  })
   useEffect(() => {
+    let stale = false // a slow answer for a previous restaurant / attempt must never overwrite the current menu
     api.menu.getPublic(restaurantSlug)
       .then((data) => {
+        if (stale) return
         if (data.restaurant) setRestaurant(data.restaurant)
         if (data.categories) setCategories(data.categories)
         if (data.items) {
@@ -72,10 +81,15 @@ export function DinerMenuPage() {
         setIsLoading(false)
       })
       .catch((err) => {
-        console.warn("API menu fetch failed; using fallback state:", err)
+        if (stale) return
+        console.warn("API menu fetch failed:", err)
+        setLoadFailed(true)
         setIsLoading(false)
       })
-  }, [restaurantSlug])
+    return () => {
+      stale = true
+    }
+  }, [restaurantSlug, reloadKey])
 
   const categoryNameMap = useMemo(() => {
     return Object.fromEntries(categories.map((c) => [c.id, c.name]))
@@ -212,7 +226,7 @@ export function DinerMenuPage() {
 
       releaseKey(idemScope)
       // 2. Set in diner tracking store (persisted to localStorage)
-      placeOrder(placedOrder)
+      placeOrder({ ...placedOrder, restaurantSlug })
 
       // 3. Reset cart & navigate to live order tracking with token
       clearCart()
@@ -222,6 +236,8 @@ export function DinerMenuPage() {
       console.error("Order placement to backend failed:", err)
       const formattedMsg = errMsg(err, "Could not fire order to kitchen. Please check network connection.")
       setOrderError(formattedMsg)
+      // most refusals mean the menu or the outlet's rules changed under the guest (dish sold out, ordering paused): show the current state
+      setReloadKey((k) => k + 1)
     } finally {
       setIsSubmittingOrder(false)
     }
@@ -230,15 +246,17 @@ export function DinerMenuPage() {
   // Active in-flight order tracker banner
   const hasInFlightOrder =
     activeOrder &&
-    (!tableId || activeOrder.tableNumber === tableId) &&
-    activeOrder.orderStatus !== "COMPLETED"
+    (!activeOrder.restaurantSlug || activeOrder.restaurantSlug === restaurantSlug) &&
+    (!tableId || !activeOrder.tableNumber || activeOrder.tableNumber.toLowerCase() === tableId.toLowerCase()) &&
+    activeOrder.orderStatus !== "COMPLETED" &&
+    activeOrder.orderStatus !== "CANCELLED"
 
   return (
     <div className="min-h-dvh bg-[#050506]">
       <div className="max-w-md mx-auto relative min-h-dvh bg-zinc-950 sm:border-x sm:border-white/[0.06]">
         <DinerTopBar
           cafeName={restaurant.name || (isLoading ? "Loading..." : "Pangat Dining")}
-          tableId={tableId || (activeOrder?.tableNumber ?? "Takeaway")}
+          tableId={tableId ?? "Takeaway"}
         />
 
         {orderingClosed ? (
@@ -273,7 +291,7 @@ export function DinerMenuPage() {
             </div>
             <button
               type="button"
-              onClick={() => navigate(`/r/${restaurantSlug}/order/${activeOrder.id}`)}
+              onClick={() => navigate(`/r/${restaurantSlug}/order/${activeOrder.id}${activeOrder.trackingToken ? `?token=${activeOrder.trackingToken}` : ""}`)}
               className="flex min-h-10 shrink-0 items-center gap-1 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
             >
               <span>Track</span>
@@ -371,7 +389,24 @@ export function DinerMenuPage() {
             </div>
           )}
 
-          {!isLoading && filteredItems.length === 0 && (
+          {!isLoading && loadFailed && menuItems.length === 0 && (
+            <div role="alert" className="py-16 text-center">
+              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-900 text-zinc-400">
+                <WifiOff className="h-5 w-5" />
+              </span>
+              <p className="font-semibold text-zinc-200">We couldn’t load the menu</p>
+              <p className="mt-1 text-sm text-zinc-500">Check your internet connection and try again.</p>
+              <button
+                type="button"
+                onClick={() => setReloadKey((k) => k + 1)}
+                className="mt-4 min-h-11 rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {!isLoading && !(loadFailed && menuItems.length === 0) && filteredItems.length === 0 && (
             <div className="text-center py-16">
               <p className="text-4xl mb-3">🍽️</p>
               <p className="text-zinc-300 font-semibold">No dishes found</p>
@@ -420,10 +455,10 @@ export function DinerMenuPage() {
         />
 
         {/* Floating Cart Pill */}
-        <FloatingCartPill gstPercentage={restaurant.gstPercentage} serviceChargePercentage={restaurant.serviceChargePercentage} onViewOrder={() => {
+        {!showCheckout && !showCustomization && <FloatingCartPill gstPercentage={restaurant.gstPercentage} serviceChargePercentage={restaurant.serviceChargePercentage} onViewOrder={() => {
           setOrderError(null)
           setShowCheckout(true)
-        }} />
+        }} />}
       </div>
     </div>
   )

@@ -22,7 +22,7 @@ export function ConnectionBadge({ onRetry }: { onRetry?: () => void }) {
       data-testid="connection-status"
       data-status={status}
       title={status === "connected" ? "Live" : "Tap to refresh the order list now"}
-      className={cn("flex items-center gap-1.5 px-2 sm:px-2.5 py-1 min-h-8 rounded-full text-[11px] sm:text-xs font-semibold border", STYLE[status])}
+      className={cn("flex items-center gap-1.5 px-2 sm:px-2.5 py-1 min-h-10 sm:min-h-8 rounded-full text-[11px] sm:text-xs font-semibold border", STYLE[status])}
     >
       <Icon className={cn("h-3 w-3", (status === "synchronising" || status === "reconnecting") && "animate-spin")} />
       <span>{CONNECTION_LABEL[status]}</span>

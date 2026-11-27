@@ -40,7 +40,7 @@ const Drawer = ({ open, onClose, children, className }: DrawerProps) => {
           className
         )}
       >
-        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-zinc-700 mb-4" />
+        <div className="mx-auto mt-3 h-1.5 w-12 shrink-0 rounded-full bg-zinc-700 mb-4" />
         {children}
       </div>
     </>
@@ -59,7 +59,7 @@ const DrawerDescription = ({ className, ...props }: React.HTMLAttributes<HTMLPar
   <p className={cn("text-sm text-zinc-400", className)} {...props} />
 )
 
-const DrawerContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+const DrawerContent = ({ className, ...props }: React.ComponentProps<"div">) => (
   <div className={cn("px-4", className)} {...props} />
 )
 

@@ -70,7 +70,7 @@ function MenuItemCardBase({ item, isOutOfStock = false, orderingClosed = false, 
 
         <div className="flex items-center justify-between">
           <span className="text-base font-bold text-zinc-100">
-            ₹{item.price}
+            ₹{Number.isInteger(Number(item.price)) ? Number(item.price) : Number(item.price).toFixed(2)}
           </span>
 
           {available && orderingClosed ? (

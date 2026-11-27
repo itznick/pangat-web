@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { create } from 'zustand'
-import type { Order, OrderStatus } from '@/types/domain'
+import type { MenuItem, Order, OrderStatus } from '@/types/domain'
 import { api, errMsg } from '@/lib/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { getSocket, joinKdsRoom } from '@/lib/socket'
@@ -37,6 +37,9 @@ interface KdsStore {
   accessDenied: boolean
   chimeCount: number
   outOfStockIds: Set<string>
+  /** The outlet's dishes and category names, for the Out of Stock sheet (a chef on this screen never opens the admin app) */
+  menuItems: MenuItem[]
+  categoryNames: Record<string, string>
   isLoading: boolean
   /** Outlet alert preferences (Settings > Kitchen & stock) */
   alertNewOrders: boolean
@@ -74,11 +77,17 @@ const arrivedAt: Record<string, number> = {}
 let resyncInFlight: Promise<void> | null = null
 let wakeLockCtl: ReturnType<typeof createWakeLock> | null = null
 
+/** Tickets whose status change is on its way to the server: a second tap on the same ticket must not skip a stage. */
+const moving = new Set<string>()
+
 /** The kitchen's tap did not reach the server: say so and reload the real queue (never show a fake state). */
-function undoKds(err: unknown, what: string) {
+function undoKds(err: unknown, what: string, reloadMenu = false) {
   toast.error(errMsg(err, `Could not ${what}. Please try again.`))
   const slug = useAuthStore.getState().currentOutlet?.slug || useAuthStore.getState().user?.restaurantSlug
-  if (slug) void useKdsStore.getState().fetchTickets(slug)
+  if (!slug) return
+  // resync merges with what is on screen (and survives a failed read); a plain refetch could drop an order that just arrived
+  if (reloadMenu) void useKdsStore.getState().fetchTickets(slug)
+  else void useKdsStore.getState().resync(slug)
 }
 
 export const useKdsStore = create<KdsStore>((set, get) => ({
@@ -89,6 +98,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
   accessDenied: false,
   chimeCount: 0,
   outOfStockIds: new Set<string>(),
+  menuItems: [],
+  categoryNames: {},
   isLoading: false,
   alertNewOrders: true,
   alertReady: true,
@@ -105,11 +116,12 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     useConnectionStore.getState().syncStarted()
     try {
       const outlet = await api.restaurants.get(slug).catch(() => null)
-      const [orders, menuItems] = await Promise.all([
+      const [orders, menu] = await Promise.all([
         // not swallowed: if the order list cannot be read the board must say so, not show an empty kitchen
         api.orders.list(slug, { startDate: recentWindowStart(), limit: 100 }),
-        outlet?.id ? api.menu.getItems(outlet.id).catch(() => []) : Promise.resolve([]),
+        api.menu.getPublic(slug).catch(() => null),
       ])
+      const menuItems: MenuItem[] = menu?.items ?? (outlet?.id ? await api.menu.getItems(outlet.id).catch(() => []) : [])
 
       const kdsTickets = Array.isArray(orders) ? orders.filter((o) => o && o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED') : []
       const outOfStock = new Set(
@@ -119,6 +131,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
       set({
         tickets: kdsTickets,
         outOfStockIds: outOfStock,
+        menuItems: Array.isArray(menuItems) ? menuItems : [],
+        categoryNames: Object.fromEntries((menu?.categories ?? []).map((c) => [c.id, c.name])),
         isLoading: false,
         alertNewOrders: outlet?.kdsNewOrderAlert ?? true,
         alertReady: outlet?.orderReadyChime ?? true,
@@ -204,7 +218,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
         const next = new Set(s.outOfStockIds)
         if (p.isAvailable) next.delete(p.id)
         else next.add(p.id)
-        return { outOfStockIds: next }
+        return { outOfStockIds: next, menuItems: s.menuItems.map((m) => (m.id === p.id ? { ...m, isAvailable: p.isAvailable } : m)) }
       })
       if (get().alertStockOut) {
         toast.info(p.isAvailable ? `${p.name} is available again` : `${p.name} is sold out${p.auto ? ' (ingredient ran out)' : ''}`)
@@ -239,6 +253,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     })),
 
   sendBackTicket: async (orderId: string, targetStatus: OrderStatus, reason: string) => {
+    if (moving.has(orderId)) return
+    moving.add(orderId)
     // Optimistic regression
     set((s) => ({
       tickets: s.tickets.map((t) =>
@@ -250,12 +266,18 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
       await api.orders.regressStatus(orderId, { targetStatus, reason })
     } catch (err) {
       undoKds(err, 'send the ticket back')
+    } finally {
+      moving.delete(orderId)
     }
   },
 
   advanceTicket: async (orderId) => {
     const currentTicket = get().tickets.find((t) => t.id === orderId)
     if (!currentTicket) return
+
+    // one change per ticket at a time: a double tap would otherwise send READY on top of PREPARING and skip a stage
+    if (moving.has(orderId)) return
+    moving.add(orderId)
 
     const nextStatus = getNextKdsStatus(currentTicket)
 
@@ -273,6 +295,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
       await api.orders.updateStatus(orderId, nextStatus)
     } catch (err) {
       undoKds(err, 'move the ticket')
+    } finally {
+      moving.delete(orderId)
     }
   },
 
@@ -283,6 +307,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
       toast.error('The bill is still unpaid. It can be archived once it is paid or settled by the cashier.')
       return
     }
+    if (moving.has(orderId)) return
+    moving.add(orderId)
     set((s) => ({
       tickets: s.tickets.filter((t) => t.id !== orderId),
     }))
@@ -291,6 +317,8 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
       await api.orders.updateStatus(orderId, 'COMPLETED')
     } catch (err) {
       undoKds(err, 'close the ticket')
+    } finally {
+      moving.delete(orderId)
     }
   },
 
@@ -311,7 +339,7 @@ export const useKdsStore = create<KdsStore>((set, get) => ({
     try {
       await api.menu.updateAvailability(menuItemId, nextAvailability)
     } catch (err) {
-      undoKds(err, 'change availability')
+      undoKds(err, 'change availability', true)
     }
   },
 

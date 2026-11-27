@@ -72,11 +72,12 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
             variant="outline"
             size="sm"
             onClick={handleReturnToDashboard}
-            className="gap-1.5 bg-zinc-800 hover:bg-zinc-700 border-zinc-700/80 text-zinc-200 text-xs font-medium cursor-pointer transition-colors shadow-xs shrink-0 h-8"
+            className="gap-1.5 bg-zinc-800 hover:bg-zinc-700 border-zinc-700/80 text-zinc-200 text-xs font-medium cursor-pointer transition-colors shadow-xs shrink-0 h-10 sm:h-8"
             title={isChefOnly ? "Exit Kitchen Station" : "Return to Admin Dashboard"}
+            aria-label={isChefOnly ? "Exit Kitchen Station" : "Return to Admin Dashboard"}
           >
             {isChefOnly ? <LogOut className="h-3.5 w-3.5" /> : <ArrowLeft className="h-3.5 w-3.5" />}
-            <span className="hidden xs:inline">{isChefOnly ? "Exit Station" : "Dashboard"}</span>
+            <span className="hidden min-[400px]:inline">{isChefOnly ? "Exit Station" : "Dashboard"}</span>
           </Button>
 
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -116,7 +117,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
       </div>
 
       {/* Right: controls */}
-      <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 pt-1 sm:pt-0 border-t border-zinc-800/50 sm:border-t-0">
+      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-x-2 gap-y-2 sm:gap-4 pt-1 sm:pt-0 border-t border-zinc-800/50 sm:border-t-0">
         <ThemeToggle className="!h-8 !w-8" />
         {/* Sound toggle */}
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -137,7 +138,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
         <button
           type="button"
           className={cn(
-            "flex items-center gap-1.5 px-2 sm:px-2.5 py-1 min-h-8 rounded-full text-[11px] sm:text-xs font-semibold border transition-colors",
+            "flex items-center gap-1.5 px-2 sm:px-2.5 py-1 min-h-10 sm:min-h-8 rounded-full text-[11px] sm:text-xs font-semibold border transition-colors",
             wakeLock === "active"
               ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-400 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
               : wakeLock === "blocked" || wakeLock === "unsupported"

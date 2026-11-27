@@ -5,6 +5,7 @@ import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter } from "
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { MAX_LINE_QTY } from "@/stores/useCartStore"
 import type { MenuItem, Modifier, SelectedModifier } from "@/types/domain"
 
 interface CustomizationDrawerProps {
@@ -32,9 +33,9 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
 
   if (!item) return null
 
-  const missingRequired = item.modifiers.find(
-    (g) => g.type === "SINGLE" && g.isRequired && !selectedSingle[g.id]
-  )
+  const isMissing = (g: Modifier) =>
+    g.isRequired && (g.type === "SINGLE" ? !selectedSingle[g.id] : (selectedMulti[g.id]?.size ?? 0) === 0)
+  const missingRequired = item.modifiers.find(isMissing)
 
   const getModifierPrice = (): number => {
     let total = 0
@@ -60,12 +61,8 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
   const totalPrice = (item.price + getModifierPrice()) * quantity
 
   const handleConfirm = () => {
-    // Validate required single choices
-    for (const group of item.modifiers) {
-      if (group.type === "SINGLE" && group.isRequired && !selectedSingle[group.id]) {
-        return
-      }
-    }
+    // Every required group (single or multiple choice) needs at least one pick
+    if (item.modifiers.some(isMissing)) return
 
     const modifiers: SelectedModifier[] = []
     item.modifiers.forEach((group) => {
@@ -113,12 +110,12 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
   }
 
   return (
-    <Drawer open={open} onClose={onClose}>
-      <DrawerHeader>
+    <Drawer open={open} onClose={onClose} className="flex max-h-[92dvh] flex-col">
+      <DrawerHeader className="shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <DrawerTitle>{item.name}</DrawerTitle>
-            <p className="text-xs text-zinc-500 mt-0.5">Base ₹{item.price}</p>
+            <p className="text-xs text-zinc-500 mt-0.5">Base ₹{Number.isInteger(Number(item.price)) ? Number(item.price) : Number(item.price).toFixed(2)}</p>
           </div>
           <button
             type="button"
@@ -131,7 +128,7 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
         </div>
       </DrawerHeader>
 
-      <DrawerContent className="max-h-[65vh] overflow-y-auto pb-2">
+      <DrawerContent className="min-h-0 flex-1 overflow-y-auto pb-2">
         {/* Modifier Groups */}
         {item.modifiers.map((group) => (
           <ModifierGroupSection
@@ -162,7 +159,7 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
         </div>
       </DrawerContent>
 
-      <DrawerFooter className="border-t border-zinc-800/80 pt-3 pb-6 sm:pb-4">
+      <DrawerFooter className="shrink-0 border-t border-zinc-800/80 pt-3 pb-6 sm:pb-4">
         {/* Quantity selector */}
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-medium text-zinc-300">Quantity</span>
@@ -179,8 +176,9 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
             <button
               type="button"
               aria-label="Increase quantity"
-              onClick={() => setQuantity(quantity + 1)}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-0 sm:min-h-0 rounded-lg bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors touch-manipulation"
+              onClick={() => setQuantity(Math.min(MAX_LINE_QTY, quantity + 1))}
+              disabled={quantity >= MAX_LINE_QTY}
+              className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-0 sm:min-h-0 rounded-lg bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors touch-manipulation disabled:opacity-40"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -192,7 +190,7 @@ export function CustomizationDrawer({ item, open, onClose, onConfirm }: Customiz
           onClick={handleConfirm}
           disabled={Boolean(missingRequired)}
         >
-          {missingRequired ? `Choose ${missingRequired.name} to continue` : `Add to Order • ₹${totalPrice}`}
+          {missingRequired ? `Choose ${missingRequired.name} to continue` : `Add to Order • ₹${Number.isInteger(totalPrice) ? totalPrice : totalPrice.toFixed(2)}`}
         </Button>
       </DrawerFooter>
     </Drawer>
@@ -232,7 +230,7 @@ function ModifierGroupSection({
           </span>
         )}
         <span className="ml-auto text-[10px] text-zinc-600">
-          {group.type === "SINGLE" ? "Choose one" : "Choose any"}
+          {group.type === "SINGLE" ? "Choose one" : group.isRequired ? "Choose at least one" : "Choose any"}
         </span>
       </div>
 
@@ -246,6 +244,8 @@ function ModifierGroupSection({
           return (
             <button
               key={option.name}
+              type="button"
+              aria-pressed={isSelected}
               onClick={() =>
                 group.type === "SINGLE"
                   ? onSingleChange(group.id, option.name)

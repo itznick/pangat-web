@@ -851,6 +851,12 @@ html.dark {
 .dark .sa-glass { background: rgba(16, 16, 19, 0.72); }
 
 
+/* Guest and kitchen screens: iOS Safari zooms the whole page when a field under 16px takes focus, which breaks the layout.
+   Keep form fields at 16px on phones; larger screens keep the compact sizes. */
+@media (max-width: 767px) {
+  .df :is(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select) { font-size: 16px; }
+}
+
 /* Printing a bill: hide everything except the invoice itself */
 @media print {
   body * { visibility: hidden !important; }
