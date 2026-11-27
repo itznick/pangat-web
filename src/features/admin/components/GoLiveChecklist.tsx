@@ -42,16 +42,17 @@ export function GoLiveChecklist({ outletId, role }: { outletId: string; role?: s
 
   if (error) return <p role="alert" className="rounded-xl border border-amber-500/40 bg-amber-100 dark:bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">{error} <button className="underline" onClick={load}>Try again</button></p>
   if (!data) return null
-  // Once everything required is genuinely done, stay out of the way (a collapsed, reassuring line)
-  const showAll = open && !data.ready
+  // Once everything required is genuinely done the checklist has done its job: don't keep occupying the dashboard
+  if (data.ready) return null
+  const showAll = open
 
   return (
     <section aria-label="Go-live checklist" data-testid="go-live" className="rounded-2xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/[0.04] p-4 sm:p-5">
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-3 text-left">
         <Rocket className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold text-zinc-900 dark:text-white">{data.ready ? "Ready to serve guests" : "Before you serve your first guest"}</h2>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">{data.done} of {data.total} steps done{data.ready ? "" : `. Still needed: ${data.steps.filter((s) => s.required && s.status !== "DONE").length}`}</p>
+          <h2 className="text-sm font-bold text-zinc-900 dark:text-white">Before you serve your first guest</h2>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">{data.done} of {data.total} steps done{`. Still needed: ${data.steps.filter((s) => s.required && s.status !== "DONE").length}`}</p>
         </div>
         <span className="text-xs text-zinc-600 dark:text-zinc-500">{showAll ? "Hide" : "Show"}</span>
       </button>
