@@ -379,7 +379,7 @@ export function AdminMenuPage() {
           <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">Menu Management</h1>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
           <Button
             onClick={() => setShowCategoryDialog(true)}
             variant="outline"

@@ -64,9 +64,9 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between px-3 sm:px-6 py-2 sm:py-2.5 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.07] shrink-0 gap-2 sm:gap-4">
+    <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between px-3 sm:px-6 py-2 sm:py-2.5 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.07] shrink-0 gap-2 lg:gap-4">
       {/* Left: Exit/Back button + Title */}
-      <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4">
+      <div className="flex items-center justify-between lg:justify-start gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <Button
             variant="outline"
@@ -97,14 +97,14 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
         </div>
 
         {/* Live clock on mobile */}
-        <div className="flex sm:hidden items-center gap-1.5 bg-zinc-950/80 px-2 py-1 rounded-lg border border-zinc-800 text-xs font-mono font-bold text-zinc-200">
+        <div className="flex lg:hidden items-center gap-1.5 bg-zinc-950/80 px-2 py-1 rounded-lg border border-zinc-800 text-xs font-mono font-bold text-zinc-200">
           <Clock className="h-3 w-3 text-amber-400 shrink-0" />
           <span>{timeStr}</span>
         </div>
       </div>
 
       {/* Center: live clock on desktop */}
-      <div className="hidden sm:flex items-center gap-2.5 bg-zinc-950/80 px-3.5 py-1.5 rounded-xl border border-zinc-800 shadow-inner">
+      <div className="hidden lg:flex items-center gap-2.5 bg-zinc-950/80 px-3.5 py-1.5 rounded-xl border border-zinc-800 shadow-inner">
         <Clock className="h-4 w-4 text-amber-400 shrink-0" />
         <div className="flex flex-col text-left">
           <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold font-sans leading-none">
@@ -117,7 +117,7 @@ export function KDSTopBar({ restaurantSlug }: KDSTopBarProps) {
       </div>
 
       {/* Right: controls */}
-      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-x-2 gap-y-2 sm:gap-4 pt-1 sm:pt-0 border-t border-zinc-800/50 sm:border-t-0">
+      <div className="flex flex-wrap items-center justify-between lg:justify-end gap-x-2 gap-y-2 sm:gap-x-4 pt-1 lg:pt-0 border-t border-zinc-800/50 lg:border-t-0">
         <ThemeToggle className="!h-8 !w-8" />
         {/* Sound toggle */}
         <div className="flex items-center gap-1.5 sm:gap-2">

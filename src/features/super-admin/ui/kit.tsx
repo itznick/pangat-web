@@ -314,8 +314,8 @@ export function DataTable<T>({
   const primary = columns.find((c) => c.primary) ?? columns[0]
   return (
     <div className={cn('transition-opacity', loading && rows && 'opacity-60')}>
-      {/* Desktop / tablet */}
-      <div className="hidden overflow-x-auto md:block">
+      {/* Desktop (the console sidebar leaves a tablet too little room for a wide table, so tablets get cards) */}
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[720px] text-[13.5px]">
           <thead>
             <tr className="border-b border-zinc-200 dark:border-white/[0.07]">
@@ -359,7 +359,7 @@ export function DataTable<T>({
         </table>
       </div>
       {/* Phones: one card per row */}
-      <div className="divide-y divide-zinc-100 dark:divide-white/[0.06] md:hidden">
+      <div className="divide-y divide-zinc-100 dark:divide-white/[0.06] lg:hidden">
         {first
           ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="space-y-2 p-4"><Skeleton className="h-4 w-1/2" /><Skeleton className="h-3 w-3/4" /></div>)
           : rows!.map((r) => (
@@ -369,14 +369,19 @@ export function DataTable<T>({
                 className={cn('space-y-2 p-4', onRowClick && 'cursor-pointer active:bg-zinc-500/[0.06]')}
               >
                 <div className="flex items-start justify-between gap-3 text-[14px] font-medium text-zinc-900 dark:text-zinc-50">{primary.cell(r)}</div>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  {columns.filter((c) => c !== primary && !c.hideOnMobile).map((c) => (
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                  {columns.filter((c) => c !== primary && !c.hideOnMobile && c.header).map((c) => (
                     <div key={c.key} className="min-w-0">
                       <dt className="text-[10.5px] font-semibold uppercase tracking-wider text-zinc-500">{c.header}</dt>
                       <dd className="mt-0.5 truncate text-[13px] text-zinc-800 dark:text-zinc-200">{c.cell(r)}</dd>
                     </div>
                   ))}
                 </dl>
+                {/* columns without a header are the row's actions: never truncate them */}
+                {columns.filter((c) => c !== primary && !c.hideOnMobile && !c.header).map((c) => {
+                  const cell = c.cell(r)
+                  return cell ? <div key={c.key} className="flex flex-wrap items-center justify-end gap-2 pt-1">{cell}</div> : null
+                })}
               </div>
             ))}
       </div>
