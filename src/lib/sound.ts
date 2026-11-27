@@ -9,13 +9,14 @@ function makeContext(): AudioContext | null {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     if (AudioCtx) {
       audioCtx = new AudioCtx()
-      audioCtx.onstatechange = () => audioListeners.forEach((f) => f(isAudioReady()))
+      audioCtx.onstatechange = notifyAudioState
     }
   }
   return audioCtx
 }
 
 const audioListeners = new Set<(ready: boolean) => void>()
+function notifyAudioState() { audioListeners.forEach((f) => f(isAudioReady())) }
 /** Told when the browser really starts/stops allowing sound (e.g. it suspends the context again). */
 export function onAudioReadyChange(f: (ready: boolean) => void): () => void {
   audioListeners.add(f)
@@ -27,13 +28,18 @@ export function armAudioUnlock(): () => void {
   if (typeof window === "undefined") return () => {}
   const unlock = () => {
     const ctx = makeContext()
-    if (ctx && ctx.state !== "running") void ctx.resume().catch(() => {})
+    if (!ctx) return
+    if (ctx.state !== "running") void ctx.resume().then(notifyAudioState, () => {})
+    else notifyAudioState()
   }
-  window.addEventListener("pointerdown", unlock, { passive: true })
-  window.addEventListener("keydown", unlock)
+  // The browser can suspend the context again (tab hidden, tablet slept): try to wake it whenever the page comes back, and always report the real state
+  const onVisible = () => { if (document.visibilityState === "visible") unlock() }
+  const events: (keyof WindowEventMap)[] = ["pointerdown", "touchstart", "click", "keydown", "focus"]
+  events.forEach((e) => window.addEventListener(e, unlock, { passive: true }))
+  document.addEventListener("visibilitychange", onVisible)
   return () => {
-    window.removeEventListener("pointerdown", unlock)
-    window.removeEventListener("keydown", unlock)
+    events.forEach((e) => window.removeEventListener(e, unlock))
+    document.removeEventListener("visibilitychange", onVisible)
   }
 }
 
