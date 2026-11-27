@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useOnChange } from "@/hooks/useOnChange"
 import { ConsentCheckbox } from "@/features/legal/ConsentCheckbox"
 import {
@@ -23,7 +23,7 @@ import {
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { useCartStore } from "@/stores/useCartStore"
+import { useCartStore, MAX_LINE_QTY } from "@/stores/useCartStore"
 import { cn } from "@/lib/utils"
 import type { PaymentMethod, OrderType, OutletOperations } from "@/types/domain"
 import { resolveOps } from "@/features/admin/settings/operations"
@@ -50,6 +50,8 @@ interface CheckoutDrawerProps {
     consentAccepted?: boolean
   }) => void
 }
+
+const fmtRupees = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2))
 
 export function CheckoutDrawer({
   open,
@@ -132,9 +134,33 @@ export function CheckoutDrawer({
     setMobile(val)
   }
 
+  const bodyRef = useRef<HTMLDivElement>(null)
+
+  // payment cards behave as one radio group: reachable and operable from the keyboard / screen readers too
+  const radioProps = (m: PaymentMethod) => ({
+    role: "radio" as const,
+    tabIndex: 0,
+    "aria-checked": paymentMethod === m,
+    onClick: () => setPaymentMethod(m),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault()
+        setPaymentMethod(m)
+      }
+    },
+  })
+
   const handleSubmit = () => {
     setHasAttemptedSubmit(true)
-    if (!isMobileValid || !isNameValid || !isAddressValid || !isTableValid || !isConsentValid) return
+    if (!isMobileValid || !isNameValid || !isAddressValid || !isTableValid || !isConsentValid) {
+      // the fields sit in a scrolling sheet: bring the first problem into view so the guest sees why nothing happened
+      requestAnimationFrame(() => {
+        const bad = bodyRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')
+        bad?.scrollIntoView({ block: "center", behavior: "smooth" })
+        bad?.focus({ preventScroll: true })
+      })
+      return
+    }
 
     onProceedToPay({
       mobile: mobile.trim() || undefined,
@@ -149,8 +175,8 @@ export function CheckoutDrawer({
   }
 
   return (
-    <Drawer open={open} onClose={onClose} className="max-h-[94vh]">
-      <DrawerHeader className="border-b border-zinc-800/80 pb-3">
+    <Drawer open={open} onClose={onClose} className="flex max-h-[94dvh] flex-col">
+      <DrawerHeader className="shrink-0 border-b border-zinc-800/80 pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
@@ -172,7 +198,7 @@ export function CheckoutDrawer({
         </div>
       </DrawerHeader>
 
-      <DrawerContent className="overflow-y-auto max-h-[72vh] px-3.5 sm:px-4 py-4 space-y-5 sm:space-y-6">
+      <DrawerContent ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 sm:px-4 py-4 space-y-5 sm:space-y-6">
         {/* Order Type Selection */}
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
@@ -243,6 +269,7 @@ export function CheckoutDrawer({
                   type="text"
                   placeholder="e.g. T01 or 1"
                   value={tableNumber}
+                  aria-invalid={hasAttemptedSubmit && !isTableValid}
                   onChange={(e) => setTableNumber(e.target.value)}
                   className={cn(
                     "w-full h-10 px-3 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all",
@@ -270,6 +297,8 @@ export function CheckoutDrawer({
                 type="text"
                 placeholder="e.g. Priya Sharma"
                 value={customerName}
+                aria-invalid={hasAttemptedSubmit && !isNameValid}
+                autoComplete="name"
                 onChange={(e) => setCustomerName(e.target.value)}
                 className={cn(
                   "w-full h-10 px-3 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all",
@@ -290,6 +319,8 @@ export function CheckoutDrawer({
                     rows={2}
                     placeholder="Flat/House number, Building, Street, Landmark"
                     value={deliveryAddress}
+                    aria-invalid={hasAttemptedSubmit && !isAddressValid}
+                    autoComplete="street-address"
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     className={cn(
                       "w-full p-2.5 rounded-xl bg-zinc-900 border text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none transition-all resize-none",
@@ -327,7 +358,7 @@ export function CheckoutDrawer({
 
           <div className="space-y-2.5">
             {entries.map((entry) => {
-              const modTotal = entry.selectedModifiers.reduce((sum, m) => sum + m.price, 0)
+              const modTotal = entry.selectedModifiers.reduce((sum, m) => sum + Number(m.price || 0), 0)
               const itemPrice = entry.price + modTotal
               return (
                 <div
@@ -369,13 +400,14 @@ export function CheckoutDrawer({
                     >
                       <Minus className="h-3 w-3 text-zinc-300" />
                     </button>
-                    <span className="text-xs sm:text-sm font-bold text-zinc-100 w-4 sm:w-5 text-center">
+                    <span className="text-xs sm:text-sm font-bold text-zinc-100 w-5 sm:w-6 text-center tabular-nums">
                       {entry.quantity}
                     </span>
                     <button
                       type="button"
                       aria-label={`Add one more ${entry.name}`}
                       onClick={() => incrementItem(entry._localId)}
+                      disabled={entry.quantity >= MAX_LINE_QTY}
                       className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center hover:bg-zinc-700 transition-colors touch-manipulation"
                     >
                       <Plus className="h-3 w-3 text-zinc-300" />
@@ -383,7 +415,7 @@ export function CheckoutDrawer({
                   </div>
 
                   <span className="text-xs sm:text-sm font-bold text-zinc-100 ml-1 min-w-[48px] sm:min-w-[54px] text-right">
-                    ₹{((Number(itemPrice) || 0) * entry.quantity).toFixed(0)}
+                    ₹{fmtRupees((Number(itemPrice) || 0) * entry.quantity)}
                   </span>
                 </div>
               )
@@ -439,13 +471,13 @@ export function CheckoutDrawer({
             <span className="text-[11px] text-zinc-500 font-medium">Choose preferred mode</span>
           </div>
 
-          <div className="grid grid-cols-1 gap-3.5">
+          <div role="radiogroup" aria-label="Payment method" className="grid grid-cols-1 gap-3.5">
             {/* Option 1: UPI Instant Pay */}
             {ops.payments.upi && (
             <div
-              onClick={() => setPaymentMethod("UPI_INSTANT")}
+              {...radioProps("UPI_INSTANT")}
               className={cn(
-                "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
+                "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
                 paymentMethod === "UPI_INSTANT"
                   ? "bg-gradient-to-r from-emerald-950/40 to-zinc-900 border-emerald-500 ring-1 ring-emerald-500/50 shadow-lg shadow-emerald-950/50"
                   : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
@@ -490,9 +522,9 @@ export function CheckoutDrawer({
             {/* Option 2: Pay at Counter OR Cash on Delivery (COD) depending on fulfillment */}
             {orderType === "DELIVERY" ? (ops.payments.cod && (
               <div
-                onClick={() => setPaymentMethod("COD")}
+                {...radioProps("COD")}
                 className={cn(
-                  "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
+                  "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
                   paymentMethod === "COD"
                     ? "bg-gradient-to-r from-purple-950/40 to-zinc-900 border-purple-500 ring-1 ring-purple-500/50 shadow-lg shadow-purple-950/40"
                     : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
@@ -533,9 +565,9 @@ export function CheckoutDrawer({
               </div>
             )) : (ops.payments.payAtCounter && (
               <div
-                onClick={() => setPaymentMethod("PAY_AT_COUNTER")}
+                {...radioProps("PAY_AT_COUNTER")}
                 className={cn(
-                  "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative",
+                  "p-4 rounded-2xl border transition-all duration-200 cursor-pointer relative outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
                   paymentMethod === "PAY_AT_COUNTER"
                     ? "bg-gradient-to-r from-amber-950/30 to-zinc-900 border-amber-500 ring-1 ring-amber-500/50 shadow-lg shadow-amber-950/40"
                     : "bg-zinc-900/50 border-zinc-800/90 hover:border-zinc-700 hover:bg-zinc-900/80"
@@ -599,6 +631,8 @@ export function CheckoutDrawer({
               maxLength={10}
               placeholder="Enter 10-digit mobile number"
               value={mobile}
+              aria-invalid={hasAttemptedSubmit && !isMobileValid}
+              autoComplete="tel-national"
               onChange={handleMobileChange}
               className={cn(
                 "w-full h-12 pl-13 pr-4 rounded-xl bg-zinc-900 border text-sm text-zinc-100 placeholder:text-zinc-600 font-medium tracking-wide focus:outline-none transition-all",
@@ -620,25 +654,24 @@ export function CheckoutDrawer({
         </div>
 
         {collectsPersonalData && (
-          <div className={cn("rounded-xl border p-3", hasAttemptedSubmit && !isConsentValid ? "border-rose-500/50 bg-rose-950/30" : "border-zinc-800 bg-zinc-900/40")}>
+          <div aria-invalid={hasAttemptedSubmit && !isConsentValid} tabIndex={-1} className={cn("rounded-xl border p-3", hasAttemptedSubmit && !isConsentValid ? "border-rose-500/50 bg-rose-950/30" : "border-zinc-800 bg-zinc-900/40")}>
             <ConsentCheckbox checked={consent} onChange={setConsent} purpose="by this restaurant and Pangat only to prepare, deliver and bill this order" />
             {hasAttemptedSubmit && !isConsentValid && <p className="mt-1.5 text-[11px] text-rose-300">Please tick to continue. We need your agreement to use your details.</p>}
           </div>
         )}
 
-        {/* Server Error Message Alert */}
+      </DrawerContent>
+
+      <DrawerFooter className="shrink-0 space-y-2.5 border-t border-zinc-800/80 pt-3 pb-6 sm:pb-4">
         {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/50 flex items-start gap-2.5 text-xs text-rose-300">
+          <div role="alert" className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 flex items-start gap-2.5 text-xs text-rose-300">
             <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
-            <div>
+            <div className="min-w-0">
               <p className="font-bold text-rose-200">Order Submission Failed</p>
-              <p className="mt-0.5 text-rose-300/90">{errorMessage}</p>
+              <p className="mt-0.5 text-rose-300/90 break-words">{errorMessage}</p>
             </div>
           </div>
         )}
-      </DrawerContent>
-
-      <DrawerFooter className="border-t border-zinc-800/80 pt-3 pb-6 sm:pb-4">
         <Button
           className={cn(
             "w-full h-12 sm:h-13 text-xs sm:text-sm font-bold rounded-xl min-h-[44px] touch-manipulation",

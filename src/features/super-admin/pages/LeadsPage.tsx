@@ -49,7 +49,7 @@ export function LeadsPage() {
                 <select aria-label="Stage" value={l.status} onChange={(e) => setLeadStatus(l, e.target.value)} className="h-8 rounded-lg border border-zinc-200 bg-transparent px-2 text-[12.5px] dark:border-white/10">{STATUSES.map((s) => <option key={s} value={s} className="bg-white dark:bg-zinc-900">{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}</select>
               ) : <StatusPill status={l.status} /> },
               { key: 'c', header: 'Captured', cell: (l: any) => <span className="text-zinc-500">{ago(l.createdAt)}</span> },
-              { key: 'a', header: '', cell: (l: any) => manage && <div className="flex justify-end gap-1.5"><Button size="sm" variant="ghost" onClick={() => setNote(l)}>Notes</Button>{l.status !== 'ONBOARDED' && can('restaurants.provision') && <Button size="sm" onClick={() => provision.openForLead(l as Lead)}><Rocket className="h-3.5 w-3.5" /> Onboard</Button>}</div> },
+              { key: 'a', header: '', cell: (l: any) => manage && <div className="flex flex-wrap justify-end gap-1.5"><Button size="sm" variant="ghost" onClick={() => setNote(l)}>Notes</Button>{l.status !== 'ONBOARDED' && can('restaurants.provision') && <Button size="sm" onClick={() => provision.openForLead(l as Lead)}><Rocket className="h-3.5 w-3.5" /> Onboard</Button>}</div> },
             ]} />
         </div>
       </Panel>

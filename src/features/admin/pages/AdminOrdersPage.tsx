@@ -305,8 +305,8 @@ export function AdminOrdersPage() {
         </div>
 
         {/* ── Search & Status Filters ──────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
-          <div className="relative flex-1 w-full sm:max-w-sm">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 justify-between">
+          <div className="relative flex-1 w-full xl:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Search order ID, table number, item..."
@@ -371,7 +371,7 @@ export function AdminOrdersPage() {
 
         {/* ── Orders Table / Mobile Cards ─────────────────────────────────────── */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden shadow-xs">
-          <Table className="hidden md:table">
+          <Table className="hidden xl:table">
             <TableHeader>
               <TableRow className="border-b border-zinc-200/80 dark:border-zinc-800/80 hover:bg-transparent">
                 <TableHead className="text-zinc-500 dark:text-zinc-400 font-semibold text-xs">Order ID</TableHead>
@@ -669,7 +669,7 @@ export function AdminOrdersPage() {
           </Table>
 
           {/* Mobile Orders Cards */}
-          <div className="block md:hidden divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
+          <div className="block xl:hidden divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
             {currentDisplayList.map((order) => {
               const payment = PAYMENT_CONFIG[order.paymentStatus] || PAYMENT_CONFIG.PENDING
               const PayIcon = payment.icon

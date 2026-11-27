@@ -55,6 +55,16 @@ function uid(): string {
   return Math.random().toString(36).slice(2, 10)
 }
 
+/** The server accepts 1-99 of a line and at most 60 lines per order; the cart enforces the same so the guest never meets a cryptic error. */
+export const MAX_LINE_QTY = 99
+
+const sameLine = (a: Omit<CartEntry, '_localId'>, b: CartEntry) =>
+  a.menuItemId === b.menuItemId &&
+  (a.notes || '').trim() === (b.notes || '').trim() &&
+  a.selectedModifiers.length === b.selectedModifiers.length &&
+  [...a.selectedModifiers].map((m) => `${m.name}|${m.price}`).sort().join(',') ===
+    [...b.selectedModifiers].map((m) => `${m.name}|${m.price}`).sort().join(',')
+
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
@@ -63,10 +73,19 @@ export const useCartStore = create<CartStore>()(
 
       // ── Mutations ────────────────────────────────────────────────────────────
 
+      // Adding the same dish with the same choices again raises its quantity instead of piling up identical lines
       addItem: (item) =>
-        set((s) => ({
-          entries: [...s.entries, { ...item, _localId: uid() }],
-        })),
+        set((s) => {
+          const existing = s.entries.find((e) => sameLine(item, e))
+          if (existing) {
+            return {
+              entries: s.entries.map((e) =>
+                e === existing ? { ...e, quantity: Math.min(MAX_LINE_QTY, e.quantity + Math.max(1, item.quantity)) } : e
+              ),
+            }
+          }
+          return { entries: [...s.entries, { ...item, quantity: Math.min(MAX_LINE_QTY, Math.max(1, item.quantity)), _localId: uid() }] }
+        }),
 
       removeItem: (localId) =>
         set((s) => ({
@@ -76,7 +95,7 @@ export const useCartStore = create<CartStore>()(
       incrementItem: (localId) =>
         set((s) => ({
           entries: s.entries.map((e) =>
-            e._localId === localId ? { ...e, quantity: e.quantity + 1 } : e
+            e._localId === localId ? { ...e, quantity: Math.min(MAX_LINE_QTY, e.quantity + 1) } : e
           ),
         })),
 

@@ -12,6 +12,7 @@ import {
   Sparkles,
   Heart,
   Check,
+  Loader2,
   XCircle,
   Bike,
   MapPin,
@@ -32,7 +33,8 @@ import { QrCodeImage } from "@/components/ui/QrCodeImage"
 
 interface OrderTrackingViewProps {
   restaurantSlug: string
-  tableId: string
+  /** Only set for a table (dine-in) order */
+  tableId?: string
   orderId?: string
   trackingToken?: string
 }
@@ -69,6 +71,8 @@ export function OrderTrackingView({
     Boolean(order?.paymentStatus === "PAID" || order?.orderStatus === "COMPLETED")
   )
   const feedbackRef = useRef<HTMLDivElement>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
   // Real-time socket updates and REST polling fallback for customer tracking
   useEffect(() => {
@@ -80,11 +84,10 @@ export function OrderTrackingView({
       try {
         const fresh = await api.orders.get(activeToken || activeOrderId, activeToken)
         if (fresh && fresh.id) {
+          const isNewlyPaid = useOrderTrackingStore.getState().order?.paymentStatus !== "PAID" && fresh.paymentStatus === "PAID"
+          if (isNewlyPaid) setShowFeedbackSheet(true)
+          setLoadFailed(false)
           useOrderTrackingStore.setState((s) => {
-            const isNewlyPaid = s.order?.paymentStatus !== "PAID" && fresh.paymentStatus === "PAID"
-            if (isNewlyPaid) {
-              setShowFeedbackSheet(true)
-            }
             return {
               order: s.order
                 ? {
@@ -100,7 +103,8 @@ export function OrderTrackingView({
           })
         }
       } catch {
-        // Fallback safely if disconnected
+        // Keep showing what we have; only say so when there is nothing to show yet (bad link, no network)
+        if (!useOrderTrackingStore.getState().order) setLoadFailed(true)
       }
     }
 
@@ -111,9 +115,12 @@ export function OrderTrackingView({
     const pollInterval = setInterval(() => {
       if (document.hidden) return
       const current = useOrderTrackingStore.getState().order
-      if (!current || current.paymentStatus === "PENDING" || current.orderStatus !== "COMPLETED") {
-        fetchLatestOrder()
-      }
+      // a cancelled order only changes while its refund is pending; a served one only until it is paid
+      const settled =
+        current?.orderStatus === "CANCELLED"
+          ? current.paymentStatus !== "REFUND_PENDING" && current.paymentStatus !== "PENDING"
+          : current?.orderStatus === "COMPLETED" && current.paymentStatus !== "PENDING"
+      if (!settled) fetchLatestOrder()
     }, 5000)
 
     // 3. Re-sync on window focus / visibility change
@@ -175,7 +182,7 @@ export function OrderTrackingView({
       socket.off("order:paid", onPaid)
       socket.off("connect", fetchLatestOrder)
     }
-  }, [order?.id, order?.trackingToken, orderId, trackingToken])
+  }, [order?.id, order?.trackingToken, orderId, trackingToken, retryKey])
 
   const [showUpiModal, setShowUpiModal] = useState(false)
   const [copiedVpa, setCopiedVpa] = useState(false)
@@ -287,6 +294,7 @@ export function OrderTrackingView({
   }, [order?.orderType])
 
   const getStepState = (idx: number) => {
+    if (currentStatus === "CANCELLED") return { isCompleted: false, isActive: false }
     if (currentStatus === "COMPLETED") {
       return { isCompleted: true, isActive: false }
     }
@@ -322,13 +330,18 @@ export function OrderTrackingView({
     }
   }
 
-  const tokenId = order ? order.id.slice(-3).toUpperCase() : "04"
+  const tokenId = order ? order.id.slice(-3).toUpperCase() : "…"
+  const methodName = (m?: string) => (m === "PAY_AT_COUNTER" ? "Counter" : m === "COD" ? "Cash on Delivery" : "UPI")
+  const fmtRupees = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2))
+  const menuPath = tableId ? `/r/${restaurantSlug}/t/${encodeURIComponent(tableId)}` : `/r/${restaurantSlug}/t/takeaway`
+  // a cancelled order is never asked for money
+  const isLive = currentStatus !== "CANCELLED"
   const isPayAtCounterPending =
-    order?.paymentMethod === "PAY_AT_COUNTER" && order?.paymentStatus === "PENDING"
+    isLive && order?.paymentMethod === "PAY_AT_COUNTER" && order?.paymentStatus === "PENDING"
   const isCodPending =
-    order?.paymentMethod === "COD" && order?.paymentStatus === "PENDING"
+    isLive && order?.paymentMethod === "COD" && order?.paymentStatus === "PENDING"
   const isUpiPending =
-    order?.paymentMethod === "UPI_INSTANT" && order?.paymentStatus === "PENDING"
+    isLive && order?.paymentMethod === "UPI_INSTANT" && order?.paymentStatus === "PENDING"
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -363,7 +376,7 @@ export function OrderTrackingView({
       <div className="sticky top-0 z-30 flex items-center gap-1 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-2 py-2">
         <button
           type="button"
-          onClick={() => navigate(`/r/${restaurantSlug}/t/${tableId}`)}
+          onClick={() => navigate(menuPath)}
           aria-label="Back to menu"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
         >
@@ -371,10 +384,33 @@ export function OrderTrackingView({
         </button>
         <div className="min-w-0">
           <h1 className="text-base font-bold text-zinc-100 leading-tight">Live Order Tracker</h1>
-          <p className="text-xs text-zinc-400">Table {tableId}</p>
+          <p className="text-xs text-zinc-400">{tableId ? `Table ${tableId}` : order?.orderType === "DELIVERY" ? "Delivery" : "Takeaway"}</p>
         </div>
       </div>
 
+      {!order ? (
+        <div className="flex-1 px-4 py-16 max-w-md mx-auto w-full text-center" role={loadFailed ? "alert" : "status"}>
+          {loadFailed ? (
+            <>
+              <XCircle className="mx-auto h-9 w-9 text-rose-400" />
+              <p className="mt-3 text-sm font-semibold text-zinc-100">We couldn’t find this order</p>
+              <p className="mt-1 text-xs text-zinc-400">Check your connection, or open the link from your order confirmation again.</p>
+              <button
+                type="button"
+                onClick={() => { setLoadFailed(false); setRetryKey((k) => k + 1) }}
+                className="mt-4 min-h-11 rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-500"
+              >
+                Try again
+              </button>
+            </>
+          ) : (
+            <>
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-emerald-400" />
+              <p className="mt-3 text-xs text-zinc-400">Loading your order…</p>
+            </>
+          )}
+        </div>
+      ) : (
       <div className="flex-1 px-4 py-5 space-y-5 max-w-md mx-auto w-full">
         {/* Order Cancelled Banner */}
         {currentStatus === "CANCELLED" && (
@@ -539,7 +575,7 @@ export function OrderTrackingView({
               <div>
                 <p className="text-xs font-bold text-emerald-300">Order Placed & Served!</p>
                 <p className="text-[11px] text-zinc-300">
-                  All items have been served to Table {tableId}. Enjoy your meal!
+                  {tableId ? `All items have been served to Table ${tableId}. Enjoy your meal!` : "Your order is complete. Enjoy your meal!"}
                 </p>
               </div>
             </div>
@@ -547,7 +583,7 @@ export function OrderTrackingView({
         </div>
 
         {/* 1-Tap Experience Feedback Component (Triggered when order is Served / COMPLETED or Paid) */}
-        {(currentStatus === "COMPLETED" || showFeedbackSheet || order?.paymentStatus === "PAID") && (
+        {isLive && (currentStatus === "COMPLETED" || showFeedbackSheet || order?.paymentStatus === "PAID") && (
           <div
             ref={feedbackRef}
             className="bg-gradient-to-b from-zinc-900 to-zinc-900/90 rounded-2xl border border-amber-500/30 p-5 shadow-xl space-y-4 animate-in fade-in duration-300"
@@ -671,6 +707,8 @@ export function OrderTrackingView({
                 <span className="text-xs font-bold text-emerald-300 block">
                   {order.paymentMethod === "PAY_AT_COUNTER"
                     ? "Paid at Counter • Thank You!"
+                    : order.paymentMethod === "COD"
+                    ? "Paid on Delivery • Thank You!"
                     : "Paid via UPI • Thank You!"}
                 </span>
                 <span className="text-[11px] text-zinc-400">
@@ -806,12 +844,18 @@ export function OrderTrackingView({
               <div className="flex items-center gap-1.5">
                 {order.paymentStatus === "PAID" ? (
                   <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Paid via {order.paymentMethod === "PAY_AT_COUNTER" ? "Counter" : order.paymentMethod === "COD" ? "COD" : "UPI"}
+                    Paid via {order.paymentMethod === "COD" ? "COD" : methodName(order.paymentMethod)}
+                  </span>
+                ) : !isLive ? (
+                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    {order.paymentStatus === "REFUNDED" ? "Refunded" : order.paymentStatus === "REFUND_PENDING" ? "Refund Pending" : "Cancelled"}
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     {order.paymentMethod === "PAY_AT_COUNTER"
                       ? "Pay at Counter Pending"
+                      : order.paymentMethod === "COD"
+                      ? "Cash on Delivery Pending"
                       : "UPI Payment Pending"}
                   </span>
                 )}
@@ -832,10 +876,17 @@ export function OrderTrackingView({
                     )}
                   </div>
                   <span className="text-zinc-300 font-semibold">
-                    ₹{(((Number(item.price || 0) + item.selectedModifiers.reduce((s, m) => s + Number(m.price || 0), 0)) * item.quantity)).toFixed(0)}
+                    ₹{fmtRupees((Number(item.price || 0) + item.selectedModifiers.reduce((s, m) => s + Number(m.price || 0), 0)) * item.quantity)}
                   </span>
                 </div>
               ))}
+            </div>
+
+            <div className="border-t border-zinc-800 pt-2.5 space-y-1 text-xs text-zinc-400">
+              {Number(order.subtotal || 0) > 0 && <div className="flex justify-between"><span>Subtotal</span><span>₹{Number(order.subtotal).toFixed(2)}</span></div>}
+              {Number(order.gstAmount || 0) > 0 && <div className="flex justify-between"><span>Taxes &amp; GST</span><span>₹{Number(order.gstAmount).toFixed(2)}</span></div>}
+              {Number(order.serviceChargeAmount || 0) > 0 && <div className="flex justify-between"><span>Service charge</span><span>₹{Number(order.serviceChargeAmount).toFixed(2)}</span></div>}
+              {Number(order.deliveryFee || 0) > 0 && <div className="flex justify-between"><span>Delivery fee</span><span>₹{Number(order.deliveryFee).toFixed(2)}</span></div>}
             </div>
 
             <div className="border-t border-zinc-800 pt-2.5 flex justify-between items-center">
@@ -849,16 +900,16 @@ export function OrderTrackingView({
 
         {/* Add More Items CTA (Requirement 3: High-contrast Dark Styled Button) */}
         <button
-          onClick={() => navigate(`/r/${restaurantSlug}/t/${tableId}`)}
+          onClick={() => navigate(menuPath)}
           className="w-full h-12 rounded-xl bg-zinc-900 hover:bg-zinc-850 active:scale-[0.99] border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-100 font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all duration-200"
         >
           <Plus className="h-4 w-4 text-emerald-400" />
-          Add More Items to Table {tableId}
+          {tableId ? `Add More Items to Table ${tableId}` : "Order Something Else"}
         </button>
 
         {/* Dynamic Scannable UPI Payment Modal */}
         <Dialog open={showUpiModal} onOpenChange={setShowUpiModal}>
-          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm p-4 sm:p-5 space-y-4 text-center max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm p-4 sm:p-5 space-y-4 text-center max-h-[90dvh] overflow-y-auto">
             <DialogHeader className="mb-1 text-left flex flex-row items-center justify-between">
               <div>
                 <DialogTitle className="text-base font-bold text-zinc-100 flex items-center gap-2">
@@ -945,6 +996,7 @@ export function OrderTrackingView({
           </DialogContent>
         </Dialog>
       </div>
+      )}
     </div>
   )
 }

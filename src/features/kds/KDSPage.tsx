@@ -95,11 +95,13 @@ export function KDSPage() {
     return () => clearTimeout(timer)
   }, [chimeCount])
 
-  const newTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "RECEIVED"), [tickets])
-  const inPrepTickets = useMemo(() => tickets.filter((t) => t.orderStatus === "PREPARING"), [tickets])
+  // Oldest first in every column: the order that has waited longest is always at the top, never buried under newer ones
+  const oldestFirst = useMemo(() => [...tickets].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()), [tickets])
+  const newTickets = useMemo(() => oldestFirst.filter((t) => t.orderStatus === "RECEIVED"), [oldestFirst])
+  const inPrepTickets = useMemo(() => oldestFirst.filter((t) => t.orderStatus === "PREPARING"), [oldestFirst])
   const readyTickets = useMemo(
-    () => tickets.filter((t) => t.orderStatus === "READY" || t.orderStatus === "DISPATCHED"),
-    [tickets]
+    () => oldestFirst.filter((t) => t.orderStatus === "READY" || t.orderStatus === "DISPATCHED"),
+    [oldestFirst]
   )
 
   const columns = useMemo(() => [
@@ -147,7 +149,7 @@ export function KDSPage() {
 
       {/* Audio alert chime visual indicator */}
       {showChimeToast && (
-        <div className="absolute top-16 right-6 z-50 flex items-center gap-2.5 bg-emerald-500 text-zinc-950 px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xl shadow-emerald-950/50 border border-emerald-400/50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-16 right-3 sm:right-6 z-50 flex items-center gap-2.5 bg-emerald-500 text-zinc-950 px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xl shadow-emerald-950/50 border border-emerald-400/50 animate-in fade-in slide-in-from-top-2 duration-200">
           <BellRing className="h-4 w-4 animate-pulse" />
           <span>New Order Received</span>
         </div>
@@ -156,7 +158,7 @@ export function KDSPage() {
       {/* Sub-header with column labels + out of stock button */}
       <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-2.5 bg-zinc-900/60 border-b border-zinc-800/80 shrink-0 gap-2">
         {/* Desktop column indicators */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-6">
           {columns.map((col) => (
             <div key={col.label} className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
@@ -169,7 +171,7 @@ export function KDSPage() {
         </div>
 
         {/* Mobile stage-based switcher */}
-        <ScrollRow role="tablist" aria-label="Order stage" className="flex md:hidden items-center gap-1 p-0.5 bg-zinc-900 rounded-xl border border-zinc-800 flex-1">
+        <ScrollRow role="tablist" aria-label="Order stage" className="flex lg:hidden items-center gap-1 p-0.5 bg-zinc-900 rounded-xl border border-zinc-800 flex-1">
           {columns.map((col) => (
             <button
               key={col.id}
@@ -203,7 +205,7 @@ export function KDSPage() {
       </div>
 
       {/* Ticket board: Desktop 3-column grid */}
-      <div className="hidden md:grid flex-1 overflow-hidden grid-cols-3 gap-4 p-4">
+      <div className="hidden lg:grid flex-1 overflow-hidden grid-cols-3 gap-4 p-4">
         {columns.map((col) => (
           <div key={col.label} className="flex flex-col overflow-hidden rounded-2xl bg-zinc-900/30 border border-zinc-800/80">
             {/* Column header */}
@@ -239,19 +241,19 @@ export function KDSPage() {
       </div>
 
       {/* Mobile single-column active stage view */}
-      <div className="flex md:hidden flex-1 flex-col overflow-hidden p-3">
+      <div className="flex lg:hidden flex-1 flex-col overflow-hidden p-3">
         <div className="flex-1 flex flex-col overflow-hidden rounded-2xl bg-zinc-900/30 border border-zinc-800/80">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/80 shrink-0 bg-zinc-900/40">
             <div className={`w-2 h-2 rounded-full ${activeMobileColumn.dotColor}`} />
             <h2 className={`text-sm font-semibold tracking-tight ${activeMobileColumn.color}`}>{activeMobileColumn.label}</h2>
             <span className="ml-auto text-xs font-medium text-zinc-500">
-              {activeMobileColumn.count === 0 ? "All clear" : `${activeMobileColumn.count} tickets`}
+              {activeMobileColumn.count === 0 ? "All clear" : `${activeMobileColumn.count} ticket${activeMobileColumn.count > 1 ? "s" : ""}`}
             </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 md:grid md:grid-cols-2 md:content-start md:items-start md:gap-3 md:space-y-0">
             {activeMobileColumn.tickets.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-zinc-700">
+              <div className="flex flex-col items-center justify-center py-16 text-zinc-700 md:col-span-2">
                 <LayoutGrid className="h-8 w-8 mb-2" />
                 <p className="text-xs font-medium">No tickets in this stage</p>
               </div>

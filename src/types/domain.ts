@@ -215,6 +215,8 @@ export interface Order {
   /** Where a guest may pay by UPI (this outlet's own, owner-confirmed ID), or null/absent when UPI is not available. Never a default. */
   payee?: { vpa: string; name: string } | null
   restaurantId: string
+  /** Added by the guest app when the order is placed, so a saved order is never shown under another restaurant's menu */
+  restaurantSlug?: string
   orderType?: OrderType
   tableNumber?: string | null
   customerName?: string | null

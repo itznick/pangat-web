@@ -11,7 +11,7 @@ interface DinerTopBarProps {
 }
 
 export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
-  const [online, setOnline] = useState(true)
+  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine))
   const { dietaryFilter, setDietaryFilter } = useCartStore()
 
   useEffect(() => {
@@ -36,13 +36,13 @@ export function DinerTopBar({ cafeName, tableId }: DinerTopBarProps) {
         <div className="flex items-center gap-3 min-w-0">
           <PangatLogo size="sm" className="shrink-0" />
           <div className="min-w-0">
-            <h1 className="truncate font-heading text-base font-semibold text-zinc-100 tracking-tight">{cafeName}</h1>
+            <h1 title={cafeName} className="truncate font-heading text-base font-semibold text-zinc-100 tracking-tight">{cafeName}</h1>
             <p className="text-xs text-zinc-400 font-medium">{/^takeaway$/i.test(tableId) ? "Takeaway" : `Table ${tableId}`}</p>
           </div>
         </div>
 
         {/* Connectivity status pill */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
         <ThemeToggle className="!h-8 !w-8" />
         <div
           className={cn(

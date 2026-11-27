@@ -151,40 +151,40 @@ function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTick
       )}
     >
       {/* Header */}
-      <div className={cn("px-4 py-3 flex items-center justify-between", config.headerBg)}>
-        <div className="flex items-center gap-2">
+      <div className={cn("px-4 py-3 flex items-center justify-between gap-2", config.headerBg)}>
+        <div className="flex min-w-0 items-center gap-2">
           {config.pulse && (
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
             </span>
           )}
-          <span className="text-sm font-bold text-zinc-100">
+          <span className="shrink-0 text-sm font-bold text-zinc-100">
             #{ticket.id.slice(-3).toUpperCase()}
           </span>
-          <span className="text-zinc-500">·</span>
+          <span className="shrink-0 text-zinc-500">·</span>
           {ticket.orderType === "TAKEAWAY" ? (
-            <span className="text-xs font-bold text-amber-300 inline-flex items-center gap-1">
-              <ShoppingBag className="h-3.5 w-3.5" />
-              {ticket.customerName || "Parcel"}
+            <span className="min-w-0 text-xs font-bold text-amber-300 inline-flex items-center gap-1">
+              <ShoppingBag className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{ticket.customerName || "Parcel"}</span>
             </span>
           ) : ticket.orderType === "DELIVERY" ? (
-            <span className="text-xs font-bold text-purple-300 inline-flex items-center gap-1">
-              <Bike className="h-3.5 w-3.5" />
-              {ticket.customerName || "Delivery"}
+            <span className="min-w-0 text-xs font-bold text-purple-300 inline-flex items-center gap-1">
+              <Bike className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{ticket.customerName || "Delivery"}</span>
             </span>
           ) : (
-            <span className="text-sm font-bold text-zinc-200 inline-flex items-center gap-1">
-              <Utensils className="h-3.5 w-3.5 text-zinc-400" />
-              Table {ticket.tableNumber || "—"}
+            <span className="min-w-0 text-sm font-bold text-zinc-200 inline-flex items-center gap-1">
+              <Utensils className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+              <span className="truncate">Table {ticket.tableNumber || "—"}</span>
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <div
             className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold",
+              "flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold whitespace-nowrap",
               config.badgeBg
             )}
           >
@@ -196,7 +196,7 @@ function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTick
       {/* Timer */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-2 text-xs font-mono border-b",
+          "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2 text-xs font-mono border-b",
           ticket.orderStatus === "RECEIVED"
             ? "border-blue-500/20"
             : ticket.orderStatus === "PREPARING"
@@ -225,7 +225,7 @@ function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTick
         <div className="px-4 py-2 bg-purple-950/20 border-b border-purple-500/20 text-xs text-purple-200 flex items-start gap-1.5">
           <MapPin className="h-3.5 w-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <p className="truncate font-semibold">{ticket.deliveryAddress}</p>
+            <p className="line-clamp-3 break-words font-semibold">{ticket.deliveryAddress}</p>
             {ticket.deliveryInstructions && (
               <p className="text-[11px] text-purple-300/80 italic">{ticket.deliveryInstructions}</p>
             )}
@@ -239,7 +239,7 @@ function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTick
           <div key={idx} className="space-y-1">
             <div className="flex items-baseline gap-2">
               <span className="text-sm font-bold text-zinc-100 font-mono">{item.quantity}×</span>
-              <span className="text-sm font-medium text-zinc-200">{item.name}</span>
+              <span className="min-w-0 break-words text-sm font-medium text-zinc-200">{item.name}</span>
             </div>
             {item.selectedModifiers && item.selectedModifiers.length > 0 && (
               <div className="flex flex-wrap gap-1 ml-6">
@@ -285,19 +285,22 @@ function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTick
             placeholder="Mandatory reason (e.g. remake item, rider delay)"
             value={sendBackReason}
             onChange={(e) => setSendBackReason(e.target.value)}
-            className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-rose-500"
+            className="w-full min-h-11 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-rose-500"
+            aria-label="Reason for sending the ticket back"
           />
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => setShowSendBackModal(false)}
-              className="flex-1 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold"
+              className="flex-1 min-h-11 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleSendBackConfirm}
               disabled={!sendBackReason.trim()}
-              className="flex-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-bold"
+              className="flex-1 min-h-11 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-bold"
             >
               Confirm
             </button>
@@ -312,16 +315,18 @@ function KDSTicketCardBase({ ticket, onAdvance, onArchive, onSendBack }: KDSTick
             <button
               type="button"
               onClick={() => setShowSendBackModal(true)}
-              className="p-2.5 rounded-xl border border-zinc-700 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs transition-colors flex items-center justify-center"
+              className="min-h-11 min-w-11 rounded-xl border border-zinc-700 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs transition-colors flex items-center justify-center touch-manipulation"
               title="Send back ticket"
+              aria-label={`Send ticket ${ticket.id.slice(-3).toUpperCase()} back`}
             >
               <Undo2 className="h-4 w-4" />
             </button>
           )}
           <button
+            type="button"
             onClick={handleAction}
             className={cn(
-              "flex-1 py-2.5 px-4 rounded-xl text-sm transition-all duration-150 active:scale-[0.98]",
+              "flex-1 min-h-11 py-2.5 px-4 rounded-xl text-sm transition-all duration-150 active:scale-[0.98] touch-manipulation",
               ticket.orderStatus === "READY" && isDelivery
                 ? "bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-lg shadow-purple-600/30"
                 : config.actionClass
